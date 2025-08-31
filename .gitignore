@@ -14,7 +14,7 @@
 /coverage
 logs.txt
 logger.logs
-
+temps
 # next.js
 /.next/
 /out/
