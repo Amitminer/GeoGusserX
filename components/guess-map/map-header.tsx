@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import { Globe, Minimize2, Target, X } from 'lucide-react';
+import { Globe, Minimize2, Target, X, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-type MapSize = 'mini' | 'expanded' | 'fullscreen';
+type MapSize = 'mini' | 'expanded' | 'fullscreen' | 'hidden';
 
 interface MapHeaderProps {
   mapSize: MapSize;
@@ -50,15 +50,26 @@ export function MapHeader({ mapSize, disabled, hasGuessLocation, onSetMapSize }:
 
         {/* Size Controls */}
         {mapSize !== 'fullscreen' && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onSetMapSize('mini')}
-            className="h-6 w-6 hover:bg-gray-700/50 transition-colors text-gray-300 hover:text-gray-100"
-            title="Minimize map"
-          >
-            <Minimize2 className="h-3 w-3" />
-          </Button>
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onSetMapSize('hidden')}
+              className="h-6 w-6 hover:bg-gray-700/50 transition-colors text-gray-300 hover:text-red-300"
+              title="Hide map"
+            >
+              <EyeOff className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onSetMapSize('mini')}
+              className="h-6 w-6 hover:bg-gray-700/50 transition-colors text-gray-300 hover:text-gray-100"
+              title="Minimize map"
+            >
+              <Minimize2 className="h-3 w-3" />
+            </Button>
+          </>
         )}
 
         {mapSize === 'expanded' && (

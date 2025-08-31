@@ -278,23 +278,19 @@ export function Game() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="h-screen flex flex-col"
+            className="h-screen flex flex-col relative"
           >
             <GameHeader onEndGame={handleEndGame} />
             
-            <div className="flex-1 flex flex-col lg:flex-row">
-              {/* Street View */}
-              <div className="flex-1 lg:flex-[2]">
-                <StreetView location={currentLocation} />
-              </div>
+            {/* Fullscreen Street View */}
+            <div className="flex-1 relative">
+              <StreetView location={currentLocation} />
               
-              {/* Guess Map */}
-              <div className="h-64 lg:h-auto lg:flex-1">
-                <GuessMap
-                  onGuess={handleMakeGuess}
-                  disabled={showResults}
-                />
-              </div>
+              {/* Floating Guess Map - positioned in bottom right */}
+              <GuessMap
+                onGuess={handleMakeGuess}
+                disabled={showResults}
+              />
             </div>
           </motion.div>
         )}
