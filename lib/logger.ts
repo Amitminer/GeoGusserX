@@ -1,5 +1,19 @@
 import React from 'react';
 
+// Conditional imports for Node.js environment
+let fs: any = null;
+let path: any = null;
+
+if (typeof window === 'undefined') {
+	try {
+		fs = require('fs').promises;
+		path = require('path');
+	} catch (error) {
+		// File system modules not available
+		console.warn('File system modules not available for logging');
+	}
+}
+
 /**
  * Available log levels in order of severity
  */
@@ -88,6 +102,15 @@ class Logger {
 	/** Map of active performance timers */
 	private performanceTimers = new Map<string, number>();
 
+	/** Path to the log file */
+	private logFilePath = path ? path.join(process.cwd(), 'logger.logs') : 'logger.logs';
+
+	/** Whether we're running in a Node.js environment (server-side) */
+	private isServerSide = typeof window === 'undefined';
+
+	/** Queue for pending file writes to avoid race conditions */
+	private writeQueue: Promise<void> = Promise.resolve();
+
 	/**
 	 * Gets current memory usage in MB
 	 * @returns Memory usage in megabytes, or 0 if not available
@@ -128,7 +151,33 @@ class Logger {
 	}
 
 	/**
-	 * Adds a log entry to the internal storage
+	 * Writes a log entry to the file system (server-side only)
+	 * @param entry - Log entry to write to file
+	 */
+	private async writeLogToFile(entry: LogEntry): Promise<void> {
+		if (!this.isServerSide || !fs) {
+			return; // Skip file writing on client-side or if fs is not available
+		}
+
+		try {
+			// Format log entry for file output
+			const logLine = `[${entry.timestamp}] [${entry.level.toUpperCase()}]${entry.source ? ` [${entry.source}]` : ''} ${entry.message}${entry.data ? ` | Data: ${JSON.stringify(entry.data)}` : ''}${entry.duration ? ` | Duration: ${entry.duration.toFixed(2)}ms` : ''}${entry.memoryUsage ? ` | Memory: ${entry.memoryUsage.toFixed(2)}MB` : ''}${entry.errorInfo ? ` | ErrorInfo: ${JSON.stringify(entry.errorInfo)}` : ''}\n`;
+
+			// Queue the write operation to avoid race conditions
+			this.writeQueue = this.writeQueue.then(async () => {
+				await fs.appendFile(this.logFilePath, logLine, 'utf8');
+			}).catch((error) => {
+				// Fallback to console if file writing fails
+				console.error('Failed to write log to file:', error);
+			});
+		} catch (error) {
+			// Silent fail - don't let logging errors break the application
+			console.error('Error in writeLogToFile:', error);
+		}
+	}
+
+	/**
+	 * Adds a log entry to the internal storage and writes to file
 	 * Maintains circular buffer by removing oldest entries when limit is exceeded
 	 * @param entry - Log entry to add
 	 */
@@ -137,6 +186,9 @@ class Logger {
 		if (this.logs.length > this.maxLogs) {
 			this.logs.shift();
 		}
+
+		// Write to file asynchronously (server-side only)
+		this.writeLogToFile(entry);
 	}
 
 	/**
@@ -393,6 +445,103 @@ class Logger {
 	}
 
 	/**
+	 * Clears the log file (server-side only)
+	 * @returns Promise that resolves when the file is cleared
+	 * @example
+	 * ```typescript
+	 * // Clear the log file at the start of a new session
+	 * await logger.clearLogFile();
+	 * ```
+	 */
+	async clearLogFile(): Promise<void> {
+		if (!this.isServerSide || !fs) {
+			return;
+		}
+
+		try {
+			// Wait for any pending writes to complete
+			await this.writeQueue;
+			// Clear the file
+			await fs.writeFile(this.logFilePath, '', 'utf8');
+		} catch (error) {
+			console.error('Failed to clear log file:', error);
+		}
+	}
+
+	/**
+	 * Reads the entire log file content (server-side only)
+	 * @returns Promise that resolves to the file content or empty string if not available
+	 * @example
+	 * ```typescript
+	 * // Read all logs from file
+	 * const fileContent = await logger.readLogFile();
+	 * console.log(fileContent);
+	 * ```
+	 */
+	async readLogFile(): Promise<string> {
+		if (!this.isServerSide || !fs) {
+			return '';
+		}
+
+		try {
+			// Wait for any pending writes to complete
+			await this.writeQueue;
+			return await fs.readFile(this.logFilePath, 'utf8');
+		} catch (error) {
+			// File might not exist yet, return empty string
+			return '';
+		}
+	}
+
+	/**
+	 * Gets the log file path
+	 * @returns The absolute path to the log file
+	 * @example
+	 * ```typescript
+	 * console.log('Logs are stored at:', logger.getLogFilePath());
+	 * ```
+	 */
+	getLogFilePath(): string {
+		return this.logFilePath;
+	}
+
+	/**
+	 * Checks if file logging is available (server-side only)
+	 * @returns True if running on server-side and can write to files
+	 * @example
+	 * ```typescript
+	 * if (logger.isFileLoggingAvailable()) {
+	 *   console.log('Logs will be saved to file');
+	 * }
+	 * ```
+	 */
+	isFileLoggingAvailable(): boolean {
+		return this.isServerSide && fs !== null;
+	}
+
+	/**
+	 * Flushes any pending log writes to ensure they are written to disk
+	 * @returns Promise that resolves when all pending writes are complete
+	 * @example
+	 * ```typescript
+	 * // Ensure all logs are written before shutting down
+	 * await logger.flushLogs();
+	 * process.exit(0);
+	 * ```
+	 */
+	async flushLogs(): Promise<void> {
+		if (!this.isServerSide || !fs) {
+			return;
+		}
+
+		try {
+			await this.writeQueue;
+		} catch (error) {
+			console.error('Error flushing logs:', error);
+		}
+	}
+
+	/**
 	 * Generates a concise summary of logging session for quick debugging
 	 * @returns Formatted summary string with key metrics
 	 * @example
@@ -410,7 +559,9 @@ class Logger {
 Total Logs: ${stats.totalLogs}
 Session Duration: ${sessionDuration}s
 Memory: ${stats.averageMemoryUsage.toFixed(1)}MB avg, ${stats.peakMemoryUsage.toFixed(1)}MB peak
-Errors: ${stats.logsByLevel.error}, Warnings: ${stats.logsByLevel.warn}`;
+Errors: ${stats.logsByLevel.error}, Warnings: ${stats.logsByLevel.warn}
+File Logging: ${this.isFileLoggingAvailable() ? 'Enabled' : 'Disabled'}
+Log File: ${this.logFilePath}`;
 	}
 }
 
