@@ -83,11 +83,14 @@ Street View images around the world!
    cp .env.local.example .env.local
    ```
 
-   Edit `.env.local` and add your Google Maps API key:
+   Edit `.env.local` and add your Google Maps credentials:
 
    ```env
    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
+   NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID=your_map_id_here
    ```
+
+   > **Important**: Both API Key and Map ID are required. The application uses Advanced Markers exclusively. See [Maps Setup Guide](MAPS_SETUP.md) for detailed instructions.
 
 4. **Run the development server**
 
@@ -100,6 +103,10 @@ Street View images around the world!
 
 ### Google Maps API Setup
 
+> **📋 Detailed Setup Guide**: For complete setup instructions including Map ID creation, see [MAPS_SETUP.md](MAPS_SETUP.md)
+
+**Quick Setup:**
+
 1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project or select an existing one
 3. Enable the following APIs:
@@ -107,7 +114,11 @@ Street View images around the world!
    - Street View Static API
    - Places API (optional, for enhanced location search)
 4. Create credentials (API key)
-5. Restrict the API key to your domain for security
+5. **Create a Map ID** (required):
+   - Go to **Google Maps Platform** > **Map Management**
+   - Click **Create Map ID**
+   - Choose **JavaScript** as the map type
+6. Restrict the API key to your domain for security
 
 ## 🎯 Game Modes
 

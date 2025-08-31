@@ -1,18 +1,26 @@
 import { Loader } from '@googlemaps/js-api-loader';
 import { Location, StreetViewLocation } from './types';
 import { logger } from './logger';
+import { generateRandomLocation } from './locations';
 
 class MapsManager {
   private loader: Loader | null = null;
   private isLoaded = false;
   private streetViewService: google.maps.StreetViewService | null = null;
+  private mapId: string | null = null;
 
   constructor() {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    this.mapId = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || null;
     
     if (!apiKey) {
       logger.error('Google Maps API key not found', undefined, 'MapsManager');
       return;
+    }
+
+    if (!this.mapId) {
+      logger.error('Google Maps Map ID not found. Map ID is required for Advanced Markers. Please set NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID in your environment variables.', undefined, 'MapsManager');
+      throw new Error('Google Maps Map ID is required. Please set NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID in your environment variables.');
     }
 
     this.loader = new Loader({
@@ -63,7 +71,7 @@ class MapsManager {
       
       try {
         logger.startTimer(`streetview-check-${attempts}`);
-        const randomLocation = this.generateRandomLocation();
+        const randomLocation = generateRandomLocation();
         const streetViewData = await this.checkStreetViewAvailability(randomLocation);
         const checkDuration = logger.endTimer(`streetview-check-${attempts}`);
         
@@ -96,44 +104,7 @@ class MapsManager {
     throw new Error('Could not find a valid Street View location after maximum attempts');
   }
 
-  private generateRandomLocation(): Location {
-    // Focus on populated areas with higher Street View coverage
-    const regions = [
-      // North America
-      { lat: 39.8283, lng: -98.5795, radius: 20 }, // USA
-      { lat: 56.1304, lng: -106.3468, radius: 15 }, // Canada
-      
-      // Europe
-      { lat: 54.5260, lng: 15.2551, radius: 15 }, // Europe
-      { lat: 51.1657, lng: 10.4515, radius: 8 }, // Germany
-      { lat: 46.2276, lng: 2.2137, radius: 8 }, // France
-      { lat: 55.3781, lng: -3.4360, radius: 6 }, // UK
-      
-      // Asia
-      { lat: 35.8617, lng: 104.1954, radius: 20 }, // China
-      { lat: 36.2048, lng: 138.2529, radius: 8 }, // Japan
-      { lat: 20.5937, lng: 78.9629, radius: 15 }, // India
-      
-      // Oceania
-      { lat: -25.2744, lng: 133.7751, radius: 12 }, // Australia
-      { lat: -40.9006, lng: 174.8860, radius: 4 }, // New Zealand
-      
-      // South America
-      { lat: -14.2350, lng: -51.9253, radius: 15 }, // Brazil
-      { lat: -38.4161, lng: -63.6167, radius: 8 }, // Argentina
-    ];
 
-    const region = regions[Math.floor(Math.random() * regions.length)];
-    
-    // Generate random point within the region
-    const angle = Math.random() * 2 * Math.PI;
-    const distance = Math.random() * region.radius;
-    
-    const lat = region.lat + (distance * Math.cos(angle)) / 111; // Rough conversion
-    const lng = region.lng + (distance * Math.sin(angle)) / (111 * Math.cos(region.lat * Math.PI / 180));
-    
-    return { lat, lng };
-  }
 
   private async checkStreetViewAvailability(location: Location): Promise<google.maps.StreetViewPanoramaData | null> {
     return new Promise((resolve) => {
@@ -192,7 +163,7 @@ class MapsManager {
     this.ensureLoaded();
 
     logger.startTimer('guess-map-creation');
-    const map = new google.maps.Map(container, {
+    const mapOptions: google.maps.MapOptions = {
       zoom: 2,
       center: { lat: 20, lng: 0 },
       mapTypeControl: false,
@@ -207,7 +178,12 @@ class MapsManager {
           stylers: [{ visibility: 'off' }]
         }
       ]
-    });
+    };
+
+    // Add Map ID (required for Advanced Markers)
+    mapOptions.mapId = this.mapId!;
+
+    const map = new google.maps.Map(container, mapOptions);
     
     const duration = logger.endTimer('guess-map-creation', 'Guess map created');
     logger.perf('Guess map creation', duration);
@@ -230,15 +206,18 @@ class MapsManager {
     bounds.extend(new google.maps.LatLng(actualLocation.lat, actualLocation.lng));
     bounds.extend(new google.maps.LatLng(guessedLocation.lat, guessedLocation.lng));
 
-    const map = new google.maps.Map(container, {
+    const mapOptions: google.maps.MapOptions = {
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: false,
       zoomControl: true,
-      gestureHandling: 'greedy'
-    });
+      gestureHandling: 'greedy',
+      mapId: this.mapId!
+    };
 
-    // Actual location marker (green)
+    const map = new google.maps.Map(container, mapOptions);
+
+    // Actual location marker (green) - Advanced Marker
     const actualMarkerElement = document.createElement('div');
     actualMarkerElement.innerHTML = `
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -254,7 +233,7 @@ class MapsManager {
       content: actualMarkerElement
     });
 
-    // Guessed location marker (red)
+    // Guessed location marker (red) - Advanced Marker
     const guessedMarkerElement = document.createElement('div');
     guessedMarkerElement.innerHTML = `
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -296,6 +275,13 @@ class MapsManager {
 
   isInitialized(): boolean {
     return this.isLoaded;
+  }
+
+  /**
+   * Get the Map ID being used
+   */
+  getMapId(): string | null {
+    return this.mapId;
   }
 }
 
