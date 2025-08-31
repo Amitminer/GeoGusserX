@@ -25,7 +25,7 @@ export default function Error({
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       <div className="max-w-md w-full text-center">
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-6" />
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-6" suppressHydrationWarning />
           
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             Something went wrong!
@@ -53,7 +53,7 @@ export default function Error({
               onClick={reset}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white"
             >
-              <RefreshCw className="w-4 h-4 mr-2" />
+              <RefreshCw className="w-4 h-4 mr-2" suppressHydrationWarning />
               Try Again
             </Button>
             
@@ -62,7 +62,7 @@ export default function Error({
               variant="outline"
               className="w-full"
             >
-              <Home className="w-4 h-4 mr-2" />
+              <Home className="w-4 h-4 mr-2" suppressHydrationWarning />
               Go to Homepage
             </Button>
           </div>

@@ -12,7 +12,7 @@ export default function NotFound() {
             <div className="text-8xl font-bold text-gray-200 dark:text-gray-700 mb-4">404</div>
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
               <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
-                <MapPin className="w-8 h-8 text-white" />
+                <MapPin className="w-8 h-8 text-white" suppressHydrationWarning />
               </div>
             </div>
           </div>
@@ -29,14 +29,14 @@ export default function NotFound() {
           <div className="space-y-3">
             <Link href="/">
               <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white">
-                <Home className="w-4 h-4 mr-2" />
+                <Home className="w-4 h-4 mr-2" suppressHydrationWarning />
                 Back to Home
               </Button>
             </Link>
             
             <Link href="/">
               <Button variant="outline" className="w-full">
-                <Search className="w-4 h-4 mr-2" />
+                <Search className="w-4 h-4 mr-2" suppressHydrationWarning />
                 Start New Game
               </Button>
             </Link>
