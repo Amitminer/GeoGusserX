@@ -13,7 +13,7 @@ A modern **single-player GeoGuessr-inspired game** where you explore real-world 
 
 ## 🔗 **Live Demo**
 
-You can play the live version here: **[GeoGusserX Live](https://xyz.com)**
+You can play the live version here: **[GeoGusserX Live](https://geogusserx.vercel.app)**
 
 ---
 
