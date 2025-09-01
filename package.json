@@ -1,6 +1,6 @@
 {
 	"name": "geogusserx",
-	"version": "0.0.7",
+	"version": "0.0.8",
 	"private": true,
 	"scripts": {
 		"dev": "next dev",
@@ -28,6 +28,7 @@
 		"next": "15.5.2",
 		"react": "19.1.0",
 		"react-dom": "19.1.0",
+		"react-icons": "^5.5.0",
 		"sharp": "^0.34.3",
 		"tailwind-merge": "^3.3.1",
 		"tailwindcss-animate": "^1.0.7",

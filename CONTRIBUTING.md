@@ -1,252 +1,112 @@
 # Contributing to GeoGusserX
 
-Thank you for your interest in contributing to GeoGusserX! We welcome
-contributions from everyone.
+Thanks for wanting to contribute! This is a fun side project, so let's keep it simple.
 
 ## 🚀 Getting Started
 
-### Prerequisites
+### What you need
+- Node.js 18+
+- pnpm (or npm if you prefer)
+- Google Maps API key for testing
 
-- Node.js 18 or higher
-- pnpm (recommended) or npm
-- Git
-- Google Maps API key (for testing)
+### Setup
 
-### Development Setup
-
-1. **Fork the repository**
-
+1. **Fork and clone**
    ```bash
-   git clone https://github.com/yourusername/geogusserx.git
-   cd geogusserx
+   git clone https://github.com/yourusername/GeoGusserX.git
+   cd GeoGusserX
    ```
 
-2. **Install dependencies**
-
+2. **Install stuff**
    ```bash
    pnpm install
    ```
 
-3. **Set up environment variables**
-
+3. **Environment setup**
    ```bash
    cp .env.local.example .env.local
    # Add your Google Maps API key to .env.local
    ```
 
-4. **Start development server**
-
+4. **Start developing**
    ```bash
    pnpm dev
    ```
 
-## 📝 Development Guidelines
+## 📝 Code Guidelines
 
-### Code Style
+Keep it simple:
+- Use TypeScript
+- Follow the existing patterns
+- Don't overcomplicate things
+- Add comments for tricky parts
 
-- Use TypeScript for all new code
-- Follow the existing code style and patterns
-- Use meaningful variable and function names
-- Add JSDoc comments for complex functions
-- Keep components small and focused
-
-### Commit Messages
-
-We use [Conventional Commits](https://www.conventionalcommits.org/):
-
-```text
-type(scope): description
-
-feat(maps): add new location algorithm
-fix(ui): resolve mobile layout issue
-docs(readme): update installation instructions
-style(components): improve button styling
-refactor(store): simplify state management
-test(utils): add distance calculation tests
-```
-
-### Branch Naming
-
-- `feature/description` - New features
-- `fix/description` - Bug fixes
-- `docs/description` - Documentation updates
-- `refactor/description` - Code refactoring
-
-## 🧪 Testing
-
-### Running Tests
+## 🔧 Available Commands
 
 ```bash
-# Run all tests
-pnpm test
-
-# Run tests in watch mode
-pnpm test:watch
-
-# Run tests with coverage
-pnpm test:coverage
+pnpm dev          # Start development server
+pnpm build        # Build for production
+pnpm start        # Start production server
+pnpm lint         # Check code style
+pnpm lint:fix     # Fix code style issues
 ```
 
-### Writing Tests
+## 🐛 Found a Bug?
 
-- Write unit tests for utility functions
-- Add integration tests for complex components
-- Test error scenarios and edge cases
-- Mock external dependencies (Google Maps API)
+Just create an issue with:
+- What happened
+- What you expected
+- Steps to reproduce
+- Your browser/OS
 
-## 🐛 Bug Reports
+## 💡 Want to Add Something?
 
-When reporting bugs, please include:
+1. Fork the repo
+2. Create a branch: `git checkout -b cool-feature`
+3. Make your changes
+4. Test it works: `pnpm build`
+5. Push and create a PR
 
-1. **Description**: Clear description of the issue
-2. **Steps to reproduce**: Detailed steps to reproduce the bug
-3. **Expected behavior**: What should happen
-4. **Actual behavior**: What actually happens
-5. **Environment**: Browser, OS, device type
-6. **Screenshots**: If applicable
+## 📁 Project Structure
 
-Use our bug report template:
-
-```markdown
-**Bug Description**
-A clear description of the bug.
-
-**Steps to Reproduce**
-1. Go to '...'
-2. Click on '...'
-3. See error
-
-**Expected Behavior**
-What you expected to happen.
-
-**Screenshots**
-Add screenshots if applicable.
-
-**Environment**
-- Browser: [e.g. Chrome 91]
-- OS: [e.g. Windows 10]
-- Device: [e.g. iPhone 12]
+```
+GeoGusserX/
+├── app/           # Next.js pages
+├── components/    # React components
+├── lib/           # Utilities and logic
+├── public/        # Static files
+└── ...
 ```
 
-## 💡 Feature Requests
+## 🎯 What Needs Help
 
-We welcome feature requests! Please:
+- Bug fixes
+- Mobile improvements
+- Performance optimizations
+- Better error handling
+- Code cleanup
 
-1. Check if the feature already exists
-2. Search existing issues for similar requests
-3. Provide a clear use case
-4. Explain the expected behavior
-5. Consider the impact on existing users
+## ⚠️ What This Project Is
 
-## 🔧 Pull Request Process
+This is a fun side project I made when bored. Don't expect:
+- Regular updates
+- Multiplayer features
+- Enterprise-level architecture
+- 24/7 support
 
-1. **Create a feature branch**
+But do expect:
+- Help if you're stuck
+- Friendly code reviews
+- Appreciation for contributions
 
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
+## 🤝 Getting Help
 
-2. **Make your changes**
-   - Follow the coding guidelines
-   - Add tests if applicable
-   - Update documentation
-
-3. **Test your changes**
-
-   ```bash
-   pnpm test
-   pnpm build
-   ```
-
-4. **Commit your changes**
-
-   ```bash
-   git commit -m "feat: add amazing feature"
-   ```
-
-5. **Push to your fork**
-
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-
-6. **Create a Pull Request**
-   - Use a clear title and description
-   - Reference any related issues
-   - Add screenshots for UI changes
-
-### Pull Request Checklist
-
-- [ ] Code follows the project's style guidelines
-- [ ] Self-review of the code has been performed
-- [ ] Code is commented, particularly in hard-to-understand areas
-- [ ] Tests have been added for new functionality
-- [ ] All tests pass locally
-- [ ] Documentation has been updated if needed
-
-## 🏗️ Project Structure
-
-```text
-geogusserx/
-├── app/                    # Next.js App Router
-├── components/            # React components
-│   ├── ui/               # Reusable UI components
-│   └── ...               # Feature components
-├── lib/                  # Utility libraries
-├── public/               # Static assets
-├── docs/                 # Documentation
-└── tests/                # Test files
-```
-
-## 🎯 Areas for Contribution
-
-### High Priority
-
-- [ ] Performance optimizations
-- [ ] Mobile experience improvements
-- [ ] Accessibility enhancements
-- [ ] Test coverage improvements
-
-### Medium Priority
-
-- [ ] New game modes
-- [ ] Statistics and analytics
-- [ ] Social features
-- [ ] Offline support
-
-### Low Priority
-
-- [ ] Themes and customization
-- [ ] Advanced settings
-- [ ] Export/import functionality
-- [ ] Developer tools
-
-## 📚 Resources
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
-- [Google Maps API Documentation](https://developers.google.com/maps/documentation)
-- [Framer Motion Documentation](https://www.framer.com/motion/)
-
-## 🤝 Community
-
-- **GitHub Discussions**: For questions and general discussion
-- **GitHub Issues**: For bug reports and feature requests
-- **Discord**: [Join our Discord server](https://discord.gg/geogusserx)
-- **Twitter**: [@geogusserx](https://twitter.com/geogusserx)
+Stuck? Create a PR anyway and mention what's not working. I'll help you figure it out!
 
 ## 📄 License
 
-By contributing to GeoGusserX, you agree that your contributions will be
-licensed under the MIT License.
+MIT - do whatever you want with it.
 
-## 🙏 Recognition
+---
 
-Contributors will be recognized in:
-
-- README.md contributors section
-- Release notes for significant contributions
-- Special thanks in the app (for major features)
-
-Thank you for contributing to GeoGusserX! 🌍
+Thanks for contributing! 🌍

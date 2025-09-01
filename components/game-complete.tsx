@@ -77,7 +77,7 @@ export function GameComplete({ gameState, onNewGame, onBackToMenu }: GameComplet
 		<motion.div
 			initial={{ opacity: 0 }}
 			animate={{ opacity: 1 }}
-			className="fixed inset-0 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-start justify-center p-4 z-50 overflow-y-auto"
+			className="fixed inset-0 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-start justify-center p-4 z-50 overflow-y-auto overscroll-contain touch-pan-y"
 		>
 			<motion.div
 				initial={{ scale: 0.9, y: 20 }}

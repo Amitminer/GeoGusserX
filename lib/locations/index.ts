@@ -41,7 +41,7 @@ export function isValidLocation(location: Location): boolean {
 }
 
 /**
- * Enhanced random location generation with multiple distribution strategies
+ * Random location generation with multiple distribution strategies
  */
 enum DistributionStrategy {
 	UNIFORM = 'uniform',

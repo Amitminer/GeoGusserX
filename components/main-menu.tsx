@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CountrySelection } from '@/components/country-selection';
 import { GameMode, CountrySettings } from '@/lib/types';
 import { logger } from '@/lib/logger';
-import { MapPin, Play, Trophy, Settings, Info, Infinity, Activity, Globe } from 'lucide-react';
+import { MapPin, Play, Trophy, Settings, Info, Infinity, Activity, Globe, Heart } from 'lucide-react';
+import { SiGithub, SiNextdotjs, SiTypescript } from 'react-icons/si';
 
 interface MainMenuProps {
 	onStartGame: (mode: GameMode) => void;
@@ -182,9 +183,9 @@ export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout
 										</CardTitle>
 									</CardHeader>
 									<CardContent>
-									<p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
-										{mode.description}
-									</p>
+										<p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
+											{mode.description}
+										</p>
 									</CardContent>
 								</Card>
 							</motion.div>
@@ -195,7 +196,7 @@ export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout
 				{/* Country Selection */}
 				<motion.div
 					variants={itemVariants}
-						className="max-w-md mx-auto mb-6 sm:mb-8"
+					className="max-w-md mx-auto mb-6 sm:mb-8"
 				>
 					<div className="text-center mb-4">
 						<h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
@@ -268,14 +269,52 @@ export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
 					transition={{ delay: 1.2 }}
-					className="text-center mt-12 sm:mt-16 text-gray-500 dark:text-gray-400"
+					className="mt-12 sm:mt-16"
 				>
-					<p className="text-xs sm:text-sm">
-						Built with ❤️ using Next.js, TypeScript, and Google Maps API
-					</p>
-					<p className="text-xs mt-2">
-						© {new Date().getFullYear()} GeoGusserX. All rights reserved.
-					</p>
+					<div className="container mx-auto relative z-10">
+						<div className="text-center text-sm text-gray-400 space-y-4">
+							{/* GitHub Link */}
+							<div className="flex justify-center items-center">
+								<a
+									href="https://github.com/Amitminer/GeoGusserX"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="inline-flex items-center space-x-2 hover:text-cyan-400 transition-colors duration-300 group"
+								>
+									<SiGithub className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+									<span>View on GitHub</span>
+								</a>
+							</div>
+
+							{/* Decorative dots */}
+							<div className="flex justify-center space-x-2">
+								<div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse"></div>
+								<div className="w-1 h-1 bg-cyan-400 rounded-full animate-pulse" style={{ animationDelay: "0.5s" }}></div>
+								<div className="w-1 h-1 bg-pink-400 rounded-full animate-pulse" style={{ animationDelay: "1s" }}></div>
+							</div>
+
+							{/* Made with ❤️ + Tech Stack */}
+							<div className="flex justify-center items-center flex-wrap gap-2 text-gray-400">
+								<span>Made with</span>
+								<Heart className="w-4 h-4 text-[#FF1493] animate-pulse" />
+								<span>and</span>
+								<div className="flex items-center gap-1">
+									<SiNextdotjs className="w-4 h-4" />
+									<span className="text-white font-semibold">Next.js</span>
+								</div>
+								<span>+</span>
+								<div className="flex items-center gap-1">
+									<SiTypescript className="w-4 h-4 text-blue-400" />
+									<span className="text-blue-400 font-semibold">TypeScript</span>
+								</div>
+							</div>
+
+							{/* Final line */}
+							<div className="pt-2 text-gray-500 font-semibold text-sm">
+								A fun geography game for everyone 🌍
+							</div>
+						</div>
+					</div>
 				</motion.footer>
 			</div>
 		</div>
