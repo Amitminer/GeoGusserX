@@ -195,7 +195,9 @@ export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout
 
 				{/* Country Selection */}
 				<motion.div
-					variants={itemVariants}
+					initial={{ opacity: 0, y: 20 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ delay: 0.6 }}
 					className="max-w-md mx-auto mb-6 sm:mb-8"
 				>
 					<div className="text-center mb-4">

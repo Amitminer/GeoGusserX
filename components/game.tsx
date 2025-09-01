@@ -260,7 +260,7 @@ export function Game() {
 
 		return (
 			<div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-				<AnimatePresence mode="wait" initial={false}>
+				<AnimatePresence mode="wait">
 				{screen === 'menu' && (
 					<motion.div
 						key="menu"
