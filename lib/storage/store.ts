@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { GameState, GameRound, GameMode, Location, GuessResult, ToastMessage } from '@/lib/types';
+import { GameState, GameRound, GameMode, Location, GuessResult, ToastMessage, CountrySettings } from '@/lib/types';
 import { calculateDistance, calculateScore } from '@/lib/utils';
 import { storageManager } from '.';
 import { logger } from '@/lib/logger';
@@ -15,6 +15,9 @@ interface GameStore {
 	isMapLoaded: boolean;
 	showResults: boolean;
 	showGameComplete: boolean;
+
+	// Settings
+	countrySettings: CountrySettings;
 
 	// Toast System
 	toasts: ToastMessage[];
@@ -41,6 +44,10 @@ interface GameStore {
 	saveGame: () => Promise<void>;
 	loadGame: (gameId: string) => Promise<void>;
 	updateStats: () => Promise<void>;
+
+	// Settings Actions
+	updateCountrySettings: (settings: CountrySettings) => Promise<void>;
+	loadCountrySettings: () => Promise<void>;
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -52,6 +59,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	isMapLoaded: false,
 	showResults: false,
 	showGameComplete: false,
+	countrySettings: {
+		isRandomCountry: true,
+		targetCountry: null
+	},
 	toasts: [],
 
 	// Game Actions
@@ -392,14 +403,28 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
 			// Calculate distance stats
 			const completedRounds = currentGame.rounds.filter(r => r.completed && r.distance !== null);
-			const totalRoundDistance = completedRounds.reduce((sum, r) => sum + (r.distance || 0), 0);
+			
+			if (completedRounds.length > 0) {
+				const totalRoundDistance = completedRounds.reduce((sum, r) => sum + (r.distance || 0), 0);
+				stats.totalDistance += totalRoundDistance;
+				
+				// Calculate average distance per round across all games
+				const totalRoundsPlayed = stats.totalGames > 1 
+					? (stats.totalGames - 1) * completedRounds.length + completedRounds.length
+					: completedRounds.length;
+				stats.averageDistance = stats.totalDistance / totalRoundsPlayed;
 
-			stats.totalDistance += totalRoundDistance;
-			stats.averageDistance = stats.totalDistance / (stats.totalGames * completedRounds.length);
-
-			const bestRoundDistance = Math.min(...completedRounds.map(r => r.distance || Infinity));
-			if (bestRoundDistance < stats.bestDistance) {
-				stats.bestDistance = bestRoundDistance;
+				// Find best distance from this game
+				const distances = completedRounds.map(r => r.distance || Infinity).filter(d => d !== Infinity);
+				if (distances.length > 0) {
+					const bestRoundDistance = Math.min(...distances);
+					if (bestRoundDistance < stats.bestDistance) {
+						stats.bestDistance = bestRoundDistance;
+					}
+				}
+			} else {
+				// No completed rounds, don't update distance stats
+				logger.warn('No completed rounds found for stats update', { gameId: currentGame.id }, 'GameStore');
 			}
 
 			await storageManager.updateStats(stats);
@@ -415,5 +440,35 @@ export const useGameStore = create<GameStore>((set, get) => ({
 			logger.endTimer('update-game-stats');
 			logger.error('Failed to update stats', error, 'GameStore');
 		}
+	},
+
+	// Settings Actions
+	updateCountrySettings: async (settings: CountrySettings) => {
+		try {
+			await storageManager.setSetting('countrySettings', settings);
+			set({ countrySettings: settings });
+			logger.info('Country settings updated', settings, 'GameStore');
+		} catch (error) {
+			logger.error('Failed to update country settings', error, 'GameStore');
+		}
+	},
+
+	loadCountrySettings: async () => {
+		try {
+			const settings = await storageManager.getSetting<CountrySettings>('countrySettings');
+			if (settings) {
+				set({ countrySettings: settings });
+				logger.info('Country settings loaded', settings, 'GameStore');
+			}
+		} catch (error) {
+			logger.error('Failed to load country settings', error, 'GameStore');
+		}
 	}
 }));
+
+// Load settings on store creation
+if (typeof window !== 'undefined') {
+	storageManager.initialize().then(() => {
+		useGameStore.getState().loadCountrySettings();
+	});
+}

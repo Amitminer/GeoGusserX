@@ -65,3 +65,12 @@ export interface ToastMessage {
 	type: 'success' | 'error' | 'warning' | 'info';
 	duration?: number;
 }
+
+export interface CountrySettings {
+	isRandomCountry: boolean;
+	targetCountry: string | null;
+}
+
+export interface UserSettings {
+	countrySettings: CountrySettings;
+}

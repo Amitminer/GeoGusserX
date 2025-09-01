@@ -16,20 +16,32 @@ interface GameCompleteProps {
 
 export function GameComplete({ gameState, onNewGame, onBackToMenu }: GameCompleteProps) {
 	const completedRounds = gameState.rounds.filter(r => r.completed);
-	const totalDistance = completedRounds.reduce((sum, r) => sum + (r.distance || 0), 0);
-	const averageDistance = totalDistance / completedRounds.length;
-	const bestRound = completedRounds.reduce((best, round) =>
-		(round.score || 0) > (best.score || 0) ? round : best
-	);
-	const worstRound = completedRounds.reduce((worst, round) =>
-		(round.score || 0) < (worst.score || 0) ? round : worst
-	);
+	
+	// Safely calculate stats with fallbacks for empty arrays
+	const totalDistance = completedRounds.length > 0 
+		? completedRounds.reduce((sum, r) => sum + (r.distance || 0), 0) 
+		: 0;
+	const averageDistance = completedRounds.length > 0 ? totalDistance / completedRounds.length : 0;
+	
+	const bestRound = completedRounds.length > 0 
+		? completedRounds.reduce((best, round) =>
+				(round.score || 0) > (best.score || 0) ? round : best
+			)
+		: { id: 'N/A', score: 0, distance: 0, completed: false, actualLocation: { lat: 0, lng: 0 }, guessedLocation: null, timeSpent: 0 };
+		
+	const worstRound = completedRounds.length > 0 
+		? completedRounds.reduce((worst, round) =>
+				(round.score || 0) < (worst.score || 0) ? round : worst
+			)
+		: { id: 'N/A', score: 0, distance: 0, completed: false, actualLocation: { lat: 0, lng: 0 }, guessedLocation: null, timeSpent: 0 };
 
 	const gameTime = gameState.endTime ? gameState.endTime - gameState.startTime : 0;
 	const gameTimeMinutes = Math.floor(gameTime / 60000);
 	const gameTimeSeconds = Math.floor((gameTime % 60000) / 1000);
 
 	const getOverallRating = (score: number, totalRounds: number) => {
+		if (totalRounds === 0) return { rating: 'No Rounds', color: 'text-gray-500', emoji: '❓' };
+		
 		const averageScore = score / totalRounds;
 		if (averageScore >= 4000) return { rating: 'Master', color: 'text-purple-500', emoji: '🏆' };
 		if (averageScore >= 3000) return { rating: 'Expert', color: 'text-blue-500', emoji: '🌟' };
@@ -134,7 +146,10 @@ export function GameComplete({ gameState, onNewGame, onBackToMenu }: GameComplet
 							</CardHeader>
 							<CardContent>
 								<div className="text-2xl font-bold">
-									{formatScore(Math.round(gameState.totalScore / completedRounds.length))}
+									{completedRounds.length > 0 
+										? formatScore(Math.round(gameState.totalScore / completedRounds.length))
+										: formatScore(0)
+									}
 								</div>
 								<div className="text-xs text-gray-500 mt-1">per round</div>
 							</CardContent>

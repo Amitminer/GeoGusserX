@@ -1,6 +1,6 @@
 import { Location } from '../types';
 import { calculateDistance } from '../utils';
-import { GEOGRAPHIC_REGIONS, GeographicRegion } from './regions';
+import { GEOGRAPHIC_REGIONS, GeographicRegion, getRegionsByCountry } from './regions';
 
 /**
  * Generate a random location within a specified region
@@ -90,4 +90,19 @@ export function calculateLocationDistance(loc1: Location, loc2: Location): numbe
 export function isLocationInRegion(location: Location, region: GeographicRegion): boolean {
 	const distance = calculateLocationDistance(location, { lat: region.lat, lng: region.lng });
 	return distance <= region.radius;
+}
+
+/**
+ * Generate a random location from a specific country
+ * @param countryName - The name of the country to generate location from
+ * @returns A random location from the specified country
+ */
+export function generateLocationByCountry(countryName: string): Location {
+	const countryRegions = getRegionsByCountry(countryName);
+	if (countryRegions.length === 0) {
+		throw new Error(`No regions found for country: ${countryName}`);
+	}
+
+	const region = countryRegions[Math.floor(Math.random() * countryRegions.length)];
+	return generateLocationInRegion(region);
 }

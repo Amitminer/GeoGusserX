@@ -1,6 +1,6 @@
 import type { Location, StreetViewLocation, StreetViewOptions } from './types';
 import { logger } from '../logger';
-import { generateRandomLocation } from '../locations';
+import { generateRandomLocation, generateLocationByCountry } from '../locations';
 
 export class StreetViewService {
 	private streetViewService: google.maps.StreetViewService | null = null;
@@ -10,8 +10,9 @@ export class StreetViewService {
 	}
 	/**
 	 * Generate a random location with available Street View
+	 * @param countryName - Optional country name to restrict location generation
 	 */
-	async getRandomStreetViewLocation(): Promise<StreetViewLocation> {
+	async getRandomStreetViewLocation(countryName?: string): Promise<StreetViewLocation> {
 		logger.startTimer('streetview-location-generation');
 		const maxAttempts = 50;
 		let attempts = 0;
@@ -21,7 +22,9 @@ export class StreetViewService {
 
 			try {
 				logger.startTimer(`streetview-check-${attempts}`);
-				const randomLocation = generateRandomLocation();
+				const randomLocation = countryName 
+					? generateLocationByCountry(countryName)
+					: generateRandomLocation();
 				const streetViewData = await this.checkStreetViewAvailability(randomLocation);
 				const checkDuration = logger.endTimer(`streetview-check-${attempts}`);
 
@@ -30,7 +33,8 @@ export class StreetViewService {
 					logger.perf('Street View location generation', totalDuration, {
 						attempts,
 						avgCheckTime: checkDuration,
-						location: randomLocation
+						location: randomLocation,
+						countryName: countryName || 'random'
 					});
 
 					return {
