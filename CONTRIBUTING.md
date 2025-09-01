@@ -13,7 +13,7 @@ Thanks for wanting to contribute! This is a fun side project, so let's keep it s
 
 1. **Fork and clone**
    ```bash
-   git clone https://github.com/yourusername/GeoGusserX.git
+   git clone https://github.com/Amitminer/GeoGusserX.git
    cd GeoGusserX
    ```
 
