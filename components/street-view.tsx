@@ -6,7 +6,9 @@ import { mapsManager } from '@/lib/maps';
 import { useGameStore } from '@/lib/storage/store';
 import { StreetViewLocation } from '@/lib/types';
 import { logger } from '@/lib/logger';
-import { Loader2 } from 'lucide-react';
+import { shouldShowCountryName } from '@/lib/utils';
+import { Loader2, MapPin } from 'lucide-react';
+import type { GeocodeResult } from '@/lib/maps/geocoding';
 
 interface StreetViewProps {
 	location: StreetViewLocation;
@@ -18,6 +20,8 @@ export function StreetView({ location, onLocationChange }: StreetViewProps) {
 	const panoramaRef = useRef<google.maps.StreetViewPanorama | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [countryInfo, setCountryInfo] = useState<GeocodeResult | null>(null);
+	const [showCountryName] = useState(() => shouldShowCountryName());
 
 	const { setStreetViewLoaded } = useGameStore();
 
@@ -76,12 +80,28 @@ export function StreetView({ location, onLocationChange }: StreetViewProps) {
 				});
 
 				// Wait for Street View to load
-				panorama.addListener('status_changed', () => {
+				panorama.addListener('status_changed', async () => {
 					const status = panorama.getStatus();
 					if (status === google.maps.StreetViewStatus.OK) {
 						setIsLoading(false);
 						setStreetViewLoaded(true);
 						logger.info('Street View loaded successfully', { location }, 'StreetView');
+
+						// Get country information if enabled
+						if (showCountryName) {
+							try {
+								const geocodingService = mapsManager.getGeocodingService();
+								if (geocodingService) {
+									const result = await geocodingService.getCountryFromCoordinates(location.location);
+									if (result) {
+										setCountryInfo(result);
+										logger.info('Country information retrieved', { country: result.country }, 'StreetView');
+									}
+								}
+							} catch (error) {
+								logger.error('Failed to get country information', error, 'StreetView');
+							}
+						}
 					} else {
 						setError('Street View not available for this location');
 						setIsLoading(false);
@@ -104,8 +124,9 @@ export function StreetView({ location, onLocationChange }: StreetViewProps) {
 				google.maps.event.clearInstanceListeners(panoramaRef.current);
 			}
 			setStreetViewLoaded(false);
+			setCountryInfo(null);
 		};
-	}, [location, onLocationChange, setStreetViewLoaded]);
+	}, [location, onLocationChange, setStreetViewLoaded, showCountryName]);
 
 	if (error) {
 		return (
@@ -156,6 +177,24 @@ export function StreetView({ location, onLocationChange }: StreetViewProps) {
 					className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg text-sm"
 				>
 					Use mouse to look around • WASD or arrow keys to move
+				</motion.div>
+			)}
+
+			{/* Country Name Overlay */}
+			{!isLoading && !error && showCountryName && countryInfo && (
+				<motion.div
+					initial={{ opacity: 0, y: -20 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ delay: 1 }}
+					className="absolute top-4 left-4 bg-blue-600/90 text-white px-4 py-2 rounded-lg shadow-lg backdrop-blur-sm z-50"
+				>
+					<div className="flex items-center gap-2">
+						<MapPin className="w-4 h-4" />
+						<div>
+							<div className="font-semibold text-sm">{countryInfo.country}</div>
+							<div className="text-xs text-blue-100">{countryInfo.countryCode}</div>
+						</div>
+					</div>
 				</motion.div>
 			)}
 		</div>

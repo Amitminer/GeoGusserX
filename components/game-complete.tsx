@@ -43,6 +43,7 @@ export function GameComplete({ gameState, onNewGame, onBackToMenu }: GameComplet
 	const handleShare = async () => {
 		const shareText = `I just scored ${formatScore(gameState.totalScore)} points in GeoGusserX! 🌍\n\nMode: ${gameState.mode}\nRounds: ${completedRounds.length}\nAverage Distance: ${formatDistance(averageDistance)}\n\nCan you beat my score?`;
 
+		// TODO: Implement share functionality right now does nothing
 		if (navigator.share) {
 			try {
 				await navigator.share({

@@ -3,6 +3,7 @@ import type { Location, StreetViewLocation } from './types';
 import { logger } from '../logger';
 import { StreetViewService } from './street-view';
 import { MapFactory } from './map-factory';
+import { GeocodingService } from './geocoding';
 
 export class MapsManager {
   private loader: Loader | null = null;
@@ -10,6 +11,7 @@ export class MapsManager {
   private mapId: string | null = null;
   private streetViewService: StreetViewService | null = null;
   private mapFactory: MapFactory | null = null;
+  private geocodingService: GeocodingService | null = null;
 
   constructor() {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -44,6 +46,8 @@ export class MapsManager {
       
       this.streetViewService = new StreetViewService();
       this.mapFactory = new MapFactory(this.mapId);
+      this.geocodingService = new GeocodingService();
+      this.geocodingService.initialize();
       this.isLoaded = true;
       
       const duration = logger.endTimer('maps-api-init', 'Google Maps API loaded successfully');
@@ -132,5 +136,12 @@ export class MapsManager {
    */
   getMapFactory(): MapFactory | null {
     return this.mapFactory;
+  }
+
+  /**
+   * Get the geocoding service instance
+   */
+  getGeocodingService(): GeocodingService | null {
+    return this.geocodingService;
   }
 }

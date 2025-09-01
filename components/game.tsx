@@ -167,6 +167,7 @@ export function Game() {
 		try {
 			const result = await makeGuess(guessedLocation);
 			setLastResult(result);
+			
 			const duration = logger.endTimer('handle-make-guess', 'Guess processed successfully');
 			logger.perf('Handle make guess', duration, {
 				distance: result.distance,
@@ -240,9 +241,9 @@ export function Game() {
 		);
 	}
 
-	return (
-		<div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-			<AnimatePresence mode="wait">
+		return (
+			<div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+				<AnimatePresence mode="wait" initial={false}>
 				{screen === 'menu' && (
 					<motion.div
 						key="menu"

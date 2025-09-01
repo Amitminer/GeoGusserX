@@ -23,8 +23,10 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange }: MiniM
 	};
 
 	useEffect(() => {
+		let map: google.maps.Map | null = null;
+
 		const initMiniMap = async () => {
-			if (!mapRef.current) return;
+			if (!mapRef.current || mapInstance) return; // Don't reinitialize if map already exists
 
 			try {
 				// Ensure Google Maps is loaded
@@ -33,7 +35,7 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange }: MiniM
 				}
 
 				// Create a simple world map for the minimap
-				const map = new google.maps.Map(mapRef.current, {
+				map = new google.maps.Map(mapRef.current, {
 					zoom: 1,
 					center: { lat: 20, lng: 0 },
 					mapTypeId: google.maps.MapTypeId.ROADMAP,
@@ -53,8 +55,8 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange }: MiniM
 				// Add listeners for map state changes
 				if (onMapStateChange) {
 					map.addListener('center_changed', () => {
-						const center = map.getCenter();
-						const zoom = map.getZoom();
+						const center = map!.getCenter();
+						const zoom = map!.getZoom();
 						if (center && zoom) {
 							onMapStateChange(
 								{ lat: center.lat(), lng: center.lng() },
@@ -63,8 +65,8 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange }: MiniM
 						}
 					});
 					map.addListener('zoom_changed', () => {
-						const center = map.getCenter();
-						const zoom = map.getZoom();
+						const center = map!.getCenter();
+						const zoom = map!.getZoom();
 						if (center && zoom) {
 							onMapStateChange(
 								{ lat: center.lat(), lng: center.lng() },
@@ -83,13 +85,13 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange }: MiniM
 
 		initMiniMap();
 
-		// Cleanup
+		// Cleanup function
 		return () => {
-			if (mapInstance) {
-				google.maps.event.clearInstanceListeners(mapInstance);
+			if (map) {
+				google.maps.event.clearInstanceListeners(map);
 			}
 		};
-	}, [mapInstance, onMapStateChange]);
+	}, [onMapStateChange, mapInstance]);
 
 	return (
 		<div

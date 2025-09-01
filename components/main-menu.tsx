@@ -233,7 +233,7 @@ export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout
 						<Button
 							variant="outline"
 							onClick={handleShowPerformance}
-							className="flex items-center gap-2 border-orange-300 text-orange-600 hover:bg-orange-50 hover:shadow-md transition-all duration-200"
+							className="flex items-center gap-2 border-orange-300 text-orange-600 hover:bg-white hover:shadow-md transition-all duration-200"
 						>
 							<Activity className="w-4 h-4" />
 							Performance

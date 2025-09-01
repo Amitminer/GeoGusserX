@@ -28,7 +28,7 @@ export function MapFooter({ guessLocation, disabled, onMakeGuess, onClearGuess }
 
         {/* Submit Button - Show when location is selected */}
         {guessLocation && !disabled && (
-          <div className="flex justify-center mt-2 gap-2">
+          <div className="flex justify-center mt-2 gap-2 no-transition">
             <Button
               variant="outline"
               size="sm"

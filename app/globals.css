@@ -136,11 +136,26 @@ body {
 	background: rgb(var(--foreground));
 }
 
-/* Smooth transitions */
-* {
+/* Smooth transitions - only apply to specific elements to prevent flickering */
+.smooth-transition {
 	transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
 	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 	transition-duration: 150ms;
+}
+
+/* Disable all transitions globally when transitioning states */
+.no-transitions,
+.no-transitions *,
+.no-transition,
+.no-transition * {
+	transition: none !important;
+	animation-duration: 0s !important;
+	animation-delay: 0s !important;
+}
+
+/* Fast transitions for UI elements that need them */
+.fast-transition {
+	transition-duration: 50ms !important;
 }
 
 /* Focus styles */

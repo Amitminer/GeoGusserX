@@ -10,7 +10,7 @@
 !.yarn/releases
 !.yarn/versions
 
-# testing
+#  ping
 /coverage
 logs.txt
 logger.logs

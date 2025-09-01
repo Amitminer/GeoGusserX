@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useReducer, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useReducer, useCallback, useMemo } from 'react';
 import { mapsManager } from '@/lib/maps';
 import { useGameStore } from '@/lib/storage/store';
 import { Location } from '@/lib/types';
@@ -103,7 +103,7 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 		}
 	}, [mapSize]);
 
-	const getMapContainerClasses = useCallback(() => {
+	const getMapContainerClasses = useMemo(() => {
 		const baseClasses = 'transition-all duration-300 ease-in-out';
 		const sizeClasses = getMapSizeClasses();
 
@@ -312,7 +312,10 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 
 	const handleMakeGuess = useCallback(() => {
 		if (guessLocation && !disabled) {
-			onGuess(guessLocation);
+			// Add a small delay to ensure smooth transition
+			setTimeout(() => {
+				onGuess(guessLocation);
+			}, 50);
 		}
 	}, [guessLocation, disabled, onGuess]);
 
@@ -398,7 +401,7 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 	// Only show loading state when not expanding from mini
 	if (isLoading && !isExpanding) {
 		return (
-			<div className={`${getMapContainerClasses()} ${className}`}>
+			<div className={`${getMapContainerClasses} ${className}`}>
 				<LoadingState />
 			</div>
 		);
@@ -406,7 +409,7 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 
 	if (error || retryCount > 0) {
 		return (
-			<div className={`${getMapContainerClasses()} ${className}`}>
+			<div className={`${getMapContainerClasses} ${className}`}>
 				<ErrorState
 					error={error}
 					retryCount={retryCount}
@@ -417,7 +420,7 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 	}
 
 	return (
-		<div className={`${getMapContainerClasses()} ${className || ''}`}>
+		<div className={`${getMapContainerClasses} ${className || ''}`}>
 			<Card className="w-full h-full flex flex-col shadow-2xl border-0 bg-gray-900/95 backdrop-blur-sm">
 				{/* Header */}
 				<MapHeader

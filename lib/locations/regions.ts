@@ -69,6 +69,34 @@ export const GEOGRAPHIC_REGIONS: GeographicRegion[] = [
 		continent: 'Asia'
 	},
 	{
+		lat: 35.6895,
+		lng: 139.6917,
+		radius: 1,
+		name: 'Tokyo, Japan',
+		continent: 'Asia'
+	},
+	{
+		lat: 34.6937,
+		lng: 135.5023,
+		radius: 1,
+		name: 'Osaka, Japan',
+		continent: 'Asia'
+	},
+	{
+		lat: 34.3963,
+		lng: 132.4596,
+		radius: 1,
+		name: 'Hiroshima, Japan',
+		continent: 'Asia'
+	},
+	{
+		lat: 35.0116,
+		lng: 135.7681,
+		radius: 1,
+		name: 'Kyoto, Japan',
+		continent: 'Asia'
+	},
+	{
 		lat: 36.2048,
 		lng: 138.2529,
 		radius: 8,

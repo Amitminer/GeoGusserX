@@ -165,6 +165,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 				guessedLocation
 			};
 
+			// Batch all state updates into a single set call to prevent multiple re-renders
 			set({
 				currentGame: { ...currentGame },
 				showResults: true

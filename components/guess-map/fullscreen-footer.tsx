@@ -49,7 +49,7 @@ export function FullscreenFooter({
             <div className="flex items-center gap-2">
               {/* Submit Button in Fullscreen */}
               {guessLocation && !disabled && (
-                <>
+                <div className="no-transition">
                   <Button
                     variant="outline"
                     onClick={onClearGuess}
@@ -63,7 +63,7 @@ export function FullscreenFooter({
                   >
                     Submit Guess
                   </Button>
-                </>
+                </div>
               )}
               <Button
                 variant="outline"

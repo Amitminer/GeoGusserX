@@ -28,7 +28,7 @@ export type GameMode = '4-rounds' | '5-rounds' | '8-rounds' | 'infinite';
 
 export interface GameSettings {
 	mode: GameMode;
-	timeLimit?: number; // in seconds, optional
+	timeLimit?: number;
 	difficulty?: 'easy' | 'medium' | 'hard';
 }
 
