@@ -17,8 +17,8 @@ contributions from everyone.
 1. **Fork the repository**
 
    ```bash
-   git clone https://github.com/yourusername/geogusserx.git
-   cd geogusserx
+   git clone https://github.com/Amitminer/GeoGusserX.git
+   cd GeoGusserX
    ```
 
 2. **Install dependencies**
