@@ -89,7 +89,7 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange }: MiniM
 				google.maps.event.clearInstanceListeners(mapInstance);
 			}
 		};
-	}, []);
+	}, [mapInstance, onMapStateChange]);
 
 	return (
 		<div

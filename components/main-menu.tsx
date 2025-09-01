@@ -151,7 +151,7 @@ export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout
 					</motion.h2>
 
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-						{gameModes.map((mode, index) => (
+						{gameModes.map((mode) => (
 							<motion.div
 								key={mode.mode}
 								variants={itemVariants}
