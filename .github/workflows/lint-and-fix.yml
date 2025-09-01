@@ -1,0 +1,127 @@
+name: Lint and Auto-fix
+
+on:
+  push:
+    branches: [main, beta-v0.7.0]
+  pull_request:
+    branches: [main, beta-v0.7.0]
+
+jobs:
+  lint-and-fix:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run lint check
+        id: lint-check
+        run: |
+          echo "Running lint check..."
+          if pnpm lint; then
+            echo "lint_passed=true" >> $GITHUB_OUTPUT
+            echo "✅ Lint check passed!"
+          else
+            echo "lint_passed=false" >> $GITHUB_OUTPUT
+            echo "❌ Lint issues found, attempting to fix..."
+          fi
+
+      - name: Run lint fix
+        if: steps.lint-check.outputs.lint_passed == 'false'
+        run: |
+          echo "Attempting to auto-fix lint issues..."
+          pnpm lint:fix || true
+
+      - name: Check for changes after lint fix
+        if: steps.lint-check.outputs.lint_passed == 'false'
+        id: check-changes
+        run: |
+          if git diff --quiet; then
+            echo "changes_made=false" >> $GITHUB_OUTPUT
+            echo "No changes were made by lint fix"
+          else
+            echo "changes_made=true" >> $GITHUB_OUTPUT
+            echo "Changes were made by lint fix"
+            git diff --name-only
+          fi
+
+      - name: Commit lint fixes
+        if: steps.lint-check.outputs.lint_passed == 'false' && steps.check-changes.outputs.changes_made == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "fix: auto-fix lint issues
+
+          - Applied ESLint auto-fixes
+          - Resolved formatting and code style issues
+          - Automated via GitHub Actions workflow"
+
+      - name: Push changes
+        if: steps.lint-check.outputs.lint_passed == 'false' && steps.check-changes.outputs.changes_made == 'true'
+        run: |
+          # Push using git directly
+          git push origin HEAD:${{ github.ref_name }}
+
+      - name: Run final lint check
+        if: steps.lint-check.outputs.lint_passed == 'false'
+        run: |
+          echo "Running final lint check after fixes..."
+          if pnpm lint; then
+            echo "✅ All lint issues have been resolved!"
+          else
+            echo "❌ Some lint issues could not be auto-fixed"
+            echo "Manual intervention may be required"
+            exit 1
+          fi
+
+      - name: Build project
+        run: |
+          echo "Building project to ensure everything works..."
+          pnpm build
+
+      - name: Summary
+        run: |
+          echo "## Lint and Fix Summary" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.lint-check.outputs.lint_passed }}" == "true" ]; then
+            echo "✅ **Lint check passed** - No issues found!" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.check-changes.outputs.changes_made }}" == "true" ]; then
+            echo "🔧 **Lint issues found and fixed** - Changes committed automatically" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Lint issues found** - No auto-fixes available, manual review needed" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Build completed successfully ✅" >> $GITHUB_STEP_SUMMARY
