@@ -1,14 +1,19 @@
 import React from 'react';
 
 // Conditional imports for Node.js environment
-let fs: any = null;
-let path: any = null;
+let fs: typeof import('fs').promises | null = null;
+let path: typeof import('path') | null = null;
 
 if (typeof window === 'undefined') {
 	try {
-		fs = require('fs').promises;
-		path = require('path');
-	} catch (error) {
+		// Use dynamic imports for Node.js modules
+		import('fs').then(fsModule => {
+			fs = fsModule.promises;
+		});
+		import('path').then(pathModule => {
+			path = pathModule;
+		});
+	} catch {
 		// File system modules not available
 		console.warn('File system modules not available for logging');
 	}
@@ -165,7 +170,9 @@ class Logger {
 
 			// Queue the write operation to avoid race conditions
 			this.writeQueue = this.writeQueue.then(async () => {
-				await fs.appendFile(this.logFilePath, logLine, 'utf8');
+				if (fs) {
+					await fs.appendFile(this.logFilePath, logLine, 'utf8');
+				}
 			}).catch((error) => {
 				// Fallback to console if file writing fails
 				console.error('Failed to write log to file:', error);
@@ -462,7 +469,9 @@ class Logger {
 			// Wait for any pending writes to complete
 			await this.writeQueue;
 			// Clear the file
-			await fs.writeFile(this.logFilePath, '', 'utf8');
+			if (fs) {
+				await fs.writeFile(this.logFilePath, '', 'utf8');
+			}
 		} catch (error) {
 			console.error('Failed to clear log file:', error);
 		}
@@ -486,8 +495,11 @@ class Logger {
 		try {
 			// Wait for any pending writes to complete
 			await this.writeQueue;
-			return await fs.readFile(this.logFilePath, 'utf8');
-		} catch (error) {
+			if (fs) {
+				return await fs.readFile(this.logFilePath, 'utf8');
+			}
+			return '';
+		} catch {
 			// File might not exist yet, return empty string
 			return '';
 		}
