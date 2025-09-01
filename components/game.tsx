@@ -26,12 +26,14 @@ export function Game() {
 		error,
 		showResults,
 		showGameComplete,
+		countrySettings,
 		startNewGame,
 		makeGuess,
 		nextRound,
 		endGame,
 		resetGame,
-		setError
+		setError,
+		updateCountrySettings
 	} = useGameStore();
 
 	const [screen, setScreen] = useState<GameScreen>('menu');
@@ -122,7 +124,8 @@ export function Game() {
 					roundIndex: currentGame.currentRoundIndex
 				}, 'Game');
 
-				const streetViewLocation = await mapsManager.getRandomStreetViewLocation();
+				const targetCountry = countrySettings.isRandomCountry ? undefined : countrySettings.targetCountry;
+				const streetViewLocation = await mapsManager.getRandomStreetViewLocation(targetCountry || undefined);
 
 				// Update the round with the actual location
 				currentRound.actualLocation = streetViewLocation.location;
@@ -143,7 +146,7 @@ export function Game() {
 		};
 
 		generateLocation();
-	}, [currentGame, screen, setError]);
+	}, [currentGame, screen, setError, countrySettings.isRandomCountry, countrySettings.targetCountry]);
 
 	const handleStartGame = async (mode: GameMode) => {
 		logger.startTimer('handle-start-game');
@@ -191,17 +194,31 @@ export function Game() {
 	};
 
 	const handleNewGame = () => {
-		resetGame();
-		setLastResult(null);
-		setCurrentLocation(null);
-		setScreen('menu');
+		try {
+			resetGame();
+			setLastResult(null);
+			setCurrentLocation(null);
+			setScreen('menu');
+		} catch (error) {
+			logger.error('Error starting new game', error, 'Game');
+			// Force reset to menu even if there's an error
+			setScreen('menu');
+			setError(null);
+		}
 	};
 
 	const handleBackToMenu = () => {
-		resetGame();
-		setLastResult(null);
-		setCurrentLocation(null);
-		setScreen('menu');
+		try {
+			resetGame();
+			setLastResult(null);
+			setCurrentLocation(null);
+			setScreen('menu');
+		} catch (error) {
+			logger.error('Error returning to menu', error, 'Game');
+			// Force reset to menu even if there's an error
+			setScreen('menu');
+			setError(null);
+		}
 	};
 
 	// Show loading screen while initializing
@@ -251,7 +268,11 @@ export function Game() {
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0 }}
 					>
-						<MainMenu onStartGame={handleStartGame} />
+						<MainMenu 
+						onStartGame={handleStartGame}
+						countrySettings={countrySettings}
+						onCountrySettingsChange={updateCountrySettings}
+					/>
 					</motion.div>
 				)}
 

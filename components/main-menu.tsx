@@ -4,15 +4,19 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { GameMode } from '@/lib/types';
+import { CountrySelection } from '@/components/country-selection';
+import { GameMode, CountrySettings } from '@/lib/types';
 import { logger } from '@/lib/logger';
-import { MapPin, Play, Trophy, Settings, Info, Infinity, Activity, Globe } from 'lucide-react';
+import { MapPin, Play, Trophy, Settings, Info, Infinity, Activity, Globe, Heart } from 'lucide-react';
+import { SiGithub, SiNextdotjs, SiTypescript } from 'react-icons/si';
 
 interface MainMenuProps {
 	onStartGame: (mode: GameMode) => void;
 	onShowStats?: () => void;
 	onShowSettings?: () => void;
 	onShowAbout?: () => void;
+	countrySettings: CountrySettings;
+	onCountrySettingsChange: (settings: CountrySettings) => void;
 }
 
 const gameModes: Array<{
@@ -68,7 +72,7 @@ const menuButtons = [
 	{ key: 'about', icon: Info, label: 'About' }
 ] as const;
 
-export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout }: MainMenuProps) {
+export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout, countrySettings, onCountrySettingsChange }: MainMenuProps) {
 	const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
 
 	const handleStartGame = useCallback(() => {
@@ -109,27 +113,27 @@ export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout
 
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-			<div className="container mx-auto px-4 py-8">
+			<div className="container mx-auto px-4 py-6 sm:py-8">
 				{/* Header */}
 				<motion.div
 					initial={{ opacity: 0, y: -20 }}
 					animate={{ opacity: 1, y: 0 }}
-					className="text-center mb-12"
+					className="text-center mb-8 sm:mb-12"
 				>
 					<motion.div
 						initial={{ scale: 0 }}
 						animate={{ scale: 1 }}
 						transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-						className="inline-flex items-center gap-3 mb-6"
+						className="inline-flex items-center gap-3 mb-4 sm:mb-6"
 					>
-						<div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-							<Globe className="w-8 h-8 text-white" />
+						<div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+							<Globe className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
 						</div>
 						<div className="text-left">
-							<h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+							<h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
 								GeoGusserX
 							</h1>
-							<p className="text-gray-600 dark:text-gray-300 text-lg">
+							<p className="text-gray-600 dark:text-gray-300 text-base sm:text-lg">
 								Explore the world, one guess at a time
 							</p>
 						</div>
@@ -145,12 +149,12 @@ export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout
 				>
 					<motion.h2
 						variants={itemVariants}
-						className="text-2xl font-bold text-center mb-8 text-gray-800 dark:text-gray-200"
+						className="text-xl sm:text-2xl font-bold text-center mb-6 sm:mb-8 text-gray-800 dark:text-gray-200"
 					>
 						Choose Your Adventure
 					</motion.h2>
 
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
 						{gameModes.map((mode) => (
 							<motion.div
 								key={mode.mode}
@@ -167,19 +171,19 @@ export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout
 								>
 									<CardHeader>
 										<CardTitle className="flex items-center gap-3">
-											<div className={`w-12 h-12 bg-gradient-to-r ${mode.color} rounded-lg flex items-center justify-center text-white shadow-md`}>
+											<div className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r ${mode.color} rounded-lg flex items-center justify-center text-white shadow-md`}>
 												{mode.icon}
 											</div>
 											<div>
-												<div className="text-xl font-bold">{mode.title}</div>
-												<div className="text-sm text-gray-500 font-normal">
+												<div className="text-lg sm:text-xl font-bold">{mode.title}</div>
+												<div className="text-xs sm:text-sm text-gray-500 font-normal">
 													{mode.rounds} • {mode.difficulty}
 												</div>
 											</div>
 										</CardTitle>
 									</CardHeader>
 									<CardContent>
-										<p className="text-gray-600 dark:text-gray-300">
+										<p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
 											{mode.description}
 										</p>
 									</CardContent>
@@ -189,18 +193,37 @@ export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout
 					</div>
 				</motion.div>
 
+				{/* Country Selection */}
+				<motion.div
+					variants={itemVariants}
+					className="max-w-md mx-auto mb-6 sm:mb-8"
+				>
+					<div className="text-center mb-4">
+						<h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+							Location Preference
+						</h3>
+						<p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+							Choose your exploration area
+						</p>
+					</div>
+					<CountrySelection
+						countrySettings={countrySettings}
+						onSettingsChange={onCountrySettingsChange}
+					/>
+				</motion.div>
+
 				{/* Start Game Button */}
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ delay: 0.8 }}
-					className="text-center mb-8"
+					className="text-center mb-6 sm:mb-8"
 				>
 					<Button
 						onClick={handleStartGame}
 						disabled={!selectedMode}
 						size="lg"
-						className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-300"
+						className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 sm:px-8 py-3 text-base sm:text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto"
 					>
 						<Play className="w-5 h-5 mr-2" />
 						Start Game
@@ -212,7 +235,7 @@ export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ delay: 0.9 }}
-					className="flex flex-wrap justify-center gap-4"
+					className="flex flex-wrap justify-center gap-3 sm:gap-4"
 				>
 					{menuButtons.map(({ key, icon: Icon, label }) => {
 						const handler = menuButtonHandlers[key];
@@ -221,7 +244,7 @@ export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout
 								key={key}
 								variant="outline"
 								onClick={handler}
-								className="flex items-center gap-2 hover:shadow-md transition-all duration-200"
+								className="flex items-center gap-2 hover:shadow-md transition-all duration-200 text-sm sm:text-base"
 							>
 								<Icon className="w-4 h-4" />
 								{label}
@@ -233,7 +256,7 @@ export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout
 						<Button
 							variant="outline"
 							onClick={handleShowPerformance}
-							className="flex items-center gap-2 border-orange-300 text-orange-600 hover:bg-white hover:shadow-md transition-all duration-200"
+							className="flex items-center gap-2 border-orange-300 text-orange-600 hover:bg-white hover:shadow-md transition-all duration-200 text-sm sm:text-base"
 						>
 							<Activity className="w-4 h-4" />
 							Performance
@@ -246,14 +269,52 @@ export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
 					transition={{ delay: 1.2 }}
-					className="text-center mt-16 text-gray-500 dark:text-gray-400"
+					className="mt-12 sm:mt-16"
 				>
-					<p className="text-sm">
-						Built with ❤️ using Next.js, TypeScript, and Google Maps API
-					</p>
-					<p className="text-xs mt-2">
-						© {new Date().getFullYear()} GeoGusserX. All rights reserved.
-					</p>
+					<div className="container mx-auto relative z-10">
+						<div className="text-center text-sm text-gray-400 space-y-4">
+							{/* GitHub Link */}
+							<div className="flex justify-center items-center">
+								<a
+									href="https://github.com/Amitminer/GeoGusserX"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="inline-flex items-center space-x-2 hover:text-cyan-400 transition-colors duration-300 group"
+								>
+									<SiGithub className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+									<span>View on GitHub</span>
+								</a>
+							</div>
+
+							{/* Decorative dots */}
+							<div className="flex justify-center space-x-2">
+								<div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse"></div>
+								<div className="w-1 h-1 bg-cyan-400 rounded-full animate-pulse" style={{ animationDelay: "0.5s" }}></div>
+								<div className="w-1 h-1 bg-pink-400 rounded-full animate-pulse" style={{ animationDelay: "1s" }}></div>
+							</div>
+
+							{/* Made with ❤️ + Tech Stack */}
+							<div className="flex justify-center items-center flex-wrap gap-2 text-gray-400">
+								<span>Made with</span>
+								<Heart className="w-4 h-4 text-[#FF1493] animate-pulse" />
+								<span>and</span>
+								<div className="flex items-center gap-1">
+									<SiNextdotjs className="w-4 h-4" />
+									<span className="text-white font-semibold">Next.js</span>
+								</div>
+								<span>+</span>
+								<div className="flex items-center gap-1">
+									<SiTypescript className="w-4 h-4 text-blue-400" />
+									<span className="text-blue-400 font-semibold">TypeScript</span>
+								</div>
+							</div>
+
+							{/* Final line */}
+							<div className="pt-2 text-gray-500 font-semibold text-sm">
+								A fun geography game for everyone 🌍
+							</div>
+						</div>
+					</div>
 				</motion.footer>
 			</div>
 		</div>

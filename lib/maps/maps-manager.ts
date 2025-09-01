@@ -67,13 +67,14 @@ export class MapsManager {
 
   /**
    * Generate a random location with available Street View
+   * @param countryName - Optional country name to restrict location generation
    */
-  async getRandomStreetViewLocation(): Promise<StreetViewLocation> {
+  async getRandomStreetViewLocation(countryName?: string): Promise<StreetViewLocation> {
     this.ensureLoaded();
     if (!this.streetViewService) {
       throw new Error('Street View service not initialized');
     }
-    return this.streetViewService.getRandomStreetViewLocation();
+    return this.streetViewService.getRandomStreetViewLocation(countryName);
   }
 
   /**

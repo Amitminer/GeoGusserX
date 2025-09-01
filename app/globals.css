@@ -329,6 +329,26 @@ body {
 	background: #f0f0f0;
 }
 
+/* Scrolling utilities */
+.scroll-smooth {
+	scroll-behavior: smooth;
+}
+
+.overscroll-contain {
+	overscroll-behavior: contain;
+}
+
+.touch-pan-y {
+	touch-action: pan-y;
+}
+
+/* Ensure proper scrolling on mobile */
+@supports (-webkit-overflow-scrolling: touch) {
+	.overflow-y-auto {
+		-webkit-overflow-scrolling: touch;
+	}
+}
+
 /* Responsive design helpers */
 @media (max-width: 768px) {
 	.mobile-hidden {

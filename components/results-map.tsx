@@ -109,21 +109,21 @@ export function ResultsMap({ actualLocation, guessedLocation }: ResultsMapProps)
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="absolute bottom-4 left-4 bg-white dark:bg-gray-800 px-4 py-3 rounded-lg shadow-lg"
+          className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm px-2 py-2 sm:px-3 sm:py-2 rounded-md sm:rounded-lg shadow-lg border border-gray-200 dark:border-gray-700"
         >
-          <div className="text-sm font-semibold mb-2">Legend</div>
+          <div className="text-xs sm:text-sm font-semibold mb-1 sm:mb-2 text-gray-800 dark:text-gray-200">Legend</div>
           <div className="flex flex-col gap-1 text-xs">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span>Actual Location</span>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full flex-shrink-0"></div>
+              <span className="text-gray-700 dark:text-gray-300 text-xs">Actual</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-              <span>Your Guess</span>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full flex-shrink-0"></div>
+              <span className="text-gray-700 dark:text-gray-300 text-xs">Your Guess</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-0.5 bg-indigo-500"></div>
-              <span>Distance</span>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="w-2 h-0.5 sm:w-3 sm:h-0.5 bg-indigo-500 flex-shrink-0"></div>
+              <span className="text-gray-700 dark:text-gray-300 text-xs">Distance</span>
             </div>
           </div>
         </motion.div>
