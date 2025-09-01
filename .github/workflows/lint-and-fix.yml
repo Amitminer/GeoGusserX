@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, beta-v0.7.0]
   pull_request:
-    branches: [main, beta-v0.7.0]
+    branches: [ dev ]
 
 jobs:
   lint-and-fix:
