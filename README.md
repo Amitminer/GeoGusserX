@@ -53,17 +53,15 @@ Drop into a **random Street View** location anywhere on Earth and guess your pos
 
 ## ✅ **Features**
 
-✔ Multiple game modes:
- • **Quick** (4 rounds)
- • **Classic** (5 rounds)
- • **Extended** (8 rounds)
- • **Endless** (infinite rounds)
-
-✔ Real **Google Street View** integration
-✔ Smart **distance-based scoring** (up to 5000 points)
-✔ **Country-specific mode** for focused play
-✔ **Responsive UI** (desktop + mobile)
-✔ **PWA support** – install as an app
+|  |  |
+|:--|:--|
+| 🕹️ **Multiple Game Modes** | Quick (4 rounds), Classic (5), Extended (8), Endless |
+| 🌐 **Google Street View** | Real, immersive exploration anywhere on Earth |
+| 📏 **Distance-based Scoring** | Up to 5000 points for perfect guesses |
+| 🗺️ **Country Mode** | Focus your challenge within a single country |
+| 📱 **Responsive UI** | Looks great on desktop & mobile |
+| 💾 **PWA Support** | Install & play as a standalone app |
+| ⚡ **Fast Gameplay** | Minimal load times, smooth transitions |
 
 ---
 
