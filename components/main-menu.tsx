@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GameMode } from '@/lib/types';
 import { logger } from '@/lib/logger';
-import { MapPin, Play, Trophy, Settings, Info, Infinity, Activity } from 'lucide-react';
+import { MapPin, Play, Trophy, Settings, Info, Infinity, Activity, Globe } from 'lucide-react';
 
 interface MainMenuProps {
 	onStartGame: (mode: GameMode) => void;
@@ -62,21 +62,50 @@ const gameModes: Array<{
 		}
 	];
 
+const menuButtons = [
+	{ key: 'stats', icon: Trophy, label: 'Statistics' },
+	{ key: 'settings', icon: Settings, label: 'Settings' },
+	{ key: 'about', icon: Info, label: 'About' }
+] as const;
+
 export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout }: MainMenuProps) {
 	const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
 
-	const handleStartGame = () => {
+	const handleStartGame = useCallback(() => {
 		if (selectedMode) {
 			onStartGame(selectedMode);
 		}
-	};
+	}, [selectedMode, onStartGame]);
 
-	const handleShowPerformance = () => {
+	const handleShowPerformance = useCallback(() => {
 		console.log('=== Performance Summary ===');
 		console.log(logger.getSummary());
 		console.log('\n=== Performance Stats ===');
-		console.log(logger.getPerformanceStats());
+		console.log(logger.getPerformanceStats);
+	}, []);
+
+	const menuButtonHandlers = useMemo(() => ({
+		stats: onShowStats,
+		settings: onShowSettings,
+		about: onShowAbout
+	}), [onShowStats, onShowSettings, onShowAbout]);
+
+	const containerVariants = {
+		hidden: { opacity: 0 },
+		visible: {
+			opacity: 1,
+			transition: {
+				staggerChildren: 0.1
+			}
+		}
 	};
+
+	const itemVariants = {
+		hidden: { opacity: 0, y: 20 },
+		visible: { opacity: 1, y: 0 }
+	};
+
+	const isDevelopment = process.env.NODE_ENV === 'development';
 
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -90,11 +119,11 @@ export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout
 					<motion.div
 						initial={{ scale: 0 }}
 						animate={{ scale: 1 }}
-						transition={{ delay: 0.2, type: 'spring' }}
+						transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
 						className="inline-flex items-center gap-3 mb-6"
 					>
-						<div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
-							<MapPin className="w-8 h-8 text-white" />
+						<div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+							<Globe className="w-8 h-8 text-white" />
 						</div>
 						<div className="text-left">
 							<h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -109,33 +138,36 @@ export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout
 
 				{/* Game Mode Selection */}
 				<motion.div
-					initial={{ opacity: 0, y: 20 }}
-					animate={{ opacity: 1, y: 0 }}
-					transition={{ delay: 0.3 }}
+					variants={containerVariants}
+					initial="hidden"
+					animate="visible"
 					className="max-w-4xl mx-auto mb-8"
 				>
-					<h2 className="text-2xl font-bold text-center mb-8 text-gray-800 dark:text-gray-200">
+					<motion.h2
+						variants={itemVariants}
+						className="text-2xl font-bold text-center mb-8 text-gray-800 dark:text-gray-200"
+					>
 						Choose Your Adventure
-					</h2>
+					</motion.h2>
 
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 						{gameModes.map((mode, index) => (
 							<motion.div
 								key={mode.mode}
-								initial={{ opacity: 0, y: 20 }}
-								animate={{ opacity: 1, y: 0 }}
-								transition={{ delay: 0.4 + index * 0.1 }}
+								variants={itemVariants}
+								whileHover={{ scale: 1.02 }}
+								whileTap={{ scale: 0.98 }}
 							>
 								<Card
 									className={`cursor-pointer transition-all duration-300 hover:shadow-xl ${selectedMode === mode.mode
 										? 'ring-2 ring-blue-500 shadow-lg scale-105'
-										: 'hover:scale-102'
+										: ''
 										}`}
 									onClick={() => setSelectedMode(mode.mode)}
 								>
 									<CardHeader>
 										<CardTitle className="flex items-center gap-3">
-											<div className={`w-12 h-12 bg-gradient-to-r ${mode.color} rounded-lg flex items-center justify-center text-white`}>
+											<div className={`w-12 h-12 bg-gradient-to-r ${mode.color} rounded-lg flex items-center justify-center text-white shadow-md`}>
 												{mode.icon}
 											</div>
 											<div>
@@ -168,7 +200,7 @@ export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout
 						onClick={handleStartGame}
 						disabled={!selectedMode}
 						size="lg"
-						className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+						className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-300"
 					>
 						<Play className="w-5 h-5 mr-2" />
 						Start Game
@@ -182,44 +214,26 @@ export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout
 					transition={{ delay: 0.9 }}
 					className="flex flex-wrap justify-center gap-4"
 				>
-					{onShowStats && (
-						<Button
-							variant="outline"
-							onClick={onShowStats}
-							className="flex items-center gap-2"
-						>
-							<Trophy className="w-4 h-4" />
-							Statistics
-						</Button>
-					)}
+					{menuButtons.map(({ key, icon: Icon, label }) => {
+						const handler = menuButtonHandlers[key];
+						return handler ? (
+							<Button
+								key={key}
+								variant="outline"
+								onClick={handler}
+								className="flex items-center gap-2 hover:shadow-md transition-all duration-200"
+							>
+								<Icon className="w-4 h-4" />
+								{label}
+							</Button>
+						) : null;
+					})}
 
-					{onShowSettings && (
-						<Button
-							variant="outline"
-							onClick={onShowSettings}
-							className="flex items-center gap-2"
-						>
-							<Settings className="w-4 h-4" />
-							Settings
-						</Button>
-					)}
-
-					{onShowAbout && (
-						<Button
-							variant="outline"
-							onClick={onShowAbout}
-							className="flex items-center gap-2"
-						>
-							<Info className="w-4 h-4" />
-							About
-						</Button>
-					)}
-
-					{process.env.NODE_ENV === 'development' && (
+					{isDevelopment && (
 						<Button
 							variant="outline"
 							onClick={handleShowPerformance}
-							className="flex items-center gap-2 border-orange-300 text-orange-600 hover:bg-orange-50"
+							className="flex items-center gap-2 border-orange-300 text-orange-600 hover:bg-orange-50 hover:shadow-md transition-all duration-200"
 						>
 							<Activity className="w-4 h-4" />
 							Performance
@@ -238,7 +252,7 @@ export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout
 						Built with ❤️ using Next.js, TypeScript, and Google Maps API
 					</p>
 					<p className="text-xs mt-2">
-						© 2024 GeoGusserX. All rights reserved.
+						© {new Date().getFullYear()} GeoGusserX. All rights reserved.
 					</p>
 				</motion.footer>
 			</div>
