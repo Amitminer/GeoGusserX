@@ -193,7 +193,7 @@ export class StreetViewService {
 				},
 				zoom: Math.max(0, Math.min(5, location.zoom || 1)),
 				addressControl: false,
-				linksControl: false,
+				linksControl: true,
 				panControl: false,
 				enableCloseButton: false,
 				showRoadLabels: false,
