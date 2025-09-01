@@ -38,22 +38,22 @@ export function RoundResults({ result, roundNumber, onNextRound, isLastRound }: 
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-black/50 flex items-start justify-center p-4 z-50 overflow-y-auto"
     >
       <motion.div
         initial={{ y: 50 }}
         animate={{ y: 0 }}
-        className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+        className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-4xl w-full my-4 min-h-fit"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">Round {roundNumber} Results</h2>
-              <p className="text-blue-100 mt-1">{getScoreMessage(result.score)}</p>
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 sm:p-6 rounded-t-xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex-1">
+              <h2 className="text-xl sm:text-2xl font-bold">Round {roundNumber} Results</h2>
+              <p className="text-blue-100 mt-1 text-sm sm:text-base">{getScoreMessage(result.score)}</p>
             </div>
-            <div className="text-right">
-              <div className={`text-3xl font-bold ${getScoreColor(result.score)} text-white`}>
+            <div className="text-left sm:text-right">
+              <div className={`text-2xl sm:text-3xl font-bold ${getScoreColor(result.score)} text-white`}>
                 {formatScore(result.score)}
               </div>
               <div className="text-blue-100 text-sm">points</div>
@@ -61,46 +61,46 @@ export function RoundResults({ result, roundNumber, onNextRound, isLastRound }: 
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            <Card className="border border-gray-200 dark:border-gray-700">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
-                  <Target className="w-4 h-4" />
+                  <Target className="w-4 h-4 text-blue-500" />
                   Distance
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatDistance(result.distance)}</div>
+                <div className="text-xl sm:text-2xl font-bold">{formatDistance(result.distance)}</div>
                 <div className="text-xs text-gray-500 mt-1">from actual location</div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border border-gray-200 dark:border-gray-700">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
-                  <Trophy className="w-4 h-4" />
+                  <Trophy className="w-4 h-4 text-yellow-500" />
                   Score
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold ${getScoreColor(result.score)}`}>
+                <div className={`text-xl sm:text-2xl font-bold ${getScoreColor(result.score)}`}>
                   {formatScore(result.score)}
                 </div>
                 <div className="text-xs text-gray-500 mt-1">out of 5,000</div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border border-gray-200 dark:border-gray-700">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
+                  <MapPin className="w-4 h-4 text-green-500" />
                   Accuracy
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="text-xl sm:text-2xl font-bold">
                   {((result.score / 5000) * 100).toFixed(1)}%
                 </div>
                 <div className="text-xs text-gray-500 mt-1">accuracy rating</div>
@@ -109,12 +109,12 @@ export function RoundResults({ result, roundNumber, onNextRound, isLastRound }: 
           </div>
 
           {/* Results Map */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Your Guess vs Actual Location</CardTitle>
+          <Card className="border border-gray-200 dark:border-gray-700">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">Your Guess vs Actual Location</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="h-64 md:h-80">
+              <div className="h-48 sm:h-64 md:h-80 rounded-b-lg overflow-hidden">
                 <ResultsMap
                   actualLocation={result.actualLocation}
                   guessedLocation={result.guessedLocation}
@@ -124,11 +124,11 @@ export function RoundResults({ result, roundNumber, onNextRound, isLastRound }: 
           </Card>
 
           {/* Action Button */}
-          <div className="flex justify-center pt-4">
+          <div className="flex justify-center pt-4 pb-2">
             <Button
               onClick={onNextRound}
               size="lg"
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8"
+              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 sm:px-8 py-3 w-full sm:w-auto text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
             >
               {isLastRound ? (
                 <>
