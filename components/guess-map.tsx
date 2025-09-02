@@ -11,7 +11,6 @@ import { Globe } from 'lucide-react';
 import {
 	MapHeader,
 	MapControls,
-	CoordinatesDisplay,
 	MapFooter,
 	FullscreenFooter,
 	LoadingState,
@@ -30,20 +29,17 @@ interface MapState {
 	mapSize: MapSize;
 	mapType: string;
 	currentZoom: number;
-	showCoordinates: boolean;
 }
 
 type MapAction =
 	| { type: 'SET_MAP_SIZE'; payload: MapSize }
 	| { type: 'SET_MAP_TYPE'; payload: string }
-	| { type: 'SET_ZOOM'; payload: number }
-	| { type: 'TOGGLE_COORDINATES' };
+	| { type: 'SET_ZOOM'; payload: number };
 
 const initialState: MapState = {
 	mapSize: 'mini',
 	mapType: 'roadmap',
 	currentZoom: 2,
-	showCoordinates: false,
 };
 
 function mapReducer(state: MapState, action: MapAction): MapState {
@@ -54,8 +50,6 @@ function mapReducer(state: MapState, action: MapAction): MapState {
 			return { ...state, mapType: action.payload };
 		case 'SET_ZOOM':
 			return { ...state, currentZoom: action.payload };
-		case 'TOGGLE_COORDINATES':
-			return { ...state, showCoordinates: !state.showCoordinates };
 		default:
 			return state;
 	}
@@ -79,7 +73,7 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 	const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
 
 	const [state, dispatch] = useReducer(mapReducer, initialState);
-	const { mapSize, mapType, currentZoom, showCoordinates } = state;
+	const { mapSize, mapType, currentZoom } = state;
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -190,6 +184,20 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 				const initialCenter = minimapState?.center || { lat: 20, lng: 0 };
 				const initialZoom = minimapState?.zoom || currentZoom;
 
+				// Ensure container has proper dimensions before creating map
+				if (containerRef.current) {
+					const rect = containerRef.current.getBoundingClientRect();
+					if (rect.width === 0 || rect.height === 0) {
+						// Container not ready, retry after a short delay
+						setTimeout(() => {
+							if (mapSize !== 'mini' && mapSize !== 'hidden') {
+								initializeMap();
+							}
+						}, 100);
+						return;
+					}
+				}
+
 				const map = new google.maps.Map(containerRef.current, {
 					zoom: initialZoom,
 					center: initialCenter,
@@ -291,10 +299,19 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 			// Immediate resize
 			triggerResize();
 
-			// Resize after animation completes
-			const timeoutId = setTimeout(triggerResize, 350);
+			// Multiple resize attempts for better reliability, especially in fullscreen
+			const timeouts = [
+				setTimeout(triggerResize, 100),
+				setTimeout(triggerResize, 350),
+				setTimeout(triggerResize, 500)
+			];
 
-			return () => clearTimeout(timeoutId);
+			// Additional resize for fullscreen mode
+			if (mapSize === 'fullscreen') {
+				timeouts.push(setTimeout(triggerResize, 750));
+			}
+
+			return () => timeouts.forEach(clearTimeout);
 		}
 	}, [mapSize]);
 
@@ -435,21 +452,16 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 					<MapControls
 						mapType={mapType}
 						currentZoom={currentZoom}
-						showCoordinates={showCoordinates}
 						guessLocation={guessLocation}
 						onSetMapType={(type) => dispatch({ type: 'SET_MAP_TYPE', payload: type })}
 						onZoomIn={handleZoomIn}
 						onZoomOut={handleZoomOut}
 						onResetView={handleResetView}
 						onCenterOnGuess={handleCenterOnGuess}
-						onToggleCoordinates={() => dispatch({ type: 'TOGGLE_COORDINATES' })}
 					/>
 				)}
 
-				{/* Coordinates Display */}
-				{showCoordinates && guessLocation && (
-					<CoordinatesDisplay guessLocation={guessLocation} />
-				)}
+
 
 				{/* Map Container */}
 				<div className="flex-1 min-h-0 relative">

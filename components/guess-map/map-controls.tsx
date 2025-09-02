@@ -8,27 +8,23 @@ import { Location } from '@/lib/types';
 interface MapControlsProps {
   mapType: string;
   currentZoom: number;
-  showCoordinates: boolean;
   guessLocation: Location | null;
   onSetMapType: (type: string) => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onResetView: () => void;
   onCenterOnGuess: () => void;
-  onToggleCoordinates: () => void;
 }
 
 export function MapControls({
   mapType,
   currentZoom,
-  showCoordinates,
   guessLocation,
   onSetMapType,
   onZoomIn,
   onZoomOut,
   onResetView,
   onCenterOnGuess,
-  onToggleCoordinates,
 }: MapControlsProps) {
   return (
     <div className="flex items-center justify-between p-3 border-b bg-gray-800/90 backdrop-blur-sm flex-shrink-0">
@@ -124,20 +120,7 @@ export function MapControls({
           </Button>
         )}
 
-        {/* Coordinates Toggle */}
-        <Button
-          variant={showCoordinates ? 'default' : 'ghost'}
-          size="sm"
-          onClick={onToggleCoordinates}
-          className={`h-7 px-2 text-xs ${
-            showCoordinates 
-              ? '' 
-              : 'text-gray-300 hover:text-gray-100 hover:bg-gray-700/50'
-          }`}
-          title="Show coordinates"
-        >
-          XY
-        </Button>
+
       </div>
     </div>
   );
