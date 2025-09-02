@@ -147,10 +147,23 @@ export class StreetViewService {
 			}, 10000); // 10 second timeout
 
 			try {
+				// Randomize search radius for more varied gameplay
+				// Smaller radius = more precise to original location
+				// Larger radius = more variety but potentially further from intended area
+				const minRadius = 1000;  // 1km minimum
+				const maxRadius = 25000; // 25km maximum (reduced from 50km)
+				const randomRadius = minRadius + Math.random() * (maxRadius - minRadius);
+				
+				logger.debug('Using random search radius', { 
+					radius: Math.round(randomRadius), 
+					location,
+					minRadius,
+					maxRadius
+				}, 'StreetViewService');
+				
 				this.streetViewService.getPanorama({
 					location: new google.maps.LatLng(location.lat, location.lng),
-					radius: 50000, // 50km radius
-					// TODO: Implement custom logic to randomize the panorama
+					radius: Math.round(randomRadius),
 					source: google.maps.StreetViewSource.OUTDOOR
 				}, (data, status) => {
 					clearTimeout(timeoutId);

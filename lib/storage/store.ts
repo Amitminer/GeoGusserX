@@ -320,9 +320,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 				});
 
 				get().addToast({
-					title: 'Game Restored!',
-					description: `Continuing your ${activeGame.mode} game`,
-					type: 'success'
+					title: '🎮 Game Restored!',
+					description: `Continuing your ${activeGame.mode} game (Round ${activeGame.currentRoundIndex + 1})`,
+					type: 'success',
+					duration: 3000 // Show for 3 seconds
 				});
 
 				return true;

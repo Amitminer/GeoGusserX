@@ -1,6 +1,6 @@
 {
 	"name": "geogusserx",
-	"version": "0.0.9",
+	"version": "0.1.1",
 	"private": true,
 	"scripts": {
 		"dev": "next dev",
