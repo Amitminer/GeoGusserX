@@ -28,6 +28,8 @@ interface GameStore {
 	nextRound: () => void;
 	endGame: () => void;
 	resetGame: () => void;
+	restoreActiveGame: () => Promise<boolean>;
+	cleanupStorage: () => Promise<void>;
 
 	// UI Actions
 	setStreetViewLoaded: (loaded: boolean) => void;
@@ -71,6 +73,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		set({ isLoading: true, error: null });
 
 		try {
+			// Clean up any incomplete games before starting new one
+			await storageManager.cleanupIncompleteGames();
+
+			// Also run general cleanup to remove old/completed games
+			await storageManager.cleanupOldGames();
+
 			const roundCount = mode === 'infinite' ? 1 : parseInt(mode.split('-')[0]);
 			const gameId = `game-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 
@@ -283,6 +291,72 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		logger.info('Game reset', undefined, 'GameStore');
 	},
 
+	// Session restoration
+	restoreActiveGame: async (): Promise<boolean> => {
+		logger.startTimer('restore-active-game');
+		set({ isLoading: true, error: null });
+
+		try {
+			// First, clean up old games
+			await storageManager.cleanupOldGames();
+
+			// Try to find an active game
+			const activeGame = await storageManager.getActiveGame();
+
+			if (activeGame) {
+				// Restore the game state
+				set({
+					currentGame: activeGame,
+					isLoading: false,
+					showResults: false,
+					showGameComplete: false
+				});
+
+				const duration = logger.endTimer('restore-active-game', 'Active game restored');
+				logger.perf('Restore active game', duration, {
+					gameId: activeGame.id,
+					mode: activeGame.mode,
+					roundIndex: activeGame.currentRoundIndex
+				});
+
+				get().addToast({
+					title: 'Game Restored!',
+					description: `Continuing your ${activeGame.mode} game`,
+					type: 'success'
+				});
+
+				return true;
+			} else {
+				// No active game found
+				set({ isLoading: false });
+				logger.endTimer('restore-active-game', 'No active game found');
+				return false;
+			}
+
+		} catch (error) {
+			logger.endTimer('restore-active-game');
+			logger.error('Failed to restore active game', error, 'GameStore');
+			set({
+				error: 'Failed to restore previous game session',
+				isLoading: false
+			});
+			return false;
+		}
+	},
+
+	// Storage cleanup
+	cleanupStorage: async () => {
+		logger.startTimer('cleanup-storage');
+		try {
+			await storageManager.cleanupOldGames();
+			const duration = logger.endTimer('cleanup-storage', 'Storage cleanup completed');
+			logger.perf('Storage cleanup', duration);
+		} catch (error) {
+			logger.endTimer('cleanup-storage');
+			logger.error('Failed to cleanup storage', error, 'GameStore');
+		}
+	},
+
 	// UI Actions
 	setStreetViewLoaded: (loaded: boolean) => {
 		set({ isStreetViewLoaded: loaded });
@@ -314,7 +388,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		}));
 
 		// Auto remove after duration
-		const duration = toast.duration || 5000;
+		const duration = toast.duration || 3000;
 		setTimeout(() => {
 			get().removeToast(id);
 		}, duration);
@@ -403,13 +477,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
 			// Calculate distance stats
 			const completedRounds = currentGame.rounds.filter(r => r.completed && r.distance !== null);
-			
+
 			if (completedRounds.length > 0) {
 				const totalRoundDistance = completedRounds.reduce((sum, r) => sum + (r.distance || 0), 0);
 				stats.totalDistance += totalRoundDistance;
-				
+
 				// Calculate average distance per round across all games
-				const totalRoundsPlayed = stats.totalGames > 1 
+				const totalRoundsPlayed = stats.totalGames > 1
 					? (stats.totalGames - 1) * completedRounds.length + completedRounds.length
 					: completedRounds.length;
 				stats.averageDistance = stats.totalDistance / totalRoundsPlayed;

@@ -33,7 +33,9 @@ export function Game() {
 		endGame,
 		resetGame,
 		setError,
-		updateCountrySettings
+		updateCountrySettings,
+		restoreActiveGame,
+		cleanupStorage
 	} = useGameStore();
 
 	const [screen, setScreen] = useState<GameScreen>('menu');
@@ -58,9 +60,17 @@ export function Game() {
 				await mapsManager.initialize();
 				logger.endTimer('maps-init-component', 'Maps initialized');
 
+				// Try to restore active game session
+				logger.startTimer('session-restoration');
+				const gameRestored = await restoreActiveGame();
+				logger.endTimer('session-restoration', gameRestored ? 'Session restored' : 'No session to restore');
+
+				// Run periodic cleanup
+				await cleanupStorage();
+
 				setIsInitialized(true);
 				const totalDuration = logger.endTimer('app-initialization', 'Application initialized successfully');
-				logger.perf('App initialization', totalDuration);
+				logger.perf('App initialization', totalDuration, { gameRestored });
 			} catch (error) {
 				logger.endTimer('app-initialization');
 				logger.error('Failed to initialize application', error, 'Game');
@@ -69,7 +79,23 @@ export function Game() {
 		};
 
 		initialize();
-	}, [setError]);
+	}, [setError, restoreActiveGame, cleanupStorage]);
+
+	// Set up periodic cleanup (every hour)
+	useEffect(() => {
+		if (!isInitialized) return;
+
+		const cleanupInterval = setInterval(async () => {
+			try {
+				logger.info('Running periodic storage cleanup', undefined, 'Game');
+				await cleanupStorage();
+			} catch (error) {
+				logger.error('Periodic cleanup failed', error, 'Game');
+			}
+		}, 60 * 60 * 1000); // 1 hour
+
+		return () => clearInterval(cleanupInterval);
+	}, [isInitialized, cleanupStorage]);
 
 	// Handle game state changes
 	useEffect(() => {
@@ -229,7 +255,7 @@ export function Game() {
 					<Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-blue-500" suppressHydrationWarning />
 					<h2 className="text-2xl font-bold mb-2">Loading GeoGusserX</h2>
 					<p className="text-gray-600 dark:text-gray-300">
-						Initializing maps and preparing your adventure...
+						Initializing maps and checking for previous game sessions...
 					</p>
 				</div>
 			</div>

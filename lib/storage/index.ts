@@ -173,7 +173,7 @@ class StorageManager {
 		}
 	}
 
-	// Cleanup
+	// Enhanced Cleanup Methods
 	async clearAllData(): Promise<void> {
 		try {
 			const db = this.ensureDB();
@@ -184,6 +184,100 @@ class StorageManager {
 		} catch (error) {
 			logger.error('Failed to clear data', error, 'StorageManager');
 			throw error;
+		}
+	}
+
+	// Clean up old/completed games to prevent storage bloat
+	async cleanupOldGames(): Promise<void> {
+		logger.startTimer('cleanup-old-games');
+		try {
+			const db = this.ensureDB();
+			const allGames = await db.getAll('games');
+			
+			const now = Date.now();
+			const EXPIRY_TIME = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
+			
+			let deletedCount = 0;
+			
+			for (const game of allGames) {
+				const gameAge = now - game.startTime;
+				
+				// Delete if game is completed OR older than 4 hours
+				if (game.isCompleted || gameAge > EXPIRY_TIME) {
+					await db.delete('games', game.id);
+					deletedCount++;
+					logger.info('Deleted old/completed game', { 
+						gameId: game.id, 
+						isCompleted: game.isCompleted, 
+						ageHours: Math.round(gameAge / (60 * 60 * 1000)) 
+					}, 'StorageManager');
+				}
+			}
+			
+			const duration = logger.endTimer('cleanup-old-games', `Cleaned up ${deletedCount} old games`);
+			logger.perf('Cleanup old games', duration, { 
+				totalGames: allGames.length, 
+				deletedCount 
+			});
+			
+		} catch (error) {
+			logger.endTimer('cleanup-old-games');
+			logger.error('Failed to cleanup old games', error, 'StorageManager');
+		}
+	}
+
+	// Get the most recent active (incomplete) game
+	async getActiveGame(): Promise<GameState | null> {
+		logger.startTimer('get-active-game');
+		try {
+			const db = this.ensureDB();
+			const allGames = await db.getAll('games');
+			
+			// Find the most recent incomplete game
+			const activeGames = allGames
+				.filter(game => !game.isCompleted)
+				.sort((a, b) => b.startTime - a.startTime);
+			
+			const activeGame = activeGames[0] || null;
+			
+			const duration = logger.endTimer('get-active-game');
+			logger.perf('Get active game', duration, { 
+				found: !!activeGame,
+				activeGamesCount: activeGames.length
+			});
+			
+			return activeGame;
+			
+		} catch (error) {
+			logger.endTimer('get-active-game');
+			logger.error('Failed to get active game', error, 'StorageManager');
+			return null;
+		}
+	}
+
+	// Clean up all incomplete games (when starting a new game)
+	async cleanupIncompleteGames(): Promise<void> {
+		logger.startTimer('cleanup-incomplete-games');
+		try {
+			const db = this.ensureDB();
+			const allGames = await db.getAll('games');
+			
+			let deletedCount = 0;
+			
+			for (const game of allGames) {
+				if (!game.isCompleted) {
+					await db.delete('games', game.id);
+					deletedCount++;
+					logger.info('Deleted incomplete game', { gameId: game.id }, 'StorageManager');
+				}
+			}
+			
+			const duration = logger.endTimer('cleanup-incomplete-games', `Cleaned up ${deletedCount} incomplete games`);
+			logger.perf('Cleanup incomplete games', duration, { deletedCount });
+			
+		} catch (error) {
+			logger.endTimer('cleanup-incomplete-games');
+			logger.error('Failed to cleanup incomplete games', error, 'StorageManager');
 		}
 	}
 
