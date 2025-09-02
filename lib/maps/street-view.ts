@@ -208,7 +208,7 @@ export class StreetViewService {
 				panControl: false,
 				enableCloseButton: false,
 				showRoadLabels: false,
-				motionTracking: isMobile,
+				motionTracking: false,
 				gestureHandling: 'greedy',
 				motionTrackingControl: false
 			};
