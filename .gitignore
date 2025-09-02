@@ -17,6 +17,8 @@ logger.logs
 temps
 TODO.md
 qodo.md
+ISSUE.md
+
 # next.js
 /.next/
 /out/

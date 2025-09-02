@@ -23,19 +23,19 @@ export class StreetViewService {
 
 			try {
 				logger.startTimer(`streetview-check-${attempts}`);
-				
+
 				// Generate location with validation
-				const randomLocation = countryName 
+				const randomLocation = countryName
 					? generateLocationByCountry(countryName, 10)
 					: generateRandomLocation(10);
-				
+
 				// Validate the generated location
 				if (!isValidLocation(randomLocation)) {
 					logger.warn('Generated invalid location, skipping', { location: randomLocation, attempt: attempts }, 'StreetViewService');
 					logger.endTimer(`streetview-check-${attempts}`);
 					continue;
 				}
-				
+
 				lastValidLocation = randomLocation;
 				const streetViewData = await this.checkStreetViewAvailability(randomLocation);
 				const checkDuration = logger.endTimer(`streetview-check-${attempts}`);
@@ -45,13 +45,13 @@ export class StreetViewService {
 						lat: streetViewData.location!.latLng!.lat(),
 						lng: streetViewData.location!.latLng!.lng()
 					};
-					
+
 					// Final validation of Street View location
 					if (!isValidLocation(finalLocation)) {
 						logger.warn('Street View returned invalid location', { finalLocation, originalLocation: randomLocation }, 'StreetViewService');
 						continue;
 					}
-					
+
 					const totalDuration = logger.endTimer('streetview-location-generation', 'Found valid Street View location');
 					logger.perf('Street View location generation', totalDuration, {
 						attempts,
@@ -75,7 +75,7 @@ export class StreetViewService {
 		}
 
 		logger.endTimer('streetview-location-generation');
-		
+
 		// If we have a last valid location but no Street View, create a fallback
 		if (lastValidLocation) {
 			logger.warn('Using last valid location as fallback', { location: lastValidLocation }, 'StreetViewService');
@@ -87,7 +87,7 @@ export class StreetViewService {
 				zoom: 1
 			};
 		}
-		
+
 		// Ultimate fallback to a known location with Street View (Times Square, NYC)
 		logger.error('Could not find any valid Street View location, using emergency fallback', { countryName }, 'StreetViewService');
 		return {
@@ -108,20 +108,20 @@ export class StreetViewService {
 		if (!data || !data.location || !data.location.latLng) {
 			return false;
 		}
-		
+
 		const lat = data.location.latLng.lat();
 		const lng = data.location.latLng.lng();
-		
+
 		// Validate coordinates
 		if (!isValidLocation({ lat, lng })) {
 			return false;
 		}
-		
+
 		// Check if pano ID exists
 		if (!data.location.pano || data.location.pano.trim() === '') {
 			return false;
 		}
-		
+
 		return true;
 	}
 
@@ -132,7 +132,7 @@ export class StreetViewService {
 				resolve(null);
 				return;
 			}
-			
+
 			// Validate input location
 			if (!isValidLocation(location)) {
 				logger.warn('Invalid location provided to Street View check', { location }, 'StreetViewService');
@@ -150,10 +150,11 @@ export class StreetViewService {
 				this.streetViewService.getPanorama({
 					location: new google.maps.LatLng(location.lat, location.lng),
 					radius: 50000, // 50km radius
+					// TODO: Implement custom logic to randomize the panorama
 					source: google.maps.StreetViewSource.OUTDOOR
 				}, (data, status) => {
 					clearTimeout(timeoutId);
-					
+
 					if (status === google.maps.StreetViewStatus.OK && data) {
 						resolve(data);
 					} else {
@@ -170,21 +171,31 @@ export class StreetViewService {
 	}
 
 	/**
-	 * Create a Street View panorama with validation
+	 * Detect if the device is mobile
+	 */
+	private isMobileDevice(): boolean {
+		return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+			(typeof navigator.maxTouchPoints !== 'undefined' && navigator.maxTouchPoints > 2);
+	}
+
+	/**
+	 * Create a Street View panorama with validation and mobile optimization
 	 */
 	createStreetView(container: HTMLElement, location: StreetViewLocation): google.maps.StreetViewPanorama {
 		logger.startTimer('streetview-creation');
-		
+
 		// Validate inputs
 		if (!container) {
 			throw new Error('Container element is required for Street View');
 		}
-		
+
 		if (!location || !isValidLocation(location.location)) {
 			throw new Error('Valid location is required for Street View');
 		}
 
 		try {
+			const isMobile = this.isMobileDevice();
+
 			const options: StreetViewOptions = {
 				position: new google.maps.LatLng(location.location.lat, location.location.lng),
 				pov: {
@@ -193,16 +204,29 @@ export class StreetViewService {
 				},
 				zoom: Math.max(0, Math.min(5, location.zoom || 1)),
 				addressControl: false,
-				linksControl: true,
+				linksControl: false,
 				panControl: false,
 				enableCloseButton: false,
 				showRoadLabels: false,
-				motionTracking: false,
+				motionTracking: isMobile,
+				gestureHandling: 'greedy',
 				motionTrackingControl: false
 			};
 
 			const panorama = new google.maps.StreetViewPanorama(container, options);
-			
+
+			// Mobile-specific optimizations
+			if (isMobile) {
+				container.style.touchAction = 'none';
+				container.style.userSelect = 'none';
+
+				panorama.addListener('idle', () => {
+					if (container.style.transform === '') {
+						container.style.transform = 'translateZ(0)';
+					}
+				});
+			}
+
 			// Add error handling for panorama
 			panorama.addListener('status_changed', () => {
 				const status = panorama.getStatus();

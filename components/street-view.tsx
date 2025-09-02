@@ -9,6 +9,7 @@ import { logger } from '@/lib/logger';
 import { shouldShowCountryName } from '@/lib/utils';
 import { Loader2, MapPin } from 'lucide-react';
 import type { GeocodeResult } from '@/lib/maps/geocoding';
+import { StreetViewControls } from '@/components/street-view-controls';
 
 interface StreetViewProps {
 	location: StreetViewLocation;
@@ -22,6 +23,7 @@ export function StreetView({ location, onLocationChange }: StreetViewProps) {
 	const [error, setError] = useState<string | null>(null);
 	const [countryInfo, setCountryInfo] = useState<GeocodeResult | null>(null);
 	const [showCountryName] = useState(() => shouldShowCountryName());
+	const [showControls] = useState(true);
 
 	const { setStreetViewLoaded } = useGameStore();
 
@@ -168,13 +170,21 @@ export function StreetView({ location, onLocationChange }: StreetViewProps) {
 				transition={{ duration: 0.5 }}
 			/>
 
-			{/* Street View Controls Overlay */}
+			{/* Virtual Joystick Controls */}
+			{!isLoading && !error && (
+				<StreetViewControls 
+					panorama={panoramaRef.current}
+					showControls={showControls}
+				/>
+			)}
+
+			{/* Desktop Controls Overlay */}
 			{!isLoading && !error && (
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ delay: 0.5 }}
-					className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg text-sm"
+					className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-2 rounded-lg text-sm hidden md:block"
 				>
 					Use mouse to look around • WASD or arrow keys to move
 				</motion.div>
