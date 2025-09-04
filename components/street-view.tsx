@@ -90,13 +90,32 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange }: 
 						try {
 							const geocodingService = mapsManager.getGeocodingService();
 							if (geocodingService) {
-								const result = await geocodingService.getCountryFromCoordinates(location.location);
-								if (result) {
-									setCountryInfo(result);
-									if (onCountryInfoChange) {
-										onCountryInfoChange(result);
+								// Use panorama's actual position instead of initial prop coordinates
+								const panoramaPosition = panorama.getPosition();
+								if (panoramaPosition) {
+									// Convert panorama position to lat/lng format expected by geocoding service
+									const actualCoordinates = {
+										lat: panoramaPosition.lat(),
+										lng: panoramaPosition.lng()
+									};
+									
+									const result = await geocodingService.getCountryFromCoordinates(actualCoordinates);
+									if (result) {
+										setCountryInfo(result);
+										if (onCountryInfoChange) {
+											onCountryInfoChange(result);
+										}
+										logger.info('Country information retrieved', { 
+											country: result.country,
+											actualCoordinates,
+											initialCoordinates: location.location
+										}, 'StreetView');
 									}
-									logger.info('Country information retrieved', { country: result.country }, 'StreetView');
+								} else {
+									logger.warn('Panorama position is null, cannot geocode', {}, 'StreetView');
+									if (onCountryInfoChange) {
+										onCountryInfoChange(null);
+									}
 								}
 							}
 						} catch (error) {
@@ -133,7 +152,18 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange }: 
 				onCountryInfoChange(null);
 			}
 		};
-	}, [location, onLocationChange, onCountryInfoChange, setStreetViewLoaded, gameSettings.showCountryName]);
+	}, [location, onLocationChange, onCountryInfoChange, setStreetViewLoaded]);
+
+	// Separate effect to handle country name overlay visibility changes
+	// This prevents panorama re-initialization when only the overlay setting changes
+	useEffect(() => {
+		// This effect intentionally only watches gameSettings.showCountryName
+		// The overlay visibility is handled in the JSX render below
+		// No panorama re-initialization needed for overlay toggle
+		logger.debug('Country name overlay setting changed', { 
+			showCountryName: gameSettings.showCountryName 
+		}, 'StreetView');
+	}, [gameSettings.showCountryName]);
 
 	if (error) {
 		return (

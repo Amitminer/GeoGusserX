@@ -11,7 +11,7 @@ uv pip install -r requirements.txt
 ```
 
 ## Scripts
-- `generate_regions.py` - Generates comprehensive regions.json with all countries worldwide
+- `generate_regions.py` - Generates regions_generated.json with all countries worldwide
 
 ## Usage
 ```bash

@@ -25,10 +25,10 @@
 			"type": "state"
 		},
 		{
-			"lat": 40.7589,
-			"lng": -73.9851,
-			"radius": 3,
-			"name": "New York, USA",
+			"lat": 42.9134,
+			"lng": -75.5960,
+			"radius": 6,
+			"name": "New York State, USA",
 			"continent": "North America",
 			"type": "state"
 		},
@@ -305,7 +305,7 @@
 			"type": "country"
 		},
 		{
-			"lat": 37.0902,
+			"lat": 35.9078,
 			"lng": 127.7669,
 			"radius": 6,
 			"name": "South Korea",

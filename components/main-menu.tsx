@@ -8,7 +8,7 @@ import { CountrySelection } from '@/components/country-selection';
 import { GameMode, CountrySettings } from '@/lib/types';
 import { useGameStore } from '@/lib/storage/store';
 import { logger } from '@/lib/logger';
-import { MapPin, Play, Trophy, Settings, Info, Infinity, Activity, Globe, Heart, Eye, EyeOff } from 'lucide-react';
+import { MapPin, Play, Trophy, Settings, Info, Infinity as InfinityIcon, Activity, Globe, Heart, Eye, EyeOff } from 'lucide-react';
 import { SiGithub, SiNextdotjs, SiTypescript } from 'react-icons/si';
 
 interface MainMenuProps {
@@ -60,7 +60,7 @@ const gameModes: Array<{
 			mode: 'infinite',
 			title: 'Infinite',
 			description: 'Keep playing until you want to stop',
-			icon: <Infinity className="w-6 h-6" />,
+			icon: <InfinityIcon className="w-6 h-6" />,
 			rounds: '∞ Rounds',
 			difficulty: 'Endless',
 			color: 'from-orange-500 to-red-600'
