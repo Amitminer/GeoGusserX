@@ -7,6 +7,7 @@ import { mapsManager } from '@/lib/maps';
 import { storageManager } from '@/lib/storage';
 import { logger } from '@/lib/logger';
 import { StreetViewLocation, Location, GuessResult, GameMode } from '@/lib/types';
+import type { GeocodeResult } from '@/lib/maps/geocoding';
 
 import { MainMenu } from '@/components/main-menu';
 import { GameHeader } from '@/components/game-header';
@@ -42,6 +43,7 @@ export function Game() {
 	const [currentLocation, setCurrentLocation] = useState<StreetViewLocation | null>(null);
 	const [lastResult, setLastResult] = useState<GuessResult | null>(null);
 	const [isInitialized, setIsInitialized] = useState(false);
+	const [countryInfo, setCountryInfo] = useState<GeocodeResult | null>(null);
 
 	// Initialize the application
 	useEffect(() => {
@@ -328,11 +330,18 @@ export function Game() {
 						exit={{ opacity: 0 }}
 						className="h-screen flex flex-col relative"
 					>
-						<GameHeader onEndGame={handleEndGame} />
+						<GameHeader 
+							onEndGame={handleEndGame} 
+							currentLocation={currentLocation?.location || null}
+							countryInfo={countryInfo}
+						/>
 
 						{/* Fullscreen Street View */}
 						<div className="flex-1 relative">
-							<StreetView location={currentLocation} />
+							<StreetView 
+								location={currentLocation} 
+								onCountryInfoChange={setCountryInfo}
+							/>
 
 							{/* Floating Guess Map - positioned in bottom right */}
 							<GuessMap

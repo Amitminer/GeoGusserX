@@ -31,6 +31,7 @@ interface GameStore {
 	restoreActiveGame: () => Promise<boolean>;
 	cleanupStorage: () => Promise<void>;
 
+
 	// UI Actions
 	setStreetViewLoaded: (loaded: boolean) => void;
 	setMapLoaded: (loaded: boolean) => void;
@@ -50,6 +51,9 @@ interface GameStore {
 	// Settings Actions
 	updateCountrySettings: (settings: CountrySettings) => Promise<void>;
 	loadCountrySettings: () => Promise<void>;
+
+	// Hint Actions
+	purchaseHint: (cost: number) => Promise<boolean>;
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -537,6 +541,45 @@ export const useGameStore = create<GameStore>((set, get) => ({
 			}
 		} catch (error) {
 			logger.error('Failed to load country settings', error, 'GameStore');
+		}
+	},
+
+	// Hint Actions
+	purchaseHint: async (cost: number): Promise<boolean> => {
+		const { currentGame } = get();
+		
+		if (!currentGame) {
+			logger.error('No active game for hint purchase', undefined, 'GameStore');
+			return false;
+		}
+		
+		if (currentGame.totalScore < cost) {
+			logger.warn('Insufficient score for hint purchase', {
+				currentScore: currentGame.totalScore,
+				requiredCost: cost
+			}, 'GameStore');
+			return false;
+		}
+		
+		try {
+			// Deduct the cost from total score
+			currentGame.totalScore = Math.max(0, currentGame.totalScore - cost);
+			
+			// Update the state
+			set({ currentGame: { ...currentGame } });
+			
+			// Save the game
+			await get().saveGame();
+			
+			logger.info('Hint purchased successfully', {
+				cost,
+				remainingScore: currentGame.totalScore
+			}, 'GameStore');
+			
+			return true;
+		} catch (error) {
+			logger.error('Failed to purchase hint', error, 'GameStore');
+			return false;
 		}
 	}
 }));

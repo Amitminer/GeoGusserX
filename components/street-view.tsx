@@ -14,9 +14,10 @@ import { StreetViewControls } from '@/components/street-view-controls';
 interface StreetViewProps {
 	location: StreetViewLocation;
 	onLocationChange?: (location: StreetViewLocation) => void;
+	onCountryInfoChange?: (countryInfo: GeocodeResult | null) => void;
 }
 
-export function StreetView({ location, onLocationChange }: StreetViewProps) {
+export function StreetView({ location, onLocationChange, onCountryInfoChange }: StreetViewProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const panoramaRef = useRef<google.maps.StreetViewPanorama | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
@@ -89,19 +90,24 @@ export function StreetView({ location, onLocationChange }: StreetViewProps) {
 						setStreetViewLoaded(true);
 						logger.info('Street View loaded successfully', { location }, 'StreetView');
 
-						// Get country information if enabled
-						if (showCountryName) {
-							try {
-								const geocodingService = mapsManager.getGeocodingService();
-								if (geocodingService) {
-									const result = await geocodingService.getCountryFromCoordinates(location.location);
-									if (result) {
-										setCountryInfo(result);
-										logger.info('Country information retrieved', { country: result.country }, 'StreetView');
+						// Get country information (for display and AI hints)
+						try {
+							const geocodingService = mapsManager.getGeocodingService();
+							if (geocodingService) {
+								const result = await geocodingService.getCountryFromCoordinates(location.location);
+								if (result) {
+									setCountryInfo(result);
+									if (onCountryInfoChange) {
+										onCountryInfoChange(result);
 									}
+									logger.info('Country information retrieved', { country: result.country }, 'StreetView');
 								}
-							} catch (error) {
-								logger.error('Failed to get country information', error, 'StreetView');
+							}
+						} catch (error) {
+							logger.error('Failed to get country information', error, 'StreetView');
+							// Still call the callback with null to indicate failure
+							if (onCountryInfoChange) {
+								onCountryInfoChange(null);
 							}
 						}
 					} else {
@@ -127,8 +133,11 @@ export function StreetView({ location, onLocationChange }: StreetViewProps) {
 			}
 			setStreetViewLoaded(false);
 			setCountryInfo(null);
+			if (onCountryInfoChange) {
+				onCountryInfoChange(null);
+			}
 		};
-	}, [location, onLocationChange, setStreetViewLoaded, showCountryName]);
+	}, [location, onLocationChange, onCountryInfoChange, setStreetViewLoaded, showCountryName]);
 
 	if (error) {
 		return (

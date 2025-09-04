@@ -6,12 +6,16 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { formatScore } from '@/lib/utils';
 import { Trophy, MapPin, Clock, Home, Zap } from 'lucide-react';
+import { HintsDialog } from '@/components/hints-dialog';
+import type { GeocodeResult } from '@/lib/maps/geocoding';
 
 interface GameHeaderProps {
 	onEndGame?: () => void;
+	currentLocation?: { lat: number; lng: number } | null;
+	countryInfo?: GeocodeResult | null;
 }
 
-export function GameHeader({ onEndGame }: GameHeaderProps) {
+export function GameHeader({ onEndGame, currentLocation, countryInfo }: GameHeaderProps) {
 	const { currentGame } = useGameStore();
 
 	if (!currentGame) return null;
@@ -97,6 +101,15 @@ export function GameHeader({ onEndGame }: GameHeaderProps) {
 							{formatScore(currentGame.totalScore)}
 						</span>
 					</motion.div>
+
+					{/* AI Hints Button */}
+					{currentLocation && (
+						<HintsDialog 
+							location={currentLocation} 
+							countryInfo={countryInfo}
+							disabled={false}
+						/>
+					)}
 
 					{/* End Game Button */}
 					{onEndGame && (
