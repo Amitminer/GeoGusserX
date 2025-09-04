@@ -51,3 +51,18 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Python virtual environments and cache
+/scripts/.venv/
+/scripts/__pycache__/
+/scripts/*.pyc
+/scripts/.python-version
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.ropeproject
+uv.lock
+regions_generated.json

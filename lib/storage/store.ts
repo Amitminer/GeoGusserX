@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { GameState, GameRound, GameMode, Location, GuessResult, ToastMessage, CountrySettings } from '@/lib/types';
+import { GameState, GameRound, GameMode, Location, GuessResult, ToastMessage, CountrySettings, UserGameSettings } from '@/lib/types';
 import { calculateDistance, calculateScore } from '@/lib/utils';
 import { storageManager } from '.';
 import { logger } from '@/lib/logger';
@@ -18,6 +18,7 @@ interface GameStore {
 
 	// Settings
 	countrySettings: CountrySettings;
+	gameSettings: UserGameSettings;
 
 	// Toast System
 	toasts: ToastMessage[];
@@ -51,6 +52,8 @@ interface GameStore {
 	// Settings Actions
 	updateCountrySettings: (settings: CountrySettings) => Promise<void>;
 	loadCountrySettings: () => Promise<void>;
+	updateGameSettings: (settings: UserGameSettings) => Promise<void>;
+	loadGameSettings: () => Promise<void>;
 
 	// Hint Actions
 	purchaseHint: (cost: number) => Promise<boolean>;
@@ -68,6 +71,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	countrySettings: {
 		isRandomCountry: true,
 		targetCountry: null
+	},
+	gameSettings: {
+		showCountryName: false, // Default to false as requested
+		preferredGameMode: '4-rounds' // Default to Quick Game for new users
 	},
 	toasts: [],
 
@@ -544,6 +551,28 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		}
 	},
 
+	updateGameSettings: async (settings: UserGameSettings) => {
+		try {
+			await storageManager.setSetting('gameSettings', settings);
+			set({ gameSettings: settings });
+			logger.info('Game settings updated', settings, 'GameStore');
+		} catch (error) {
+			logger.error('Failed to update game settings', error, 'GameStore');
+		}
+	},
+
+	loadGameSettings: async () => {
+		try {
+			const settings = await storageManager.getSetting<UserGameSettings>('gameSettings');
+			if (settings) {
+				set({ gameSettings: settings });
+				logger.info('Game settings loaded', settings, 'GameStore');
+			}
+		} catch (error) {
+			logger.error('Failed to load game settings', error, 'GameStore');
+		}
+	},
+
 	// Hint Actions
 	purchaseHint: async (cost: number): Promise<boolean> => {
 		const { currentGame } = get();
@@ -587,6 +616,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 // Load settings on store creation
 if (typeof window !== 'undefined') {
 	storageManager.initialize().then(() => {
-		useGameStore.getState().loadCountrySettings();
+		const store = useGameStore.getState();
+		store.loadCountrySettings();
+		store.loadGameSettings();
 	});
 }

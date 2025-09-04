@@ -3,13 +3,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { mapsManager } from '@/lib/maps';
-import { useGameStore } from '@/lib/storage/store';
-import { StreetViewLocation } from '@/lib/types';
 import { logger } from '@/lib/logger';
-import { shouldShowCountryName } from '@/lib/utils';
-import { Loader2, MapPin } from 'lucide-react';
+import { StreetViewLocation } from '@/lib/types';
 import type { GeocodeResult } from '@/lib/maps/geocoding';
 import { StreetViewControls } from '@/components/street-view-controls';
+import { useGameStore } from '@/lib/storage/store';
+import { Loader2, MapPin } from 'lucide-react';
 
 interface StreetViewProps {
 	location: StreetViewLocation;
@@ -23,10 +22,7 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange }: 
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [countryInfo, setCountryInfo] = useState<GeocodeResult | null>(null);
-	const [showCountryName] = useState(() => shouldShowCountryName());
-	const [showControls] = useState(true);
-
-	const { setStreetViewLoaded } = useGameStore();
+	const { setStreetViewLoaded, gameSettings } = useGameStore();
 
 	useEffect(() => {
 		const initializeStreetView = async () => {
@@ -137,7 +133,7 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange }: 
 				onCountryInfoChange(null);
 			}
 		};
-	}, [location, onLocationChange, onCountryInfoChange, setStreetViewLoaded, showCountryName]);
+	}, [location, onLocationChange, onCountryInfoChange, setStreetViewLoaded, gameSettings.showCountryName]);
 
 	if (error) {
 		return (
@@ -183,7 +179,7 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange }: 
 			{!isLoading && !error && (
 				<StreetViewControls 
 					panorama={panoramaRef.current}
-					showControls={showControls}
+					showControls={true}
 				/>
 			)}
 
@@ -200,7 +196,7 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange }: 
 			)}
 
 			{/* Country Name Overlay */}
-			{!isLoading && !error && showCountryName && countryInfo && (
+			{!isLoading && !error && gameSettings.showCountryName && countryInfo && (
 				<motion.div
 					initial={{ opacity: 0, y: -20 }}
 					animate={{ opacity: 1, y: 0 }}

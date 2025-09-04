@@ -146,8 +146,10 @@ export function Game() {
 				return;
 			}
 
+			let timerStarted = false;
 			try {
 				logger.startTimer('round-location-generation');
+				timerStarted = true;
 				logger.info('Generating new Street View location', {
 					roundIndex: currentGame.currentRoundIndex
 				}, 'Game');
@@ -167,7 +169,9 @@ export function Game() {
 				});
 
 			} catch (error) {
-				logger.endTimer('round-location-generation');
+				if (timerStarted) {
+					logger.endTimer('round-location-generation');
+				}
 				logger.error('Failed to generate Street View location', error, 'Game');
 				setError('Failed to load a new location. Please try again.');
 			}

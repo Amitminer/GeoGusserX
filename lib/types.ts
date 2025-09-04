@@ -26,7 +26,7 @@ export interface GameState {
 
 export type GameMode = '4-rounds' | '5-rounds' | '8-rounds' | 'infinite';
 
-export interface GameSettings {
+export interface GameConfig {
 	mode: GameMode;
 	timeLimit?: number;
 	difficulty?: 'easy' | 'medium' | 'hard';
@@ -71,6 +71,12 @@ export interface CountrySettings {
 	targetCountry: string | null;
 }
 
+export interface UserGameSettings {
+	showCountryName: boolean;
+	preferredGameMode: GameMode;
+}
+
 export interface UserSettings {
 	countrySettings: CountrySettings;
+	gameSettings: UserGameSettings;
 }

@@ -171,10 +171,3 @@ export function formatDistance(distance: number): string {
 export function formatScore(score: number): string {
   return score.toLocaleString();
 }
-
-/**
- * Check if country name should be shown in street view
- */
-export function shouldShowCountryName(): boolean {
-  return process.env.NEXT_PUBLIC_SHOW_COUNTRY_NAME === 'true';
-}

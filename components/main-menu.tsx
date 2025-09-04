@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CountrySelection } from '@/components/country-selection';
 import { GameMode, CountrySettings } from '@/lib/types';
+import { useGameStore } from '@/lib/storage/store';
 import { logger } from '@/lib/logger';
-import { MapPin, Play, Trophy, Settings, Info, Infinity, Activity, Globe, Heart } from 'lucide-react';
+import { MapPin, Play, Trophy, Settings, Info, Infinity, Activity, Globe, Heart, Eye, EyeOff } from 'lucide-react';
 import { SiGithub, SiNextdotjs, SiTypescript } from 'react-icons/si';
 
 interface MainMenuProps {
@@ -73,13 +74,23 @@ const menuButtons = [
 ] as const;
 
 export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout, countrySettings, onCountrySettingsChange }: MainMenuProps) {
-	const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
+	const { gameSettings, updateGameSettings } = useGameStore();
+	const [selectedMode, setSelectedMode] = useState<GameMode | null>(() => gameSettings.preferredGameMode);
+
+	// Update selected mode when game settings change (e.g., when loaded from storage)
+	useEffect(() => {
+		if (gameSettings.preferredGameMode && selectedMode !== gameSettings.preferredGameMode) {
+			setSelectedMode(gameSettings.preferredGameMode);
+		}
+	}, [gameSettings.preferredGameMode, selectedMode]);
 
 	const handleStartGame = useCallback(() => {
 		if (selectedMode) {
+			// Save the selected mode as preferred for next time
+			updateGameSettings({ ...gameSettings, preferredGameMode: selectedMode });
 			onStartGame(selectedMode);
 		}
-	}, [selectedMode, onStartGame]);
+	}, [selectedMode, onStartGame, gameSettings, updateGameSettings]);
 
 	const handleShowPerformance = useCallback(() => {
 		console.log('=== Performance Summary ===');
@@ -167,7 +178,11 @@ export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout
 										? 'ring-2 ring-blue-500 shadow-lg scale-105'
 										: ''
 										}`}
-									onClick={() => setSelectedMode(mode.mode)}
+									onClick={() => {
+										setSelectedMode(mode.mode);
+										// Update preferred mode immediately when selected
+										updateGameSettings({ ...gameSettings, preferredGameMode: mode.mode });
+									}}
 								>
 									<CardHeader>
 										<CardTitle className="flex items-center gap-3">
@@ -193,25 +208,91 @@ export function MainMenu({ onStartGame, onShowStats, onShowSettings, onShowAbout
 					</div>
 				</motion.div>
 
-				{/* Country Selection */}
+				{/* Settings Section */}
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ delay: 0.6 }}
-					className="max-w-md mx-auto mb-6 sm:mb-8"
+					className="max-w-md mx-auto mb-6 sm:mb-8 space-y-6"
 				>
-					<div className="text-center mb-4">
-						<h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
-							Location Preference
-						</h3>
-						<p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-							Choose your exploration area
-						</p>
+					{/* Country Selection */}
+					<div>
+						<div className="text-center mb-4">
+							<h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+								Location Preference
+							</h3>
+							<p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+								Choose your exploration area
+							</p>
+						</div>
+						<CountrySelection
+							countrySettings={countrySettings}
+							onSettingsChange={onCountrySettingsChange}
+						/>
 					</div>
-					<CountrySelection
-						countrySettings={countrySettings}
-						onSettingsChange={onCountrySettingsChange}
-					/>
+
+					{/* Game Settings */}
+					<div>
+						<div className="text-center mb-4">
+							<h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+								Game Settings
+							</h3>
+							<p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+								Customize your gameplay experience
+							</p>
+						</div>
+
+						{/* Show Country Name Toggle Card */}
+						<Card
+							className="w-full max-w-sm mx-auto cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-blue-200"
+							onClick={() => updateGameSettings({ ...gameSettings, showCountryName: !gameSettings.showCountryName })}
+						>
+							<CardContent className="p-4">
+								<div className="flex items-center justify-between">
+									<div className="flex items-center gap-3">
+										{gameSettings.showCountryName ? (
+											<Eye className="w-4 h-4 text-green-500" />
+										) : (
+											<EyeOff className="w-4 h-4 text-gray-500" />
+										)}
+										<div className="text-left">
+											<p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+												{gameSettings.showCountryName ? "Country Names Visible" : "Country Names Hidden"}
+											</p>
+											<p className="text-xs text-gray-500 dark:text-gray-400">
+												{gameSettings.showCountryName
+													? "Easier mode - country names shown"
+													: "Challenge mode - no country hints"
+												}
+											</p>
+										</div>
+									</div>
+									{/* Custom Toggle Button */}
+									<div
+										className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${gameSettings.showCountryName
+											? 'bg-green-600 shadow-lg'
+											: 'bg-gray-300 dark:bg-gray-600'
+											}`}
+										onClick={(e) => {
+											e.stopPropagation();
+											updateGameSettings({ ...gameSettings, showCountryName: !gameSettings.showCountryName });
+										}}
+									>
+										<span
+											className={`h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform duration-300 ease-in-out flex items-center justify-center ${gameSettings.showCountryName ? 'translate-x-6' : 'translate-x-1'
+												}`}
+										>
+											{gameSettings.showCountryName ? (
+												<Eye className="w-3 h-3 text-green-600" />
+											) : (
+												<EyeOff className="w-3 h-3 text-gray-500" />
+											)}
+										</span>
+									</div>
+								</div>
+							</CardContent>
+						</Card>
+					</div>
 				</motion.div>
 
 				{/* Start Game Button */}

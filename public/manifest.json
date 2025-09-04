@@ -4,6 +4,7 @@
   "description": "Test your geography knowledge by guessing locations from Street View images around the world!",
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#3b82f6",
 
