@@ -11,7 +11,8 @@
 		"test:algorithm": "bun scripts/algorithm-benchmark.mjs",
 		"test:algorithm:full": "bun scripts/algorithm-benchmark.mjs full",
 		"test:algorithm:countries": "bun scripts/algorithm-benchmark.mjs countries",
-		"test:algorithm:scale": "bun scripts/algorithm-benchmark.mjs scale"
+		"test:algorithm:scale": "bun scripts/algorithm-benchmark.mjs scale",
+		"test:algorithm:custom": "bun scripts/algorithm-benchmark.mjs quick --iter"
 	},
 	"dependencies": {
 		"@eslint/eslintrc": "^3.3.1",
@@ -33,6 +34,7 @@
 		"lucide-react": "^0.542.0",
 		"next": "15.5.2",
 		"react": "19.1.0",
+		"react-device-detect": "^2.2.3",
 		"react-dom": "19.1.0",
 		"react-icons": "^5.5.0",
 		"sharp": "^0.34.3",

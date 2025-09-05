@@ -7,9 +7,18 @@
 ### Quick Commands
 ```bash
 npm run test:algorithm          # Quick benchmark (1k iterations)
-npm run test:algorithm:full     # Full benchmark (10k iterations)
-npm run test:algorithm:countries # Country lookup tests
+npm run test:algorithm:full     # Full benchmark (10k iterations) 
+npm run test:algorithm:countries # Country lookup tests (1k per country)
 npm run test:algorithm:scale    # Scalability (100k iterations)
+```
+
+### Custom Iterations
+```bash
+# Custom iteration count with --iter flag
+npm run test:algorithm:custom 50000     # Quick test with 50k iterations
+bun scripts/algorithm-benchmark.mjs full --iter 25000   # Full test with 25k
+bun scripts/algorithm-benchmark.mjs countries --iter 5000 # 5k per country
+bun scripts/algorithm-benchmark.mjs scale --iter 1000000  # 1M iterations
 ```
 
 ### Browser Region Lookup Tests
@@ -37,7 +46,8 @@ python generate_regions.py
 
 | File | Purpose |
 |------|----------|
-| `algorithm-benchmark.mjs` | Bun algorithm benchmark runner (fast) |
+| `algorithm-benchmark.mjs` | Bun algorithm benchmark runner (ultra-fast) |
+| `performance-functions.mjs` | Console-based performance test functions |
 | `region-lookup-test.ts` | Browser console region lookup tests |
 | `generate_regions.py` | Python script to generate regions.json |
 | `requirements.txt` | Python dependencies |

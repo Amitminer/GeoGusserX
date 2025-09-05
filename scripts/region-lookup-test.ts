@@ -3,7 +3,7 @@
  * Copy and paste this into your browser console when running the app
  */
 
-import { runPerformanceTest, quickPerformanceTest, testCountryLookups } from '../lib/locations/performance-test';
+import { runPerformanceTest, quickPerformanceTest, testCountryLookups } from './performance-functions.mjs';
 
 // Make functions available globally for browser console
 declare global {

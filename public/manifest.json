@@ -1,54 +1,24 @@
 {
-  "name": "GeoGusserX - Geography Guessing Game",
-  "short_name": "GeoGusserX",
-  "description": "Test your geography knowledge by guessing locations from Street View images around the world!",
-  "start_url": "/",
-  "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#ffffff",
-  "theme_color": "#3b82f6",
-
-  "scope": "/",
-  "lang": "en",
-  "categories": [
-    "games",
-    "education",
-    "entertainment"
-  ],
-  "icons": [
-    {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Quick Game",
-      "short_name": "Quick",
-      "description": "Start a 4-round quick game",
-      "url": "/?mode=quick",
-      "icons": [
-        {
-          "src": "/icon.svg",
-          "sizes": "any",
-          "type": "image/svg+xml"
-        }
-      ]
-    },
-    {
-      "name": "Classic Game",
-      "short_name": "Classic",
-      "description": "Start a 5-round classic game",
-      "url": "/?mode=classic",
-      "icons": [
-        {
-          "src": "/icon.svg",
-          "sizes": "any",
-          "type": "image/svg+xml"
-        }
-      ]
-    }
-  ]
+	"name": "GeoGusserX - Geography Guessing Game",
+	"short_name": "GeoGusserX",
+	"description": "Test your geography knowledge by guessing locations from Street View images around the world!",
+	"start_url": "/",
+	"display": "standalone",
+	"orientation": "portrait",
+	"background_color": "#ffffff",
+	"theme_color": "#3b82f6",
+	"scope": "/",
+	"lang": "en",
+	"categories": [
+		"games",
+		"entertainment"
+	],
+	"icons": [
+		{
+			"src": "/icon.svg",
+			"sizes": "any",
+			"type": "image/svg+xml",
+			"purpose": "any maskable"
+		}
+	]
 }

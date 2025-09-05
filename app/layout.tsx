@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastSystem } from "@/components/toast-provider";
+import { OrientationLock } from "@/components/orientation-lock";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -86,7 +87,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        {children}
+        <OrientationLock>
+          {children}
+        </OrientationLock>
         <ToastSystem />
       </body>
     </html>

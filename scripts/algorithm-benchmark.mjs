@@ -4,51 +4,82 @@
  */
 
 // Import the performance test functions
-import { runPerformanceTest, quickPerformanceTest, testCountryLookups } from '../lib/locations/performance-test.js';
-import { logger } from '../lib/logger/index.js';
+import { runPerformanceTest, quickPerformanceTest, testCountryLookups } from './performance-functions.mjs';
 
 async function main() {
-	const command = process.argv[2] || 'quick';
+	const args = process.argv.slice(2);
+	const command = args[0] || 'quick';
+	
+	// Parse --iter parameter
+	let customIterations = null;
+	const iterIndex = args.indexOf('--iter');
+	if (iterIndex !== -1 && args[iterIndex + 1]) {
+		customIterations = parseInt(args[iterIndex + 1]);
+		if (isNaN(customIterations) || customIterations <= 0) {
+			console.error('❌ Invalid iteration count. Must be a positive number.');
+			return;
+		}
+	}
 
-	logger.info('🧪 GeoGusserX Algorithm Benchmark Runner', { command }, 'AlgorithmBenchmark');
+	console.log('🧪 GeoGusserX Algorithm Benchmark Runner');
+	console.log(`Command: ${command}`);
+	if (customIterations) {
+		console.log(`Custom iterations: ${customIterations.toLocaleString()}`);
+	}
+	console.log();
 
 	try {
 		switch (command) {
-			case 'full':
-				logger.info('Running full algorithm benchmark...', { iterations: 10000 }, 'AlgorithmBenchmark');
-				runPerformanceTest(10000);
+			case 'full': {
+				const iterations = customIterations || 10000;
+				console.log(`Running full algorithm benchmark (${iterations.toLocaleString()} iterations)...`);
+				runPerformanceTest(iterations);
 				break;
+			}
 
-			case 'quick':
-				logger.info('Running quick algorithm benchmark...', { iterations: 1000 }, 'AlgorithmBenchmark');
-				quickPerformanceTest();
+			case 'quick': {
+				const iterations = customIterations || 1000;
+				console.log(`Running quick algorithm benchmark (${iterations.toLocaleString()} iterations)...`);
+				if (customIterations) {
+					runPerformanceTest(iterations);
+				} else {
+					quickPerformanceTest();
+				}
 				break;
+			}
 
-			case 'countries':
-				logger.info('Running country lookup benchmark...', undefined, 'AlgorithmBenchmark');
-				testCountryLookups();
+			case 'countries': {
+				const iterations = customIterations || 1000;
+				console.log(`Running country lookup benchmark (${iterations.toLocaleString()} iterations per country)...`);
+				testCountryLookups(iterations);
 				break;
+			}
 
-			case 'scale':
-				logger.info('Running scalability benchmark...', { iterations: 100000 }, 'AlgorithmBenchmark');
-				runPerformanceTest(100000);
+			case 'scale': {
+				const iterations = customIterations || 100000;
+				console.log(`Running scalability benchmark (${iterations.toLocaleString()} iterations)...`);
+				runPerformanceTest(iterations);
 				break;
+			}
 
 			default:
-				logger.info('Available commands:', {
-					commands: {
-						quick: 'Quick benchmark (1k iterations)',
-						full: 'Full benchmark (10k iterations)',
-						countries: 'Country lookup benchmark',
-						scale: 'Scalability benchmark (100k iterations)'
-					},
-					usage: 'bun scripts/algorithm-benchmark.mjs [command]'
-				}, 'AlgorithmBenchmark');
+				console.log('Available commands:');
+				console.log('  quick     - Quick benchmark (1k iterations)');
+				console.log('  full      - Full benchmark (10k iterations)');
+				console.log('  countries - Country lookup benchmark (1k per country)');
+				console.log('  scale     - Scalability benchmark (100k iterations)');
+				console.log('\nOptions:');
+				console.log('  --iter <number>  - Custom iteration count');
+				console.log('\nUsage:');
+				console.log('  bun scripts/algorithm-benchmark.mjs [command]');
+				console.log('  bun scripts/algorithm-benchmark.mjs quick --iter 5000');
+				console.log('  bun scripts/algorithm-benchmark.mjs scale --iter 1000000');
 				break;
 		}
 	} catch (error) {
-		logger.error('Error running algorithm benchmark', { error: error.message }, 'AlgorithmBenchmark');
-		logger.info('Make sure you have built the project first: npm run build', undefined, 'AlgorithmBenchmark');
+		console.error('❌ Error running algorithm benchmark:', error.message);
+		console.log('💡 Make sure you have built the project first: npm run build');
+		console.error('Full error:', error);
 	}
 }
 
