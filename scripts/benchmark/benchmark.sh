@@ -2,7 +2,45 @@
 
 # 🔥 GEOGUSSERX BENCHMARK SCRIPT 🔥
 # Merged enhanced + extreme benchmarks with figlet ASCII art
-# Usage: ./benchmark.sh [normal|hard|insane|nuclear|extreme|godmode]
+# Usage: ./benchmark.sh [normal|hard|insane|nuclear|extreme|godmode|--help|-h]
+
+# Find project root directory
+find_project_root() {
+    local current_dir="$(pwd)"
+    local search_dir="$current_dir"
+    
+    # Look for package.json to identify project root
+    while [ "$search_dir" != "/" ]; do
+        if [ -f "$search_dir/package.json" ] && grep -q "geogusserx\|GeoGusserX" "$search_dir/package.json" 2>/dev/null; then
+            echo "$search_dir"
+            return 0
+        fi
+        search_dir="$(dirname "$search_dir")"
+    done
+    
+    # If not found, check if we're already in project root
+    if [ -f "package.json" ] && grep -q "geogusserx\|GeoGusserX" "package.json" 2>/dev/null; then
+        echo "$(pwd)"
+        return 0
+    fi
+    
+    return 1
+}
+
+# Change to project root
+PROJECT_ROOT=$(find_project_root)
+if [ $? -ne 0 ] || [ -z "$PROJECT_ROOT" ]; then
+    echo "❌ ERROR: Could not find GeoGusserX project root directory."
+    echo "   Please run this script from within the GeoGusserX project."
+    exit 1
+fi
+
+cd "$PROJECT_ROOT" || {
+    echo "❌ ERROR: Could not change to project root: $PROJECT_ROOT"
+    exit 1
+}
+
+echo "✅ Working from project root: $PROJECT_ROOT"
 
 MODE=${1:-normal}
 LOG_FILE="scripts/benchmark/benchmark_logs_${MODE}.txt"
@@ -21,6 +59,119 @@ CYAN='\033[0;36m'
 WHITE='\033[1;37m'
 BOLD='\033[1m'
 NC='\033[0m' # No Color
+
+# Function to show comprehensive help
+show_help() {
+    echo -e "${CYAN}🔥 GeoGusserX Benchmark Script 🔥${NC}"
+    echo ""
+    echo -e "${BOLD}USAGE:${NC}"
+    echo "  ./scripts/benchmark/benchmark.sh [MODE] [OPTIONS]"
+    echo "  ./benchmark.sh [MODE] [OPTIONS]  # if symlinked to root"
+    echo ""
+    echo -e "${BOLD}MODES:${NC}"
+    echo -e "  ${GREEN}normal${NC}   - Standard benchmarks (1k-100k iterations)"
+    echo -e "             Quick tests for development and CI"
+    echo ""
+    echo -e "  ${YELLOW}hard${NC}     - Intensive benchmarks (up to 500k iterations)"
+    echo -e "             More thorough performance testing"
+    echo ""
+    echo -e "  ${PURPLE}insane${NC}   - CPU stress tests (up to 2.5M iterations)"
+    echo -e "             Heavy load testing for performance analysis"
+    echo ""
+    echo -e "  ${RED}nuclear${NC}  - System torture tests (up to 20M iterations)"
+    echo -e "             Extreme stress testing for stability"
+    echo ""
+    echo -e "  ${RED}extreme${NC}  - Ultimate stress tests (up to 25M iterations)"
+    echo -e "             Maximum performance and stability testing"
+    echo ""
+    echo -e "  ${WHITE}${BOLD}godmode${NC}  - MAXIMUM DESTRUCTION (50M iterations)"
+    echo -e "             ⚠️  WARNING: Will push your system to absolute limits!"
+    echo ""
+    echo -e "${BOLD}OPTIONS:${NC}"
+    echo -e "  ${CYAN}--help, -h${NC}    Show this help message"
+    echo ""
+    echo -e "${BOLD}EXAMPLES:${NC}"
+    echo "  ./scripts/benchmark/benchmark.sh normal     # Run standard tests"
+    echo "  ./scripts/benchmark/benchmark.sh hard       # Run intensive tests"
+    echo "  ./scripts/benchmark/benchmark.sh --help     # Show this help"
+    echo ""
+    echo -e "${BOLD}SYSTEM REQUIREMENTS:${NC}"
+    echo -e "  ${CYAN}•${NC} Node.js 20+ with pnpm or bun"
+    echo -e "  ${CYAN}•${NC} At least 4GB RAM (8GB+ recommended for extreme modes)"
+    echo -e "  ${CYAN}•${NC} Good CPU cooling (especially for nuclear/extreme/godmode)"
+    echo -e "  ${CYAN}•${NC} Sufficient disk space for log files"
+    echo ""
+    echo -e "${BOLD}OUTPUT:${NC}"
+    echo -e "  Results are saved to: ${YELLOW}scripts/benchmark/benchmark_logs_[MODE].txt${NC}"
+    echo -e "  Real-time progress is shown in the terminal"
+    echo ""
+    echo -e "${BOLD}NOTES:${NC}"
+    echo -e "  ${YELLOW}•${NC} Press CTRL+C to cancel at any time"
+    echo -e "  ${YELLOW}•${NC} Each benchmark has a 1-hour timeout"
+    echo -e "  ${YELLOW}•${NC} System stats are collected before/after each test"
+    echo -e "  ${YELLOW}•${NC} Extreme modes include countdown warnings"
+    echo ""
+    echo -e "${RED}⚠️  WARNING:${NC} Extreme modes (nuclear/extreme/godmode) will heavily stress your system!"
+    echo -e "${RED}⚠️  WARNING:${NC} Ensure adequate cooling and power supply before running!"
+    echo ""
+}
+
+# Function to ensure benchmark directory exists and log file can be created
+ensure_log_directory() {
+    local log_dir=$(dirname "$LOG_FILE")
+    
+    # Create directory if it doesn't exist
+    if [ ! -d "$log_dir" ]; then
+        echo -e "${YELLOW}📁 Creating benchmark directory: $log_dir${NC}"
+        if ! mkdir -p "$log_dir" 2>/dev/null; then
+            echo -e "${RED}❌ ERROR: Cannot create directory $log_dir${NC}"
+            echo -e "${RED}   Please check permissions and try again.${NC}"
+            exit 1
+        fi
+    fi
+    
+    # Test if we can write to the log file
+    if ! touch "$LOG_FILE" 2>/dev/null; then
+        echo -e "${RED}❌ ERROR: Cannot create log file $LOG_FILE${NC}"
+        echo -e "${RED}   Please check permissions and disk space.${NC}"
+        exit 1
+    fi
+    
+    echo -e "${GREEN}✅ Log file ready: $LOG_FILE${NC}"
+}
+
+# Function to validate system requirements
+validate_requirements() {
+    local missing_deps=()
+    
+    # Check for Node.js
+    if ! command -v node >/dev/null 2>&1; then
+        missing_deps+=("Node.js")
+    fi
+    
+    # Check for npm or pnpm or bun
+    if ! command -v npm >/dev/null 2>&1 && ! command -v pnpm >/dev/null 2>&1 && ! command -v bun >/dev/null 2>&1; then
+        missing_deps+=("npm/pnpm/bun")
+    fi
+    
+    # Check if package.json exists
+    if [ ! -f "package.json" ]; then
+        echo -e "${RED}❌ ERROR: package.json not found${NC}"
+        echo -e "${RED}   Please run this script from the project root directory.${NC}"
+        exit 1
+    fi
+    
+    if [ ${#missing_deps[@]} -gt 0 ]; then
+        echo -e "${RED}❌ ERROR: Missing required dependencies:${NC}"
+        for dep in "${missing_deps[@]}"; do
+            echo -e "${RED}   - $dep${NC}"
+        done
+        echo -e "${YELLOW}   Please install the missing dependencies and try again.${NC}"
+        exit 1
+    fi
+    
+    echo -e "${GREEN}✅ System requirements validated${NC}"
+}
 
 # Check if figlet is available
 if command -v figlet >/dev/null 2>&1; then
@@ -97,8 +248,9 @@ show_progress() {
     printf "] %d%% (%d/%d)${NC}" $percentage $current $total
 }
 
-# Clear the log file and add epic header
-cat > "$LOG_FILE" << EOF
+# Initialize log file with epic header
+init_log_file() {
+    if ! cat > "$LOG_FILE" << EOF
 🔥🔥🔥 GEOGUSSERX BENCHMARK RESULTS 🔥🔥🔥
 ═══════════════════════════════════════════════════════════════
 Generated on: $TIMESTAMP
@@ -109,6 +261,14 @@ Mode: $MODE
 ═══════════════════════════════════════════════════════════════
 
 EOF
+    then
+        echo -e "${RED}❌ ERROR: Failed to initialize log file $LOG_FILE${NC}"
+        echo -e "${RED}   Please check permissions and disk space.${NC}"
+        exit 1
+    fi
+    
+    echo -e "${GREEN}✅ Log file initialized successfully${NC}"
+}
 
 # Function to run command and log output with style
 run_and_log() {
@@ -176,12 +336,10 @@ show_mode_info() {
         "insane")
             show_title "INSANE MODE" "$PURPLE"
             echo -e "${PURPLE}🔥 Running CPU stress tests (up to 2.5M iterations)${NC}"
-            echo -e "${RED}⚠️  Warning: This may take 10-30 minutes!${NC}"
             ;;
         "nuclear")
             show_title "NUCLEAR MODE" "$RED"
             echo -e "${RED}☢️  Running system torture tests (up to 20M iterations)${NC}"
-            echo -e "${RED}⚠️  WARNING: This may take 30-60 minutes!${NC}"
             echo -e "${YELLOW}Press CTRL+C within 10 seconds to cancel...${NC}"
             for i in {10..1}; do
                 echo -ne "\r${YELLOW}Starting in $i seconds... ${NC}"
@@ -216,8 +374,19 @@ show_mode_info() {
             echo -e "${RED}${BOLD}🔥 MAY THE ODDS BE EVER IN YOUR FAVOR! 🔥${NC}"
             ;;
         *)
-            echo -e "${RED}Invalid mode: $MODE${NC}"
-            echo "Usage: $0 [normal|hard|insane|nuclear|extreme|godmode]"
+            echo -e "${RED}❌ ERROR: Invalid mode '$MODE'${NC}"
+            echo ""
+            echo -e "${BOLD}Valid modes are:${NC}"
+            echo -e "  ${GREEN}normal${NC}   - Standard benchmarks (1k-100k iterations)"
+            echo -e "  ${YELLOW}hard${NC}     - Intensive benchmarks (up to 500k iterations)"
+            echo -e "  ${PURPLE}insane${NC}   - CPU stress tests (up to 2.5M iterations)"
+            echo -e "  ${RED}nuclear${NC}  - System torture tests (up to 20M iterations)"
+            echo -e "  ${RED}extreme${NC}  - Ultimate stress tests (up to 25M iterations)"
+            echo -e "  ${WHITE}${BOLD}godmode${NC}  - MAXIMUM DESTRUCTION (50M iterations)"
+            echo ""
+            echo -e "${CYAN}Usage: $0 [MODE] [--help|-h]${NC}"
+            echo -e "${CYAN}Example: $0 normal${NC}"
+            echo -e "${CYAN}Help: $0 --help${NC}"
             exit 1
             ;;
     esac
@@ -300,8 +469,29 @@ Level 8: 40M iterations|bun scripts/algorithm-benchmark.mjs scale --iter 4000000
 GODMODE: 50M iterations|bun scripts/algorithm-benchmark.mjs scale --iter 50000000|👹|$WHITE
 "
 
+# Check for help flag after functions are defined
+if [[ "$1" == "--help" || "$1" == "-h" || "$1" == "help" ]]; then
+    show_help
+    exit 0
+fi
+
 # Main execution
 show_epic_header
+
+# Validate system requirements first
+echo -e "${CYAN}🔍 Validating system requirements...${NC}"
+validate_requirements
+echo ""
+
+# Ensure log directory exists and is writable
+echo -e "${CYAN}📁 Setting up logging...${NC}"
+ensure_log_directory
+echo ""
+
+# Initialize the log file
+init_log_file
+echo ""
+
 show_system_info
 show_mode_info
 
@@ -343,10 +533,8 @@ for benchmark in "${filtered_benchmarks[@]}"; do
 
     run_and_log "$description" "$command" "$emoji" "$color"
 
-    # Add a small delay between benchmarks to let the system breathe
+    # No cooldown needed - let's keep things moving!
     if [ $current_benchmark -lt $total_benchmarks ]; then
-        echo -e "${CYAN}💤 Cooling down for 3 seconds...${NC}"
-        sleep 3
         echo ""
     fi
 done
@@ -359,7 +547,13 @@ echo "Benchmark completed: $(date '+%Y-%m-%d %H:%M:%S')" >> "$LOG_FILE"
 echo "Total duration: $(($(date +%s) - $(date -d "$TIMESTAMP" +%s))) seconds" >> "$LOG_FILE"
 echo "Final memory usage: $(free -h | grep Mem | awk '{print $3 "/" $2}' 2>/dev/null || echo 'N/A')" >> "$LOG_FILE"
 echo "Final load average: $(uptime | awk -F'load average:' '{print $2}' 2>/dev/null || echo 'N/A')" >> "$LOG_FILE"
-echo "CPU temperature (if available): $(sensors 2>/dev/null | grep -i temp | head -1 || echo 'N/A')" >> "$LOG_FILE"
+# Safely get CPU temperature if available
+if command -v sensors >/dev/null 2>&1; then
+    cpu_temp=$(sensors 2>/dev/null | grep -i temp | head -1 || echo 'N/A')
+    echo "CPU temperature (if available): $cpu_temp" >> "$LOG_FILE"
+else
+    echo "CPU temperature: Not available (sensors command not found)" >> "$LOG_FILE"
+fi
 echo "═══════════════════════════════════════════════════════════════" >> "$LOG_FILE"
 
 echo ""
