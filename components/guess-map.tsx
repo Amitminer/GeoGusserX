@@ -80,7 +80,7 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 	const [guessLocation, setGuessLocation] = useState<Location | null>(null);
 	const [retryCount, setRetryCount] = useState(0);
 	const [isExpanding, setIsExpanding] = useState(false);
-	const [minimapState, setMinimapState] = useState<{ center: { lat: number; lng: number }, zoom: number } | null>(null);
+	const minimapStateRef = useRef<{ center: { lat: number; lng: number }, zoom: number } | null>(null);
 
 	const { setMapLoaded } = useGameStore();
 
@@ -190,8 +190,8 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 				}
 
 				// Create map with initial center and zoom
-				const initialCenter = minimapState?.center || { lat: 20, lng: 0 };
-				const initialZoom = minimapState?.zoom || 2;
+				const initialCenter = minimapStateRef.current?.center || { lat: 20, lng: 0 };
+				const initialZoom = minimapStateRef.current?.zoom || 2;
 
 				if (containerRef.current) {
 					containerRef.current.innerHTML = '';
@@ -436,7 +436,7 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 	}, [mapSize, setMapLoaded]);
 
 	const handleMapStateChange = useCallback((center: { lat: number; lng: number }, zoom: number) => {
-		setMinimapState({ center, zoom });
+		minimapStateRef.current = { center, zoom };
 		dispatch({ type: 'SET_ZOOM', payload: zoom });
 	}, []);
 
