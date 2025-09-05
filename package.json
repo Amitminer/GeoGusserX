@@ -1,6 +1,6 @@
 {
 	"name": "geogusserx",
-	"version": "0.1.3",
+	"version": "0.1.4",
 	"private": true,
 	"scripts": {
 		"dev": "next dev",
@@ -8,10 +8,10 @@
 		"start": "next start",
 		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
-		"test:algorithm": "node scripts/algorithm-benchmark.js",
-		"test:algorithm:full": "node scripts/algorithm-benchmark.js full",
-		"test:algorithm:countries": "node scripts/algorithm-benchmark.js countries",
-		"test:algorithm:scale": "node scripts/algorithm-benchmark.js scale"
+		"test:algorithm": "bun scripts/algorithm-benchmark.mjs",
+		"test:algorithm:full": "bun scripts/algorithm-benchmark.mjs full",
+		"test:algorithm:countries": "bun scripts/algorithm-benchmark.mjs countries",
+		"test:algorithm:scale": "bun scripts/algorithm-benchmark.mjs scale"
 	},
 	"dependencies": {
 		"@eslint/eslintrc": "^3.3.1",
@@ -36,7 +36,6 @@
 		"react-dom": "19.1.0",
 		"react-icons": "^5.5.0",
 		"sharp": "^0.34.3",
-		"simple-statistics": "^7.8.8",
 		"tailwind-merge": "^3.3.1",
 		"tailwindcss-animate": "^1.0.7",
 		"zustand": "^5.0.8"
