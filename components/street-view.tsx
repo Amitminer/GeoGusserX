@@ -225,13 +225,13 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange }: 
 				</motion.div>
 			)}
 
-			{/* Country Name Overlay */}
+			{/* Country Name Overlay - Fixed Position */}
 			{!isLoading && !error && gameSettings.showCountryName && countryInfo && (
 				<motion.div
 					initial={{ opacity: 0, y: -20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ delay: 1 }}
-					className="absolute top-4 left-4 bg-blue-600/90 text-white px-4 py-2 rounded-lg shadow-lg backdrop-blur-sm z-50"
+					className="fixed top-4 left-4 bg-blue-600/90 text-white px-4 py-2 rounded-lg shadow-lg backdrop-blur-sm z-50"
 				>
 					<div className="flex items-center gap-2">
 						<MapPin className="w-4 h-4" />
