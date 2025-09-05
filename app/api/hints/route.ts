@@ -67,11 +67,11 @@ function validateRequest(body: unknown): body is SingleHintRequest {
 	}
 	// Validate roundNumber and hintNumber are finite integers within reasonable bounds
 	if (!Number.isFinite(obj.roundNumber) || !Number.isInteger(obj.roundNumber) ||
-		obj.roundNumber < 0 || obj.roundNumber > MAX_ROUND_NUMBER) {
+		obj.roundNumber < 1 || obj.roundNumber > MAX_ROUND_NUMBER) {
 		return false;
 	}
 	if (!Number.isFinite(obj.hintNumber) || !Number.isInteger(obj.hintNumber) ||
-		obj.hintNumber < 0 || obj.hintNumber > MAX_HINT_NUMBER) {
+		obj.hintNumber < 1 || obj.hintNumber > MAX_HINT_NUMBER) {
 		return false;
 	}
 	// Validate gameMode is a non-empty string of reasonable length
@@ -356,9 +356,11 @@ function redactCountryTerms(
 	resp: SingleHintResponse,
 	info: { country: string; countryCode: string }
 ): SingleHintResponse {
+	// Escape user-provided terms to prevent RegExp injection and apply global replacement
+	const esc = (s: string) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
 	const patterns = [
-		new RegExp(`\\b${info.country.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, 'i'),
-		new RegExp(`\\b${info.countryCode}\\b`, 'i')
+		new RegExp(`\\b${esc(info.country)}\\b`, 'ig'),
+		new RegExp(`\\b${esc(info.countryCode)}\\b`, 'ig')
 	];
 	let hint = resp.hint;
 	for (const re of patterns) {
