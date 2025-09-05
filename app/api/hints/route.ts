@@ -176,9 +176,6 @@ function getDifficultyGuidance(hintNumber: number): string {
 
 // Parse AI response with improved error handling
 function parseSingleHintResponse(text: string, hintNumber: number): SingleHintResponse {
-	// Log the raw response for debugging
-	logger.info('Raw AI response received', { text: text.substring(0, 500) }, 'HintsAPI');
-
 	try {
 		// Try multiple JSON extraction patterns
 		const jsonPatterns = [
@@ -195,12 +192,6 @@ function parseSingleHintResponse(text: string, hintNumber: number): SingleHintRe
 					const parsed = JSON.parse(jsonText);
 
 					if (parsed.hint && typeof parsed.hint === 'string') {
-						logger.info('Successfully parsed JSON response', { 
-							hint: parsed.hint.substring(0, 100),
-							category: parsed.category,
-							difficulty: parsed.difficulty 
-						}, 'HintsAPI');
-
 						return {
 							hint: parsed.hint.trim(),
 							confidence: Math.max(0.1, Math.min(1.0, parsed.confidence || 0.7)),
@@ -208,11 +199,7 @@ function parseSingleHintResponse(text: string, hintNumber: number): SingleHintRe
 							difficulty: validateDifficulty(parsed.difficulty) || getDefaultDifficulty(hintNumber)
 						};
 					}
-				} catch (parseError) {
-					logger.warn('Failed to parse JSON match', { 
-						jsonText: jsonMatch[0].substring(0, 200),
-						error: parseError 
-					}, 'HintsAPI');
+				} catch {
 					continue;
 				}
 			}
@@ -220,7 +207,7 @@ function parseSingleHintResponse(text: string, hintNumber: number): SingleHintRe
 
 		// Fallback: try to extract hint from plain text
 		const lines = text.split('\n').filter(line => line.trim().length > 0);
-		
+
 		// Look for lines that could be hints
 		const potentialHints = lines.filter(line => {
 			const trimmed = line.trim();
@@ -241,8 +228,6 @@ function parseSingleHintResponse(text: string, hintNumber: number): SingleHintRe
 
 		if (potentialHints.length > 0) {
 			const hint = potentialHints[0].trim();
-			logger.info('Using fallback text parsing', { hint: hint.substring(0, 100) }, 'HintsAPI');
-			
 			return {
 				hint,
 				confidence: 0.6,
@@ -251,18 +236,9 @@ function parseSingleHintResponse(text: string, hintNumber: number): SingleHintRe
 			};
 		}
 
-		// If all else fails, log the response and return a fallback
-		logger.warn('Could not parse AI response, using fallback', { 
-			responseLength: text.length,
-			firstChars: text.substring(0, 200) 
-		}, 'HintsAPI');
-
 		throw new Error('Could not parse valid hint from response');
 	} catch (error) {
-		logger.error('Failed to parse Gemini single hint response', { 
-			error,
-			responseText: text.substring(0, 500) 
-		}, 'HintsAPI');
+		logger.error('Failed to parse AI response', error, 'HintsAPI');
 		throw error;
 	}
 }
@@ -370,7 +346,7 @@ export async function POST(request: NextRequest) {
 		// Initialize Gemini AI
 		const genAI = new GoogleGenerativeAI(apiKey);
 		const model = genAI.getGenerativeModel({
-			model: 'gemini-1.5-flash',
+			model: 'gemini-2.5-flash',
 			generationConfig: {
 				temperature: 0.9,
 				topP: 0.95,
@@ -381,14 +357,6 @@ export async function POST(request: NextRequest) {
 
 		// Build prompt and generate hint
 		const prompt = buildSingleHintPrompt(reqBody);
-
-		logger.info('Generating AI hint via API', {
-			location: reqBody.location,
-			roundNumber: reqBody.roundNumber,
-			hintNumber: reqBody.hintNumber,
-			country: reqBody.countryInfo.country,
-			clientIP
-		}, 'HintsAPI');
 
 		// Add timeout to prevent hanging requests
 		const timeoutPromise = new Promise<never>((_, reject) => {
@@ -409,23 +377,8 @@ export async function POST(request: NextRequest) {
 			parsedResponse = parseSingleHintResponse(text, reqBody.hintNumber);
 		} catch (parseError) {
 			// If parsing fails, return a fallback hint instead of throwing
-			logger.warn('AI response parsing failed, using fallback hint', {
-				parseError,
-				hintNumber: reqBody.hintNumber,
-				country: reqBody.countryInfo.country
-			}, 'HintsAPI');
-			
 			parsedResponse = getFallbackSingleHint(reqBody);
 		}
-
-		logger.info('AI hint generated successfully via API', {
-			hintNumber: reqBody.hintNumber,
-			category: parsedResponse.category,
-			difficulty: parsedResponse.difficulty,
-			confidence: parsedResponse.confidence,
-			country: reqBody.countryInfo.country,
-			clientIP
-		}, 'HintsAPI');
 
 		return NextResponse.json(parsedResponse);
 
@@ -453,10 +406,6 @@ export async function POST(request: NextRequest) {
 		if (body && validateRequest(body)) {
 			const reqBody = body as SingleHintRequest;
 			const fallbackHint = getFallbackSingleHint(reqBody);
-			logger.info('Returning fallback hint due to API error', {
-				hintNumber: reqBody.hintNumber,
-				error: errorMessage
-			}, 'HintsAPI');
 			return NextResponse.json(fallbackHint);
 		}
 
