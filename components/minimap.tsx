@@ -12,8 +12,8 @@ interface MiniMapProps {
 
 export function MiniMap({ onExpand, onHide, className, onMapStateChange }: MiniMapProps) {
 	const mapRef = useRef<HTMLDivElement>(null);
+	const mapInstanceRef = useRef<google.maps.Map | null>(null);
 	const [isMapLoaded, setIsMapLoaded] = useState(false);
-	const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
 
 	// Handle double-click to expand
 	const handleDoubleClick = (e: React.MouseEvent) => {
@@ -26,7 +26,13 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange }: MiniM
 		let map: google.maps.Map | null = null;
 
 		const initMiniMap = async () => {
-			if (!mapRef.current || mapInstance) return; // Don't reinitialize if map already exists
+			if (!mapRef.current) return;
+			
+			// Clean up existing map instance if any
+			if (mapInstanceRef.current) {
+				google.maps.event.clearInstanceListeners(mapInstanceRef.current);
+				mapInstanceRef.current = null;
+			}
 
 			try {
 				// Ensure Google Maps is loaded
@@ -76,7 +82,7 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange }: MiniM
 					});
 				}
 
-				setMapInstance(map);
+				mapInstanceRef.current = map;
 				setIsMapLoaded(true);
 			} catch (error) {
 				console.error('Failed to initialize minimap:', error);
@@ -90,8 +96,12 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange }: MiniM
 			if (map) {
 				google.maps.event.clearInstanceListeners(map);
 			}
+			if (mapInstanceRef.current) {
+				google.maps.event.clearInstanceListeners(mapInstanceRef.current);
+				mapInstanceRef.current = null;
+			}
 		};
-	}, [onMapStateChange, mapInstance]);
+	}, [onMapStateChange]);
 
 	return (
 		<div

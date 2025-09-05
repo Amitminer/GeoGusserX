@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Globe, Minimize2, Target, X, EyeOff } from 'lucide-react';
+import { Globe, Minimize2, Target, X, EyeOff, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -12,9 +12,10 @@ interface MapHeaderProps {
   disabled: boolean;
   hasGuessLocation: boolean;
   onSetMapSize: (size: MapSize) => void;
+  onReloadMap?: () => void;
 }
 
-export function MapHeader({ mapSize, disabled, hasGuessLocation, onSetMapSize }: MapHeaderProps) {
+export function MapHeader({ mapSize, disabled, hasGuessLocation, onSetMapSize, onReloadMap }: MapHeaderProps) {
   return (
     <div className="flex items-center justify-between px-3 py-1.5 md:py-2 border-b bg-gray-800/90 backdrop-blur-sm flex-shrink-0">
       <div className="flex items-center gap-1 md:gap-1.5">
@@ -47,6 +48,19 @@ export function MapHeader({ mapSize, disabled, hasGuessLocation, onSetMapSize }:
             'Click to guess'
           )}
         </Badge>
+
+        {/* Reload Map Button - Show in expanded/fullscreen modes */}
+        {(mapSize === 'expanded' || mapSize === 'fullscreen') && onReloadMap && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onReloadMap}
+            className="h-6 w-6 hover:bg-gray-700/50 transition-colors text-gray-300 hover:text-blue-300"
+            title="Reload map"
+          >
+            <RotateCcw className="h-3 w-3" />
+          </Button>
+        )}
 
         {/* Size Controls */}
         {mapSize !== 'fullscreen' && (

@@ -236,10 +236,22 @@ function parseSingleHintResponse(text: string, hintNumber: number): SingleHintRe
 			};
 		}
 
-		throw new Error('Could not parse valid hint from response');
+		// If we can't parse anything, return a basic fallback
+		return {
+			hint: "Look for distinctive language, architecture, or cultural markers visible in the Street View.",
+			confidence: 0.5,
+			category: 'general',
+			difficulty: getDefaultDifficulty(hintNumber)
+		};
 	} catch (error) {
 		logger.error('Failed to parse AI response', error, 'HintsAPI');
-		throw error;
+		// Return fallback instead of throwing
+		return {
+			hint: "Look for distinctive language, architecture, or cultural markers visible in the Street View.",
+			confidence: 0.5,
+			category: 'general',
+			difficulty: getDefaultDifficulty(hintNumber)
+		};
 	}
 }
 
@@ -247,7 +259,29 @@ function validateCategory(category: string): SingleHintResponse['category'] | nu
 	const validCategories: SingleHintResponse['category'][] = [
 		'geographical', 'cultural', 'architectural', 'environmental', 'general'
 	];
-	return validCategories.includes(category as SingleHintResponse['category']) ? category as SingleHintResponse['category'] : null;
+
+	// Map common AI responses to valid categories
+	const categoryMap: Record<string, SingleHintResponse['category']> = {
+		'language': 'cultural',
+		'linguistic': 'cultural',
+		'script': 'cultural',
+		'text': 'cultural',
+		'building': 'architectural',
+		'structure': 'architectural',
+		'infrastructure': 'architectural',
+		'vehicles': 'cultural',
+		'transportation': 'cultural',
+		'nature': 'environmental',
+		'climate': 'environmental',
+		'location': 'geographical',
+		'region': 'geographical'
+	};
+
+	if (validCategories.includes(category as SingleHintResponse['category'])) {
+		return category as SingleHintResponse['category'];
+	}
+
+	return categoryMap[category.toLowerCase()] || null;
 }
 
 function validateDifficulty(difficulty: string): SingleHintResponse['difficulty'] | null {
@@ -346,12 +380,12 @@ export async function POST(request: NextRequest) {
 		// Initialize Gemini AI
 		const genAI = new GoogleGenerativeAI(apiKey);
 		const model = genAI.getGenerativeModel({
-			model: 'gemini-2.5-flash',
+			model: 'gemini-2.0-flash',
 			generationConfig: {
-				temperature: 0.9,
-				topP: 0.95,
+				temperature: 0.7,
+				topP: 0.8,
 				topK: 40,
-				maxOutputTokens: 300,
+				maxOutputTokens: 1000,
 			},
 		});
 
@@ -371,14 +405,8 @@ export async function POST(request: NextRequest) {
 		const response = result.response;
 		const text = response.text();
 
-		// Try to parse the response, with fallback handling
-		let parsedResponse: SingleHintResponse;
-		try {
-			parsedResponse = parseSingleHintResponse(text, reqBody.hintNumber);
-		} catch (parseError) {
-			// If parsing fails, return a fallback hint instead of throwing
-			parsedResponse = getFallbackSingleHint(reqBody);
-		}
+		// Parse the response (now with built-in fallback handling)
+		const parsedResponse = parseSingleHintResponse(text, reqBody.hintNumber);
 
 		return NextResponse.json(parsedResponse);
 
