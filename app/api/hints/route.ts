@@ -16,6 +16,26 @@ const MAX_PREVIOUS_HINTS = 20; // Reasonable max for previous hints array
 const MAX_HINT_LENGTH = 1000; // Reasonable max length for individual hints
 const MAX_COUNTRY_INFO_LENGTH = 500; // Reasonable max length for country info strings
 
+// Timeout helper that properly cleans up timers
+function withTimeout<T>(p: Promise<T>, ms: number, message: string): Promise<T> {
+	return new Promise<T>((resolve, reject) => {
+		const timer = setTimeout(() => {
+			reject(new Error(message));
+		}, ms);
+
+		p.then(
+			(value) => {
+				clearTimeout(timer);
+				resolve(value);
+			},
+			(error) => {
+				clearTimeout(timer);
+				reject(error);
+			}
+		);
+	});
+}
+
 // Request validation
 function validateRequest(body: unknown): body is SingleHintRequest {
 	if (!body || typeof body !== 'object' || body === null) {
@@ -445,15 +465,12 @@ export async function POST(request: NextRequest) {
 		// Build prompt and generate hint
 		const prompt = buildSingleHintPrompt(reqBody);
 
-		// Add timeout to prevent hanging requests
-		const timeoutPromise = new Promise<never>((_, reject) => {
-			setTimeout(() => reject(new Error('AI request timeout after 30 seconds')), 30000);
-		});
-
-		const result = await Promise.race([
+		// Add timeout to prevent hanging requests with proper cleanup
+		const result = await withTimeout(
 			model.generateContent(prompt),
-			timeoutPromise
-		]);
+			30000,
+			'AI request timeout after 30 seconds'
+		);
 
 		const response = result.response;
 		const text = response.text();

@@ -27,7 +27,7 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange }: MiniM
 
 		const initMiniMap = async () => {
 			if (!mapRef.current) return;
-			
+
 			// Clean up existing map instance if any
 			if (mapInstanceRef.current) {
 				google.maps.event.clearInstanceListeners(mapInstanceRef.current);
@@ -111,7 +111,7 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange }: MiniM
 				{/* Header */}
 				<div className="flex items-center justify-between px-3 py-1.5 md:py-2 border-b bg-gray-800/90 backdrop-blur-sm flex-shrink-0">
 					<div className="flex items-center gap-1 md:gap-1.5">
-						<Globe className="h-3 w-3 md:h-4 md:w-4 text-blue-500" />
+						<Globe className="h-4 w-4 md:h-4 md:w-4 text-blue-500" />
 						<span className="text-[11px] md:text-xs font-medium text-gray-100">
 							Make your guess (zoomable)
 						</span>
