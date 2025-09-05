@@ -173,6 +173,12 @@ git push origin feature-name
 
 ---
 
+## 📚 **Documentation**
+
+* **[Algorithm.md](Algorithm.md)** - Detailed documentation of our location generation algorithm, including cryptographic randomness, distribution strategies, and geographic calculations
+
+---
+
 ## 📜 **License**
 
 MIT – Free to use, modify, and share.

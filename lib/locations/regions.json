@@ -3,7 +3,7 @@
 		{
 			"lat": 39.8283,
 			"lng": -98.5795,
-			"radius": 25,
+			"radius": 600,
 			"name": "United States",
 			"continent": "North America",
 			"type": "country"
@@ -43,7 +43,7 @@
 		{
 			"lat": 56.1304,
 			"lng": -106.3468,
-			"radius": 20,
+			"radius": 600,
 			"name": "Canada",
 			"continent": "North America",
 			"type": "country"
@@ -177,6 +177,14 @@
 			"type": "country"
 		},
 		{
+			"lat": 49.8153,
+			"lng": 6.1296,
+			"radius": 1,
+			"name": "Luxembourg",
+			"continent": "Europe",
+			"type": "country"
+		},
+		{
 			"lat": 46.8182,
 			"lng": 8.2275,
 			"radius": 3,
@@ -217,6 +225,30 @@
 			"type": "country"
 		},
 		{
+			"lat": 58.5953,
+			"lng": 25.0136,
+			"radius": 3,
+			"name": "Estonia",
+			"continent": "Europe",
+			"type": "country"
+		},
+		{
+			"lat": 56.8796,
+			"lng": 24.6032,
+			"radius": 3,
+			"name": "Latvia",
+			"continent": "Europe",
+			"type": "country"
+		},
+		{
+			"lat": 55.1694,
+			"lng": 23.8813,
+			"radius": 3,
+			"name": "Lithuania",
+			"continent": "Europe",
+			"type": "country"
+		},
+		{
 			"lat": 38.7223,
 			"lng": -9.1393,
 			"radius": 4,
@@ -233,10 +265,82 @@
 			"type": "country"
 		},
 		{
+			"lat": 35.1264,
+			"lng": 33.4299,
+			"radius": 2,
+			"name": "Cyprus",
+			"continent": "Europe",
+			"type": "country"
+		},
+		{
+			"lat": 35.9375,
+			"lng": 14.3754,
+			"radius": 1,
+			"name": "Malta",
+			"continent": "Europe",
+			"type": "country"
+		},
+		{
 			"lat": 45.9432,
 			"lng": 24.9668,
 			"radius": 6,
 			"name": "Romania",
+			"continent": "Europe",
+			"type": "country"
+		},
+		{
+			"lat": 64.9631,
+			"lng": -19.0208,
+			"radius": 8,
+			"name": "Iceland",
+			"continent": "Europe",
+			"type": "country"
+		},
+		{
+			"lat": 45.1000,
+			"lng": 15.2000,
+			"radius": 6,
+			"name": "Croatia",
+			"continent": "Europe",
+			"type": "country"
+		},
+		{
+			"lat": 47.1625,
+			"lng": 19.5033,
+			"radius": 5,
+			"name": "Hungary",
+			"continent": "Europe",
+			"type": "country"
+		},
+		{
+			"lat": 42.7339,
+			"lng": 25.4858,
+			"radius": 5,
+			"name": "Bulgaria",
+			"continent": "Europe",
+			"type": "country"
+		},
+		{
+			"lat": 44.0165,
+			"lng": 21.0059,
+			"radius": 5,
+			"name": "Serbia",
+			"continent": "Europe",
+			"type": "country"
+		},
+		{
+			"lat": 46.1512,
+			"lng": 14.9955,
+			"radius": 3,
+			"name": "Slovenia",
+			"continent": "Europe",
+			"type": "country"
+		},
+		{
+			"lat": 48.6690,
+			"lng": 19.6990,
+			"radius": 4,
+			"name": "Slovakia",
 			"continent": "Europe",
 			"type": "country"
 		},
@@ -297,12 +401,44 @@
 			"type": "region"
 		},
 		{
-			"lat": 35.8617,
-			"lng": 104.1954,
-			"radius": 25,
+			"lat": 35.0000,
+			"lng": 105.0000,
+			"radius": 500,
 			"name": "China",
 			"continent": "Asia",
 			"type": "country"
+		},
+		{
+			"lat": 39.9042,
+			"lng": 116.4074,
+			"radius": 100,
+			"name": "North China",
+			"continent": "Asia",
+			"type": "region"
+		},
+		{
+			"lat": 23.1291,
+			"lng": 113.2644,
+			"radius": 120,
+			"name": "South China",
+			"continent": "Asia",
+			"type": "region"
+		},
+		{
+			"lat": 30.2741,
+			"lng": 120.1551,
+			"radius": 150,
+			"name": "East China",
+			"continent": "Asia",
+			"type": "region"
+		},
+		{
+			"lat": 36.0611,
+			"lng": 103.8343,
+			"radius": 200,
+			"name": "West China",
+			"continent": "Asia",
+			"type": "region"
 		},
 		{
 			"lat": 35.9078,
@@ -313,12 +449,52 @@
 			"type": "country"
 		},
 		{
-			"lat": 20.5937,
-			"lng": 78.9629,
-			"radius": 20,
+			"lat": 23.5000,
+			"lng": 78.0000,
+			"radius": 400,
 			"name": "India",
 			"continent": "Asia",
 			"type": "country"
+		},
+		{
+			"lat": 28.6139,
+			"lng": 77.2090,
+			"radius": 150,
+			"name": "North India",
+			"continent": "Asia",
+			"type": "region"
+		},
+		{
+			"lat": 19.0760,
+			"lng": 72.8777,
+			"radius": 120,
+			"name": "West India",
+			"continent": "Asia",
+			"type": "region"
+		},
+		{
+			"lat": 12.9716,
+			"lng": 77.5946,
+			"radius": 150,
+			"name": "South India",
+			"continent": "Asia",
+			"type": "region"
+		},
+		{
+			"lat": 22.5726,
+			"lng": 88.3639,
+			"radius": 120,
+			"name": "East India",
+			"continent": "Asia",
+			"type": "region"
+		},
+		{
+			"lat": 21.1458,
+			"lng": 79.0882,
+			"radius": 100,
+			"name": "Central India",
+			"continent": "Asia",
+			"type": "region"
 		},
 		{
 			"lat": 13.7563,
@@ -403,7 +579,7 @@
 		{
 			"lat": -25.2744,
 			"lng": 133.7751,
-			"radius": 20,
+			"radius": 500,
 			"name": "Australia",
 			"continent": "Oceania",
 			"type": "country"
@@ -443,10 +619,50 @@
 		{
 			"lat": -14.2350,
 			"lng": -51.9253,
-			"radius": 20,
+			"radius": 600,
 			"name": "Brazil",
 			"continent": "South America",
 			"type": "country"
+		},
+		{
+			"lat": -23.5505,
+			"lng": -46.6333,
+			"radius": 150,
+			"name": "Southeast Brazil",
+			"continent": "South America",
+			"type": "region"
+		},
+		{
+			"lat": -22.9068,
+			"lng": -43.1729,
+			"radius": 120,
+			"name": "Rio de Janeiro Region",
+			"continent": "South America",
+			"type": "region"
+		},
+		{
+			"lat": -15.7942,
+			"lng": -47.8822,
+			"radius": 100,
+			"name": "Central Brazil",
+			"continent": "South America",
+			"type": "region"
+		},
+		{
+			"lat": -8.0476,
+			"lng": -34.8770,
+			"radius": 200,
+			"name": "Northeast Brazil",
+			"continent": "South America",
+			"type": "region"
+		},
+		{
+			"lat": -3.1190,
+			"lng": -60.0217,
+			"radius": 300,
+			"name": "Amazon Brazil",
+			"continent": "South America",
+			"type": "region"
 		},
 		{
 			"lat": -38.4161,
@@ -545,6 +761,46 @@
 			"type": "country"
 		},
 		{
+			"lat": 1.3733,
+			"lng": 32.2903,
+			"radius": 8,
+			"name": "Uganda",
+			"continent": "Africa",
+			"type": "country"
+		},
+		{
+			"lat": -1.9403,
+			"lng": 29.8739,
+			"radius": 4,
+			"name": "Rwanda",
+			"continent": "Africa",
+			"type": "country"
+		},
+		{
+			"lat": -6.3690,
+			"lng": 34.8888,
+			"radius": 8,
+			"name": "Tanzania",
+			"continent": "Africa",
+			"type": "country"
+		},
+		{
+			"lat": 15.5007,
+			"lng": 32.5599,
+			"radius": 12,
+			"name": "Sudan",
+			"continent": "Africa",
+			"type": "country"
+		},
+		{
+			"lat": 9.1450,
+			"lng": 40.4897,
+			"radius": 10,
+			"name": "Ethiopia",
+			"continent": "Africa",
+			"type": "country"
+		},
+		{
 			"lat": 40.000000,
 			"lng": -89.000000,
 			"radius": 8,
@@ -585,11 +841,35 @@
 			"type": "country"
 		},
 		{
-			"lat": 56.0,
-			"lng": 40.0,
-			"radius": 15,
+			"lat": 61.5240,
+			"lng": 105.3188,
+			"radius": 800,
+			"name": "Russia",
+			"continent": "Europe",
+			"type": "country"
+		},
+		{
+			"lat": 55.7558,
+			"lng": 37.6176,
+			"radius": 200,
 			"name": "European Russia",
 			"continent": "Europe",
+			"type": "region"
+		},
+		{
+			"lat": 60.0000,
+			"lng": 100.0000,
+			"radius": 400,
+			"name": "Siberia, Russia",
+			"continent": "Asia",
+			"type": "region"
+		},
+		{
+			"lat": 62.0000,
+			"lng": 150.0000,
+			"radius": 300,
+			"name": "Far East Russia",
+			"continent": "Asia",
 			"type": "region"
 		},
 		{
@@ -637,6 +917,46 @@
 			"lng": 66.9045,
 			"radius": 15,
 			"name": "Kazakhstan",
+			"continent": "Asia",
+			"type": "country"
+		},
+		{
+			"lat": 41.2033,
+			"lng": 69.2401,
+			"radius": 8,
+			"name": "Uzbekistan",
+			"continent": "Asia",
+			"type": "country"
+		},
+		{
+			"lat": 15.8700,
+			"lng": 100.9925,
+			"radius": 8,
+			"name": "Myanmar",
+			"continent": "Asia",
+			"type": "country"
+		},
+		{
+			"lat": 12.5657,
+			"lng": 104.9910,
+			"radius": 6,
+			"name": "Cambodia",
+			"continent": "Asia",
+			"type": "country"
+		},
+		{
+			"lat": 19.8563,
+			"lng": 102.4955,
+			"radius": 6,
+			"name": "Laos",
+			"continent": "Asia",
+			"type": "country"
+		},
+		{
+			"lat": 4.2105,
+			"lng": 101.9758,
+			"radius": 2,
+			"name": "Brunei",
 			"continent": "Asia",
 			"type": "country"
 		},
