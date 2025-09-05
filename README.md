@@ -77,7 +77,7 @@ Drop into a **random Street View** location anywhere on Earth and guess your pos
 
 **Google Gemini API (for AI hints):**
 * Get your free API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
-* Add to `.env.local` as `NEXT_PUBLIC_GEMINI_API_KEY`
+* Add to `.env.local` as `GEMINI_API_KEY`
 
 ### 2. **Setup the project**
 
