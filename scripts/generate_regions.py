@@ -446,7 +446,7 @@ def fetch_geonames_data(geoname_id: str) -> Optional[List[Dict]]:
     """Fetch administrative divisions from GeoNames API."""
     params = {
         'geonameId': geoname_id,
-        'username': 'demo'
+        'username': 'amit75'
     }
     url = GEONAMES_ADMIN_URL + '?' + '&'.join([f"{k}={quote(str(v))}" for k, v in params.items()])
 

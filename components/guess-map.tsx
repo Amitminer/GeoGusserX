@@ -320,9 +320,13 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 	
 	useEffect(() => {
 		if (mapRef.current && prevMapSizeRef.current !== mapSize && mapSize !== 'mini' && mapSize !== 'hidden') {
+			// Capture the map's current center before the timeout
+			const savedCenter = mapRef.current.getCenter();
+			
 			const timeout = setTimeout(() => {
-				if (mapRef.current) {
-					google.maps.event.trigger(mapRef.current, 'resize');
+				if (mapRef.current && savedCenter) {
+					// Force a safe redraw by setting the center
+					mapRef.current.setCenter(savedCenter);
 				}
 			}, 50);
 

@@ -8,6 +8,14 @@ const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX_REQUESTS = 10; // Max 10 requests per minute per IP
 
+// Constants for validation bounds
+const MAX_ROUND_NUMBER = 1000; // Reasonable max for round numbers
+const MAX_HINT_NUMBER = 10; // Reasonable max for hints per round
+const MAX_GAME_MODE_LENGTH = 50; // Reasonable max length for game mode string
+const MAX_PREVIOUS_HINTS = 20; // Reasonable max for previous hints array
+const MAX_HINT_LENGTH = 1000; // Reasonable max length for individual hints
+const MAX_COUNTRY_INFO_LENGTH = 500; // Reasonable max length for country info strings
+
 // Request validation
 function validateRequest(body: unknown): body is SingleHintRequest {
 	if (!body || typeof body !== 'object' || body === null) {
@@ -16,7 +24,7 @@ function validateRequest(body: unknown): body is SingleHintRequest {
 
 	const obj = body as Record<string, unknown>;
 
-	// Check location object
+	// Check location object with strict geographic bounds
 	if (!obj.location || typeof obj.location !== 'object' || obj.location === null) {
 		return false;
 	}
@@ -24,15 +32,34 @@ function validateRequest(body: unknown): body is SingleHintRequest {
 	if (typeof location.lat !== 'number' || typeof location.lng !== 'number') {
 		return false;
 	}
+	// Validate coordinates are finite numbers within valid geographic bounds
+	if (!Number.isFinite(location.lat) || !Number.isFinite(location.lng) ||
+		location.lat < -90 || location.lat > 90 ||
+		location.lng < -180 || location.lng > 180) {
+		return false;
+	}
 
-	// Check basic properties
+	// Check basic properties with strict validation
 	if (typeof obj.roundNumber !== 'number' ||
 		typeof obj.gameMode !== 'string' ||
 		typeof obj.hintNumber !== 'number') {
 		return false;
 	}
+	// Validate roundNumber and hintNumber are finite integers within reasonable bounds
+	if (!Number.isFinite(obj.roundNumber) || !Number.isInteger(obj.roundNumber) ||
+		obj.roundNumber < 0 || obj.roundNumber > MAX_ROUND_NUMBER) {
+		return false;
+	}
+	if (!Number.isFinite(obj.hintNumber) || !Number.isInteger(obj.hintNumber) ||
+		obj.hintNumber < 0 || obj.hintNumber > MAX_HINT_NUMBER) {
+		return false;
+	}
+	// Validate gameMode is a non-empty string of reasonable length
+	if (obj.gameMode.length === 0 || obj.gameMode.length > MAX_GAME_MODE_LENGTH) {
+		return false;
+	}
 
-	// Check countryInfo object
+	// Check countryInfo object with strict string validation
 	if (!obj.countryInfo || typeof obj.countryInfo !== 'object' || obj.countryInfo === null) {
 		return false;
 	}
@@ -42,14 +69,24 @@ function validateRequest(body: unknown): body is SingleHintRequest {
 		typeof countryInfo.formattedAddress !== 'string') {
 		return false;
 	}
+	// Validate countryInfo strings are non-empty and within reasonable length bounds
+	if (countryInfo.country.length === 0 || countryInfo.country.length > MAX_COUNTRY_INFO_LENGTH ||
+		countryInfo.countryCode.length === 0 || countryInfo.countryCode.length > 10 || // Country codes are typically 2-3 chars
+		countryInfo.formattedAddress.length === 0 || countryInfo.formattedAddress.length > MAX_COUNTRY_INFO_LENGTH) {
+		return false;
+	}
 
-	// Optional previousHints array
+	// Optional previousHints array with stricter validation
 	if (obj.previousHints !== undefined && !Array.isArray(obj.previousHints)) {
 		return false;
 	}
 	if (Array.isArray(obj.previousHints)) {
+		// Validate array length is within reasonable bounds
+		if (obj.previousHints.length > MAX_PREVIOUS_HINTS) {
+			return false;
+		}
 		for (const hint of obj.previousHints) {
-			if (typeof hint !== 'string') {
+			if (typeof hint !== 'string' || hint.length === 0 || hint.length > MAX_HINT_LENGTH) {
 				return false;
 			}
 		}
@@ -295,6 +332,21 @@ function getDefaultDifficulty(hintNumber: number): SingleHintResponse['difficult
 	return 'hard';
 }
 
+function redactCountryTerms(
+	resp: SingleHintResponse,
+	info: { country: string; countryCode: string }
+): SingleHintResponse {
+	const patterns = [
+		new RegExp(`\\b${info.country.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, 'i'),
+		new RegExp(`\\b${info.countryCode}\\b`, 'i')
+	];
+	let hint = resp.hint;
+	for (const re of patterns) {
+		hint = hint.replace(re, 'this country');
+	}
+	return { ...resp, hint };
+}
+
 function getFallbackSingleHint(request: SingleHintRequest): SingleHintResponse {
 	const { hintNumber } = request;
 
@@ -344,28 +396,29 @@ export async function POST(request: NextRequest) {
 		);
 	}
 
+	// Get client IP for rate limiting
+	const clientIP = getClientIP(request);
+
+	// Check rate limit
+	if (!checkRateLimit(clientIP)) {
+		return NextResponse.json(
+			{ error: 'Rate limit exceeded. Please wait before requesting another hint.' },
+			{ status: 429 }
+		);
+	}
+
+	// Validate request
+	if (!validateRequest(body)) {
+		return NextResponse.json(
+			{ error: 'Invalid request format' },
+			{ status: 400 }
+		);
+	}
+
+	// Type-cast the validated body for type safety - now in broader scope
+	const reqBody = body as SingleHintRequest;
+
 	try {
-		// Get client IP for rate limiting
-		const clientIP = getClientIP(request);
-
-		// Check rate limit
-		if (!checkRateLimit(clientIP)) {
-			return NextResponse.json(
-				{ error: 'Rate limit exceeded. Please wait before requesting another hint.' },
-				{ status: 429 }
-			);
-		}
-
-		// Validate request
-		if (!validateRequest(body)) {
-			return NextResponse.json(
-				{ error: 'Invalid request format' },
-				{ status: 400 }
-			);
-		}
-
-		// Type-cast the validated body for type safety
-		const reqBody = body as SingleHintRequest;
 
 		// Check for API key
 		const apiKey = process.env.GEMINI_API_KEY;
@@ -407,8 +460,11 @@ export async function POST(request: NextRequest) {
 
 		// Parse the response (now with built-in fallback handling)
 		const parsedResponse = parseSingleHintResponse(text, reqBody.hintNumber);
-
-		return NextResponse.json(parsedResponse);
+		const safeResponse = redactCountryTerms(parsedResponse, {
+			country: reqBody.countryInfo.country,
+			countryCode: reqBody.countryInfo.countryCode
+		});
+		return NextResponse.json(safeResponse);
 
 	} catch (error: unknown) {
 		logger.error('Failed to generate hint via API', error, 'HintsAPI');
@@ -430,17 +486,12 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// For other errors, return fallback hint if we have valid body
-		if (body && validateRequest(body)) {
-			const reqBody = body as SingleHintRequest;
-			const fallbackHint = getFallbackSingleHint(reqBody);
-			return NextResponse.json(fallbackHint);
-		}
-
-		// If we don't have a valid body, return generic error
-		return NextResponse.json(
-			{ error: 'Failed to generate hint. Please try again.' },
-			{ status: 500 }
-		);
+		// For other errors, return fallback hint using already-validated reqBody
+		const fallbackHint = getFallbackSingleHint(reqBody);
+		const safeResponse = redactCountryTerms(fallbackHint, {
+			country: reqBody.countryInfo.country,
+			countryCode: reqBody.countryInfo.countryCode
+		});
+		return NextResponse.json(safeResponse);
 	}
 }
