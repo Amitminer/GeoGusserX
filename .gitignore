@@ -20,6 +20,10 @@ qodo.md
 ISSUE.md
 AGENTS.md
 
+# benchmark logs
+benchmark_logs_*.txt
+extreme_benchmark_logs.txt
+
 # next.js
 /.next/
 /out/

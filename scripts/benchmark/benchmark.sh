@@ -132,7 +132,7 @@ EOF
     local start_time=$(date +%s.%N)
 
     # Run the command and capture both stdout and stderr
-    if timeout 3600 eval "$command" >> "$LOG_FILE" 2>&1; then
+    if timeout 3600 bash -c "$command" >> "$LOG_FILE" 2>&1; then
         local end_time=$(date +%s.%N)
         local duration=$(echo "$end_time - $start_time" | bc -l 2>/dev/null || echo "N/A")
         echo -e "${GREEN}✅ $description completed successfully in ${duration}s${NC}"
