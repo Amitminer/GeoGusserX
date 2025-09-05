@@ -1,6 +1,6 @@
 {
 	"name": "geogusserx",
-	"version": "0.1.2",
+	"version": "0.1.3",
 	"private": true,
 	"scripts": {
 		"dev": "next dev",
@@ -36,14 +36,14 @@
 		"zustand": "^5.0.8"
 	},
 	"devDependencies": {
-		"@tailwindcss/postcss": "^4.1.12",
-		"@types/node": "^20.19.11",
+		"@tailwindcss/postcss": "^4.1.13",
+		"@types/node": "^20.19.13",
 		"@types/react": "^19.1.12",
 		"@types/react-dom": "^19.1.9",
 		"eslint": "^9.34.0",
 		"eslint-config-next": "15.5.2",
-		"tailwindcss": "^4.1.12",
-		"tw-animate-css": "^1.3.7",
+		"tailwindcss": "^4.1.13",
+		"tw-animate-css": "^1.3.8",
 		"typescript": "^5.9.2"
 	}
 }
