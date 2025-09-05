@@ -1,29 +1,6 @@
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
-import { Location } from '@/lib/types';
 import { logger } from '@/lib/logger';
-import type { GeocodeResult } from '@/lib/maps/geocoding';
-
-export interface SingleHintRequest {
-  location: Location;
-  roundNumber: number;
-  gameMode: string;
-  hintNumber: number; // 1, 2, 3, etc.
-  previousHints?: string[];
-  countryInfo: GeocodeResult;
-}
-
-export interface SingleHintResponse {
-  hint: string;
-  confidence: number;
-  category: 'geographical' | 'cultural' | 'architectural' | 'environmental' | 'general';
-  difficulty: 'easy' | 'medium' | 'hard';
-}
-
-export interface LocationContext {
-  country: string;
-  countryCode: string;
-  formattedAddress: string;
-}
+import type { SingleHintRequest, SingleHintResponse, LocationContext } from './types';
 
 class GeminiService {
   private genAI: GoogleGenerativeAI | null = null;

@@ -1,22 +1,5 @@
-import { Location } from '@/lib/types';
 import { logger } from '@/lib/logger';
-import type { GeocodeResult } from '@/lib/maps/geocoding';
-
-export interface SingleHintRequest {
-  location: Location;
-  roundNumber: number;
-  gameMode: string;
-  hintNumber: number;
-  previousHints?: string[];
-  countryInfo: GeocodeResult;
-}
-
-export interface SingleHintResponse {
-  hint: string;
-  confidence: number;
-  category: 'geographical' | 'cultural' | 'architectural' | 'environmental' | 'general';
-  difficulty: 'easy' | 'medium' | 'hard';
-}
+import type { SingleHintRequest, SingleHintResponse } from './types';
 
 class HintsClient {
   private lastRequestTime = 0;
@@ -43,11 +26,14 @@ class HintsClient {
         country: request.countryInfo.country
       }, 'HintsClient');
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 35000); // 35s safety
       const response = await fetch('/api/hints', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: controller.signal,
         body: JSON.stringify({
           location: request.location,
           roundNumber: request.roundNumber,
@@ -61,6 +47,7 @@ class HintsClient {
           }
         }),
       });
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
@@ -154,3 +141,6 @@ class HintsClient {
 }
 
 export const hintsClient = new HintsClient();
+
+// Re-export types for convenience
+export type { SingleHintRequest, SingleHintResponse } from './types';

@@ -1,30 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { logger } from '@/lib/logger';
-
-// Types for the API
-interface SingleHintRequest {
-	location: {
-		lat: number;
-		lng: number;
-	};
-	roundNumber: number;
-	gameMode: string;
-	hintNumber: number;
-	previousHints?: string[];
-	countryInfo: {
-		country: string;
-		countryCode: string;
-		formattedAddress: string;
-	};
-}
-
-interface SingleHintResponse {
-	hint: string;
-	confidence: number;
-	category: 'geographical' | 'cultural' | 'architectural' | 'environmental' | 'general';
-	difficulty: 'easy' | 'medium' | 'hard';
-}
+import type { SingleHintRequest, SingleHintResponse } from '@/lib/ai/types';
 
 // Rate limiting storage (in production, use Redis or similar)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -345,6 +322,18 @@ function getFallbackSingleHint(request: SingleHintRequest): SingleHintResponse {
 }
 
 export async function POST(request: NextRequest) {
+	// Parse request body once and store it in outer scope
+	let body: unknown;
+	try {
+		body = await request.json();
+	} catch (parseError) {
+		logger.error('Failed to parse request body', parseError, 'HintsAPI');
+		return NextResponse.json(
+			{ error: 'Invalid JSON in request body' },
+			{ status: 400 }
+		);
+	}
+
 	try {
 		// Get client IP for rate limiting
 		const clientIP = getClientIP(request);
@@ -357,9 +346,6 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Parse request body
-		const body = await request.json();
-
 		// Validate request
 		if (!validateRequest(body)) {
 			return NextResponse.json(
@@ -367,6 +353,9 @@ export async function POST(request: NextRequest) {
 				{ status: 400 }
 			);
 		}
+
+		// Type-cast the validated body for type safety
+		const reqBody = body as SingleHintRequest;
 
 		// Check for API key
 		const apiKey = process.env.GEMINI_API_KEY;
@@ -391,13 +380,13 @@ export async function POST(request: NextRequest) {
 		});
 
 		// Build prompt and generate hint
-		const prompt = buildSingleHintPrompt(body);
+		const prompt = buildSingleHintPrompt(reqBody);
 
 		logger.info('Generating AI hint via API', {
-			location: body.location,
-			roundNumber: body.roundNumber,
-			hintNumber: body.hintNumber,
-			country: body.countryInfo.country,
+			location: reqBody.location,
+			roundNumber: reqBody.roundNumber,
+			hintNumber: reqBody.hintNumber,
+			country: reqBody.countryInfo.country,
 			clientIP
 		}, 'HintsAPI');
 
@@ -417,24 +406,24 @@ export async function POST(request: NextRequest) {
 		// Try to parse the response, with fallback handling
 		let parsedResponse: SingleHintResponse;
 		try {
-			parsedResponse = parseSingleHintResponse(text, body.hintNumber);
+			parsedResponse = parseSingleHintResponse(text, reqBody.hintNumber);
 		} catch (parseError) {
 			// If parsing fails, return a fallback hint instead of throwing
 			logger.warn('AI response parsing failed, using fallback hint', {
 				parseError,
-				hintNumber: body.hintNumber,
-				country: body.countryInfo.country
+				hintNumber: reqBody.hintNumber,
+				country: reqBody.countryInfo.country
 			}, 'HintsAPI');
 			
-			parsedResponse = getFallbackSingleHint(body);
+			parsedResponse = getFallbackSingleHint(reqBody);
 		}
 
 		logger.info('AI hint generated successfully via API', {
-			hintNumber: body.hintNumber,
+			hintNumber: reqBody.hintNumber,
 			category: parsedResponse.category,
 			difficulty: parsedResponse.difficulty,
 			confidence: parsedResponse.confidence,
-			country: body.countryInfo.country,
+			country: reqBody.countryInfo.country,
 			clientIP
 		}, 'HintsAPI');
 
@@ -460,21 +449,18 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// For other errors, return fallback hint instead of error
-		try {
-			const body = await request.json();
-			if (validateRequest(body)) {
-				const fallbackHint = getFallbackSingleHint(body);
-				logger.info('Returning fallback hint due to API error', {
-					hintNumber: body.hintNumber,
-					error: errorMessage
-				}, 'HintsAPI');
-				return NextResponse.json(fallbackHint);
-			}
-		} catch {
-			// If we can't even parse the request, return generic error
+		// For other errors, return fallback hint if we have valid body
+		if (body && validateRequest(body)) {
+			const reqBody = body as SingleHintRequest;
+			const fallbackHint = getFallbackSingleHint(reqBody);
+			logger.info('Returning fallback hint due to API error', {
+				hintNumber: reqBody.hintNumber,
+				error: errorMessage
+			}, 'HintsAPI');
+			return NextResponse.json(fallbackHint);
 		}
 
+		// If we don't have a valid body, return generic error
 		return NextResponse.json(
 			{ error: 'Failed to generate hint. Please try again.' },
 			{ status: 500 }
