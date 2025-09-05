@@ -3,29 +3,26 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { mapsManager } from '@/lib/maps';
-import { useGameStore } from '@/lib/storage/store';
-import { StreetViewLocation } from '@/lib/types';
 import { logger } from '@/lib/logger';
-import { shouldShowCountryName } from '@/lib/utils';
-import { Loader2, MapPin } from 'lucide-react';
+import { StreetViewLocation } from '@/lib/types';
 import type { GeocodeResult } from '@/lib/maps/geocoding';
 import { StreetViewControls } from '@/components/street-view-controls';
+import { useGameStore } from '@/lib/storage/store';
+import { Loader2, MapPin } from 'lucide-react';
 
 interface StreetViewProps {
 	location: StreetViewLocation;
 	onLocationChange?: (location: StreetViewLocation) => void;
+	onCountryInfoChange?: (countryInfo: GeocodeResult | null) => void;
 }
 
-export function StreetView({ location, onLocationChange }: StreetViewProps) {
+export function StreetView({ location, onLocationChange, onCountryInfoChange }: StreetViewProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const panoramaRef = useRef<google.maps.StreetViewPanorama | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [countryInfo, setCountryInfo] = useState<GeocodeResult | null>(null);
-	const [showCountryName] = useState(() => shouldShowCountryName());
-	const [showControls] = useState(true);
-
-	const { setStreetViewLoaded } = useGameStore();
+	const { setStreetViewLoaded, gameSettings } = useGameStore();
 
 	useEffect(() => {
 		const initializeStreetView = async () => {
@@ -89,19 +86,43 @@ export function StreetView({ location, onLocationChange }: StreetViewProps) {
 						setStreetViewLoaded(true);
 						logger.info('Street View loaded successfully', { location }, 'StreetView');
 
-						// Get country information if enabled
-						if (showCountryName) {
-							try {
-								const geocodingService = mapsManager.getGeocodingService();
-								if (geocodingService) {
-									const result = await geocodingService.getCountryFromCoordinates(location.location);
+						// Get country information (for display and AI hints)
+						try {
+							const geocodingService = mapsManager.getGeocodingService();
+							if (geocodingService) {
+								// Use panorama's actual position instead of initial prop coordinates
+								const panoramaPosition = panorama.getPosition();
+								if (panoramaPosition) {
+									// Convert panorama position to lat/lng format expected by geocoding service
+									const actualCoordinates = {
+										lat: panoramaPosition.lat(),
+										lng: panoramaPosition.lng()
+									};
+
+									const result = await geocodingService.getCountryFromCoordinates(actualCoordinates);
 									if (result) {
 										setCountryInfo(result);
-										logger.info('Country information retrieved', { country: result.country }, 'StreetView');
+										if (onCountryInfoChange) {
+											onCountryInfoChange(result);
+										}
+										logger.info('Country information retrieved', {
+											country: result.country,
+											actualCoordinates,
+											initialCoordinates: location.location
+										}, 'StreetView');
+									}
+								} else {
+									logger.warn('Panorama position is null, cannot geocode', {}, 'StreetView');
+									if (onCountryInfoChange) {
+										onCountryInfoChange(null);
 									}
 								}
-							} catch (error) {
-								logger.error('Failed to get country information', error, 'StreetView');
+							}
+						} catch (error) {
+							logger.error('Failed to get country information', error, 'StreetView');
+							// Still call the callback with null to indicate failure
+							if (onCountryInfoChange) {
+								onCountryInfoChange(null);
 							}
 						}
 					} else {
@@ -127,8 +148,22 @@ export function StreetView({ location, onLocationChange }: StreetViewProps) {
 			}
 			setStreetViewLoaded(false);
 			setCountryInfo(null);
+			if (onCountryInfoChange) {
+				onCountryInfoChange(null);
+			}
 		};
-	}, [location, onLocationChange, setStreetViewLoaded, showCountryName]);
+	}, [location, onLocationChange, onCountryInfoChange, setStreetViewLoaded]);
+
+	// Separate effect to handle country name overlay visibility changes
+	// This prevents panorama re-initialization when only the overlay setting changes
+	useEffect(() => {
+		// This effect intentionally only watches gameSettings.showCountryName
+		// The overlay visibility is handled in the JSX render below
+		// No panorama re-initialization needed for overlay toggle
+		logger.debug('Country name overlay setting changed', {
+			showCountryName: gameSettings.showCountryName
+		}, 'StreetView');
+	}, [gameSettings.showCountryName]);
 
 	if (error) {
 		return (
@@ -172,9 +207,9 @@ export function StreetView({ location, onLocationChange }: StreetViewProps) {
 
 			{/* Virtual Joystick Controls */}
 			{!isLoading && !error && (
-				<StreetViewControls 
+				<StreetViewControls
 					panorama={panoramaRef.current}
-					showControls={showControls}
+					showControls={true}
 				/>
 			)}
 
@@ -190,13 +225,13 @@ export function StreetView({ location, onLocationChange }: StreetViewProps) {
 				</motion.div>
 			)}
 
-			{/* Country Name Overlay */}
-			{!isLoading && !error && showCountryName && countryInfo && (
+			{/* Country Name Overlay - Fixed Position */}
+			{!isLoading && !error && gameSettings.showCountryName && countryInfo && (
 				<motion.div
 					initial={{ opacity: 0, y: -20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ delay: 1 }}
-					className="absolute top-4 left-4 bg-blue-600/90 text-white px-4 py-2 rounded-lg shadow-lg backdrop-blur-sm z-50"
+					className="fixed top-26 lg:top-20 left-2.5 bg-blue-600/90 text-white px-4 py-2 rounded-lg shadow-lg backdrop-blur-sm z-40"
 				>
 					<div className="flex items-center gap-2">
 						<MapPin className="w-4 h-4" />

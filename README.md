@@ -59,6 +59,8 @@ Drop into a **random Street View** location anywhere on Earth and guess your pos
 | 🌐 **Google Street View** | Real, immersive exploration anywhere on Earth |
 | 📏 **Distance-based Scoring** | Up to 5000 points for perfect guesses |
 | 🗺️ **Country Mode** | Focus your challenge within a single country |
+| 🤖 **AI-Powered Hints** | Get strategic hints using Google Gemini AI (300 points) |
+| 👁️ **Country Name Toggle** | Show/hide country names for difficulty control |
 | 📱 **Responsive UI** | Looks great on desktop & mobile |
 | 💾 **PWA Support** | Install & play as a standalone app |
 | ⚡ **Fast Gameplay** | Minimal load times, smooth transitions |
@@ -67,17 +69,15 @@ Drop into a **random Street View** location anywhere on Earth and guess your pos
 
 ## ⚡ **Quick Start**
 
-### 1. **Get a Google Maps API Key**
+### 1. **Get API Keys**
 
-Enable:
+**Google Maps API:**
+* Enable: Maps **JavaScript API**, **Street View Static API**
+* Create: API Key & Map ID
 
-* Maps **JavaScript API**
-* **Street View Static API**
-
-Create:
-
-* API Key
-* Map ID
+**Google Gemini API (for AI hints):**
+* Get your free API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+* Add to `.env.local` as `GEMINI_API_KEY`
 
 ### 2. **Setup the project**
 
@@ -91,7 +91,9 @@ npm install
 
 ```bash
 cp .env.local.example .env.local
-# Add your Google Maps API key & Map ID in .env.local
+# Add your API keys in .env.local:
+# - Google Maps API key & Map ID
+# - Google Gemini API key (for AI hints)
 ```
 
 ### 4. **Run locally**
@@ -107,9 +109,18 @@ Open **[http://localhost:3000](http://localhost:3000)**
 ## 🎮 **How to Play**
 
 1. **Look around** with Street View
-2. **Guess on the map** where you think you are
-3. **Score points** based on distance
-4. **Repeat for all rounds** & see your final score
+2. **Use AI hints** if you're stuck (costs 300 points)
+3. **Guess on the map** where you think you are
+4. **Score points** based on distance
+5. **Repeat for all rounds** & see your final score
+
+### 🤖 **AI Hints System**
+
+- **Cost:** 300 points per hint
+- **Powered by:** Google Gemini AI
+- **Strategic hints** about geography, culture, architecture, and more
+- **Smart analysis** of your current Street View location
+- **Use wisely** - hints cost points but can save you from terrible guesses!
 
 ---
 

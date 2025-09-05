@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { GameState, GameRound, GameMode, Location, GuessResult, ToastMessage, CountrySettings } from '@/lib/types';
+import { GameState, GameRound, GameMode, Location, GuessResult, ToastMessage, CountrySettings, UserGameSettings } from '@/lib/types';
 import { calculateDistance, calculateScore } from '@/lib/utils';
 import { storageManager } from '.';
 import { logger } from '@/lib/logger';
@@ -18,6 +18,7 @@ interface GameStore {
 
 	// Settings
 	countrySettings: CountrySettings;
+	gameSettings: UserGameSettings;
 
 	// Toast System
 	toasts: ToastMessage[];
@@ -30,6 +31,7 @@ interface GameStore {
 	resetGame: () => void;
 	restoreActiveGame: () => Promise<boolean>;
 	cleanupStorage: () => Promise<void>;
+
 
 	// UI Actions
 	setStreetViewLoaded: (loaded: boolean) => void;
@@ -50,6 +52,11 @@ interface GameStore {
 	// Settings Actions
 	updateCountrySettings: (settings: CountrySettings) => Promise<void>;
 	loadCountrySettings: () => Promise<void>;
+	updateGameSettings: (settings: UserGameSettings) => Promise<void>;
+	loadGameSettings: () => Promise<void>;
+
+	// Hint Actions
+	purchaseHint: (cost: number) => Promise<boolean>;
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -64,6 +71,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	countrySettings: {
 		isRandomCountry: true,
 		targetCountry: null
+	},
+	gameSettings: {
+		showCountryName: false, // Default to false as requested
+		preferredGameMode: '4-rounds' // Default to Quick Game for new users
 	},
 	toasts: [],
 
@@ -538,12 +549,75 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		} catch (error) {
 			logger.error('Failed to load country settings', error, 'GameStore');
 		}
+	},
+
+	updateGameSettings: async (settings: UserGameSettings) => {
+		try {
+			await storageManager.setSetting('gameSettings', settings);
+			set({ gameSettings: settings });
+			logger.info('Game settings updated', settings, 'GameStore');
+		} catch (error) {
+			logger.error('Failed to update game settings', error, 'GameStore');
+		}
+	},
+
+	loadGameSettings: async () => {
+		try {
+			const settings = await storageManager.getSetting<UserGameSettings>('gameSettings');
+			if (settings) {
+				set({ gameSettings: settings });
+				logger.info('Game settings loaded', settings, 'GameStore');
+			}
+		} catch (error) {
+			logger.error('Failed to load game settings', error, 'GameStore');
+		}
+	},
+
+	// Hint Actions
+	purchaseHint: async (cost: number): Promise<boolean> => {
+		const { currentGame } = get();
+		
+		if (!currentGame) {
+			logger.error('No active game for hint purchase', undefined, 'GameStore');
+			return false;
+		}
+		
+		if (currentGame.totalScore < cost) {
+			logger.warn('Insufficient score for hint purchase', {
+				currentScore: currentGame.totalScore,
+				requiredCost: cost
+			}, 'GameStore');
+			return false;
+		}
+		
+		try {
+			// Deduct the cost from total score
+			currentGame.totalScore = Math.max(0, currentGame.totalScore - cost);
+			
+			// Update the state
+			set({ currentGame: { ...currentGame } });
+			
+			// Save the game
+			await get().saveGame();
+			
+			logger.info('Hint purchased successfully', {
+				cost,
+				remainingScore: currentGame.totalScore
+			}, 'GameStore');
+			
+			return true;
+		} catch (error) {
+			logger.error('Failed to purchase hint', error, 'GameStore');
+			return false;
+		}
 	}
 }));
 
 // Load settings on store creation
 if (typeof window !== 'undefined') {
 	storageManager.initialize().then(() => {
-		useGameStore.getState().loadCountrySettings();
+		const store = useGameStore.getState();
+		store.loadCountrySettings();
+		store.loadGameSettings();
 	});
 }

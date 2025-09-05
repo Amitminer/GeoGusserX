@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Globe, Minimize2, Target, X, EyeOff } from 'lucide-react';
+import { Globe, Minimize2, Target, X, EyeOff, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -12,9 +12,10 @@ interface MapHeaderProps {
   disabled: boolean;
   hasGuessLocation: boolean;
   onSetMapSize: (size: MapSize) => void;
+  onReloadMap?: () => void;
 }
 
-export function MapHeader({ mapSize, disabled, hasGuessLocation, onSetMapSize }: MapHeaderProps) {
+export function MapHeader({ mapSize, disabled, hasGuessLocation, onSetMapSize, onReloadMap }: MapHeaderProps) {
   return (
     <div className="flex items-center justify-between px-3 py-1.5 md:py-2 border-b bg-gray-800/90 backdrop-blur-sm flex-shrink-0">
       <div className="flex items-center gap-1 md:gap-1.5">
@@ -48,6 +49,19 @@ export function MapHeader({ mapSize, disabled, hasGuessLocation, onSetMapSize }:
           )}
         </Badge>
 
+        {/* Reload Map Button - Show in expanded/fullscreen modes */}
+        {(mapSize === 'expanded' || mapSize === 'fullscreen') && onReloadMap && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onReloadMap}
+            className="h-7 w-7 hover:bg-gray-700/50 transition-colors text-gray-300 hover:text-blue-300"
+            title="Reload map"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+        )}
+
         {/* Size Controls */}
         {mapSize !== 'fullscreen' && (
           <>
@@ -55,19 +69,19 @@ export function MapHeader({ mapSize, disabled, hasGuessLocation, onSetMapSize }:
               variant="ghost"
               size="icon"
               onClick={() => onSetMapSize('hidden')}
-              className="h-6 w-6 hover:bg-gray-700/50 transition-colors text-gray-300 hover:text-red-300"
+              className="h-7 w-7 hover:bg-gray-700/50 transition-colors text-gray-300 hover:text-red-300"
               title="Hide map"
             >
-              <EyeOff className="h-3 w-3" />
+              <EyeOff className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => onSetMapSize('mini')}
-              className="h-6 w-6 hover:bg-gray-700/50 transition-colors text-gray-300 hover:text-gray-100"
+              className="h-7 w-7 hover:bg-gray-700/50 transition-colors text-gray-300 hover:text-gray-100"
               title="Minimize map"
             >
-              <Minimize2 className="h-3 w-3" />
+              <Minimize2 className="h-4 w-4" />
             </Button>
           </>
         )}
@@ -77,10 +91,10 @@ export function MapHeader({ mapSize, disabled, hasGuessLocation, onSetMapSize }:
             variant="ghost"
             size="icon"
             onClick={() => onSetMapSize('fullscreen')}
-            className="h-6 w-6 hover:bg-gray-700/50 transition-colors text-gray-300 hover:text-gray-100"
+            className="h-7 w-7 hover:bg-gray-700/50 transition-colors text-gray-300 hover:text-gray-100"
             title="Open fullscreen"
           >
-            <Target className="h-3 w-3" />
+            <Target className="h-4 w-4" />
           </Button>
         )}
 
@@ -89,10 +103,10 @@ export function MapHeader({ mapSize, disabled, hasGuessLocation, onSetMapSize }:
             variant="ghost"
             size="icon"
             onClick={() => onSetMapSize('expanded')}
-            className="h-6 w-6 hover:bg-red-900/50 transition-colors text-gray-300 hover:text-red-300"
+            className="h-7 w-7 hover:bg-red-900/50 transition-colors text-gray-300 hover:text-red-300"
             title="Exit fullscreen (Esc)"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </Button>
         )}
       </div>
