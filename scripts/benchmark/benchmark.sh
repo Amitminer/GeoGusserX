@@ -5,7 +5,7 @@
 # Usage: ./benchmark.sh [normal|hard|insane|nuclear|extreme|godmode]
 
 MODE=${1:-normal}
-LOG_FILE="benchmark_logs_${MODE}.txt"
+LOG_FILE="scripts/benchmark/benchmark_logs_${MODE}.txt"
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 HOSTNAME=$(hostname)
 CPU_INFO=$(lscpu | grep "Model name" | cut -d: -f2 | xargs 2>/dev/null || echo "Unknown CPU")
