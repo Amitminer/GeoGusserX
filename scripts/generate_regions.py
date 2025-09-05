@@ -860,15 +860,15 @@ def print_next_steps(args):
     print("   For production use, get a free GeoNames account at geonames.org")
 
 
-def handle_error(args):
+def handle_error(err: Exception, args):
     """Handle and print error information."""
-    print("\n❌ Failed to generate regions.json: {e}")
+    print(f"\n❌ Failed to generate regions.json: {err}")
     print("\n🔧 Troubleshooting:")
     print("   - Check your internet connection")
     print("   - Verify REST Countries API is accessible")
     print("   - Try running the script again")
     print("   - Use --verbose flag for more detailed output")
-    if args.verbose:
+    if getattr(args, "verbose", False):
         import traceback
         print("\n🔍 Detailed error:")
         traceback.print_exc()
@@ -909,7 +909,7 @@ def main():
         print("\n⚠️  Operation cancelled by user")
         sys.exit(1)
     except Exception as e:
-        handle_error(e)
+        handle_error(e, args)
         sys.exit(1)
 
 
