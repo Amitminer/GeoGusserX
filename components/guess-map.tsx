@@ -36,8 +36,18 @@ type MapAction =
 	| { type: 'SET_MAP_TYPE'; payload: string }
 	| { type: 'SET_ZOOM'; payload: number };
 
+// Check if we're on mobile to set initial map state
+const getInitialMapSize = (): MapSize => {
+	if (typeof window !== 'undefined') {
+		// Check for mobile device
+		const isMobile = window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+		return isMobile ? 'hidden' : 'mini';
+	}
+	return 'mini'; // Default for SSR
+};
+
 const initialState: MapState = {
-	mapSize: 'mini',
+	mapSize: getInitialMapSize(),
 	mapType: 'roadmap',
 	currentZoom: 2,
 };
@@ -332,6 +342,8 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 		document.addEventListener('keydown', handleKeyDown);
 		return () => document.removeEventListener('keydown', handleKeyDown);
 	}, [mapSize]);
+
+
 
 	const handleMakeGuess = useCallback(() => {
 		if (guessLocation && !disabled) {

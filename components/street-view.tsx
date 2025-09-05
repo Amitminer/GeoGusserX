@@ -98,14 +98,14 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange }: 
 										lat: panoramaPosition.lat(),
 										lng: panoramaPosition.lng()
 									};
-									
+
 									const result = await geocodingService.getCountryFromCoordinates(actualCoordinates);
 									if (result) {
 										setCountryInfo(result);
 										if (onCountryInfoChange) {
 											onCountryInfoChange(result);
 										}
-										logger.info('Country information retrieved', { 
+										logger.info('Country information retrieved', {
 											country: result.country,
 											actualCoordinates,
 											initialCoordinates: location.location
@@ -160,8 +160,8 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange }: 
 		// This effect intentionally only watches gameSettings.showCountryName
 		// The overlay visibility is handled in the JSX render below
 		// No panorama re-initialization needed for overlay toggle
-		logger.debug('Country name overlay setting changed', { 
-			showCountryName: gameSettings.showCountryName 
+		logger.debug('Country name overlay setting changed', {
+			showCountryName: gameSettings.showCountryName
 		}, 'StreetView');
 	}, [gameSettings.showCountryName]);
 
@@ -207,7 +207,7 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange }: 
 
 			{/* Virtual Joystick Controls */}
 			{!isLoading && !error && (
-				<StreetViewControls 
+				<StreetViewControls
 					panorama={panoramaRef.current}
 					showControls={true}
 				/>
@@ -231,7 +231,7 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange }: 
 					initial={{ opacity: 0, y: -20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ delay: 1 }}
-					className="fixed top-4 left-4 bg-blue-600/90 text-white px-4 py-2 rounded-lg shadow-lg backdrop-blur-sm z-50"
+					className="fixed top-26 lg:top-20 left-2.5 bg-blue-600/90 text-white px-4 py-2 rounded-lg shadow-lg backdrop-blur-sm z-40"
 				>
 					<div className="flex items-center gap-2">
 						<MapPin className="w-4 h-4" />

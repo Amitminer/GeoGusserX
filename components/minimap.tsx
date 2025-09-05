@@ -112,7 +112,7 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange }: MiniM
 				<div className="flex items-center justify-between px-3 py-1.5 md:py-2 border-b bg-gray-800/90 backdrop-blur-sm flex-shrink-0">
 					<div className="flex items-center gap-1 md:gap-1.5">
 						<Globe className="h-3 w-3 md:h-4 md:w-4 text-blue-500" />
-						<span className="text-[10px] md:text-xs font-medium text-gray-100">
+						<span className="text-[11px] md:text-xs font-medium text-gray-100">
 							Make your guess (zoomable)
 						</span>
 					</div>
@@ -123,15 +123,15 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange }: MiniM
 								className="p-1 text-[10px] md:text-xs text-gray-400 hover:text-red-300 transition-colors"
 								title="Hide map"
 							>
-								<EyeOff className="h-3 w-3" />
+								<EyeOff className="h-5 w-5" />
 							</button>
 						)}
 						<button
 							onClick={onExpand}
-							className="flex items-center gap-1 px-2 py-1 text-[10px] md:text-xs text-blue-300 hover:text-blue-200 transition-colors"
+							className="flex items-center gap-1 px-2 py-1 text-[11px] md:text-xs text-blue-300 hover:text-blue-200 transition-colors"
 							title="Double-click map to expand"
 						>
-							<Expand className="h-3 w-3" />
+							<Expand className="h-4 w-4" />
 							Expand
 						</button>
 					</div>

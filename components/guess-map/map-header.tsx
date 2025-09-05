@@ -55,10 +55,10 @@ export function MapHeader({ mapSize, disabled, hasGuessLocation, onSetMapSize, o
             variant="ghost"
             size="icon"
             onClick={onReloadMap}
-            className="h-6 w-6 hover:bg-gray-700/50 transition-colors text-gray-300 hover:text-blue-300"
+            className="h-7 w-7 hover:bg-gray-700/50 transition-colors text-gray-300 hover:text-blue-300"
             title="Reload map"
           >
-            <RotateCcw className="h-3 w-3" />
+            <RotateCcw className="h-4 w-4" />
           </Button>
         )}
 
@@ -69,19 +69,19 @@ export function MapHeader({ mapSize, disabled, hasGuessLocation, onSetMapSize, o
               variant="ghost"
               size="icon"
               onClick={() => onSetMapSize('hidden')}
-              className="h-6 w-6 hover:bg-gray-700/50 transition-colors text-gray-300 hover:text-red-300"
+              className="h-7 w-7 hover:bg-gray-700/50 transition-colors text-gray-300 hover:text-red-300"
               title="Hide map"
             >
-              <EyeOff className="h-3 w-3" />
+              <EyeOff className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => onSetMapSize('mini')}
-              className="h-6 w-6 hover:bg-gray-700/50 transition-colors text-gray-300 hover:text-gray-100"
+              className="h-7 w-7 hover:bg-gray-700/50 transition-colors text-gray-300 hover:text-gray-100"
               title="Minimize map"
             >
-              <Minimize2 className="h-3 w-3" />
+              <Minimize2 className="h-4 w-4" />
             </Button>
           </>
         )}
@@ -91,10 +91,10 @@ export function MapHeader({ mapSize, disabled, hasGuessLocation, onSetMapSize, o
             variant="ghost"
             size="icon"
             onClick={() => onSetMapSize('fullscreen')}
-            className="h-6 w-6 hover:bg-gray-700/50 transition-colors text-gray-300 hover:text-gray-100"
+            className="h-7 w-7 hover:bg-gray-700/50 transition-colors text-gray-300 hover:text-gray-100"
             title="Open fullscreen"
           >
-            <Target className="h-3 w-3" />
+            <Target className="h-4 w-4" />
           </Button>
         )}
 
@@ -103,10 +103,10 @@ export function MapHeader({ mapSize, disabled, hasGuessLocation, onSetMapSize, o
             variant="ghost"
             size="icon"
             onClick={() => onSetMapSize('expanded')}
-            className="h-6 w-6 hover:bg-red-900/50 transition-colors text-gray-300 hover:text-red-300"
+            className="h-7 w-7 hover:bg-red-900/50 transition-colors text-gray-300 hover:text-red-300"
             title="Exit fullscreen (Esc)"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </Button>
         )}
       </div>
