@@ -404,7 +404,6 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 	// Reload map functionality
 	const handleReloadMap = useCallback(() => {
 		if (mapRef.current) {
-			// Clear existing map and marker
 			google.maps.event.clearInstanceListeners(mapRef.current);
 			mapRef.current = null;
 		}
@@ -413,24 +412,19 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 			markerRef.current = null;
 		}
 		
-		// Clear guess location
 		setGuessLocation(null);
-		
-		// Reset error state
 		setError(null);
 		setRetryCount(0);
-		
-		// Force re-initialization
-		setIsLoading(true);
 		setMapLoaded(false);
 		
-		// Trigger map re-initialization after a short delay
+		// Force re-initialization by temporarily changing mapSize
+		const currentMapSize = mapSize;
+		dispatch({ type: 'SET_MAP_SIZE', payload: 'mini' });
+		
+		// Restore the original mapSize to trigger re-initialization
 		setTimeout(() => {
-			if (mapSize !== 'mini' && mapSize !== 'hidden') {
-				// The useEffect will handle re-initialization
-				setIsLoading(false);
-			}
-		}, 100);
+			dispatch({ type: 'SET_MAP_SIZE', payload: currentMapSize });
+		}, 50);
 		
 		logger.info('Map reload triggered', { mapSize }, 'GuessMap');
 	}, [mapSize, setMapLoaded]);
