@@ -38,7 +38,8 @@ export default function PlayPage() {
 		resetGame,
 		setError,
 		restoreActiveGame,
-		cleanupStorage
+		cleanupStorage,
+		setActualLocation
 	} = useGameStore();
 
 	const [screen, setScreen] = useState<GameScreen>('loading');
@@ -176,9 +177,18 @@ export default function PlayPage() {
 			try {
 				const streetViewLocation = await mapsManager.getRandomStreetViewLocation(targetCountry ?? undefined);
 
-				// Update the round with the actual location
-				currentRound.actualLocation = streetViewLocation.location;
+				// Debug logging for generated location
+				logger.info('🌍 Generated Street View location', {
+					streetViewLocation,
+					roundId: currentRound.id,
+					timestamp: Date.now()
+				}, 'PlayPage');
+
+				// IMPORTANT: Use the store method to properly update the actual location
+				await setActualLocation(streetViewLocation.location);
+				
 				setCurrentLocation(streetViewLocation);
+				
 			} catch (error) {
 				logger.error('Failed to generate Street View location', error, 'PlayPage');
 
@@ -189,15 +199,19 @@ export default function PlayPage() {
 					pitch: 0,
 					zoom: 1
 				};
-				currentRound.actualLocation = fallbackLocation.location;
+				
+				// Use the store method to update with fallback location
+				await setActualLocation(fallbackLocation.location);
+				
 				setCurrentLocation(fallbackLocation);
+				
 			} finally {
 				setIsGeneratingLocation(false);
 			}
 		};
 
 		generateLocation();
-	}, [currentGame, screen, showGameComplete, currentLocation, isGeneratingLocation, targetCountry, memoizedEndGame, memoizedNextRound]);
+	}, [currentGame, screen, showGameComplete, currentLocation, isGeneratingLocation, targetCountry, memoizedEndGame, memoizedNextRound, setActualLocation]);
 
 	const handleMakeGuess = async (guessedLocation: Location) => {
 		if (!currentGame) return;

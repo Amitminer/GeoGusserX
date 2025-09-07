@@ -57,6 +57,9 @@ interface GameStore {
 
 	// Hint Actions
 	purchaseHint: (cost: number) => Promise<boolean>;
+
+	// Location Actions
+	setActualLocation: (location: Location) => Promise<void>;
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -662,6 +665,42 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		} catch (error) {
 			logger.error('Failed to purchase hint', error, 'GameStore');
 			return false;
+		}
+	},
+
+	// Location Actions
+	setActualLocation: async (location: Location): Promise<void> => {
+		const { currentGame } = get();
+		
+		if (!currentGame) {
+			logger.error('No active game for setting actual location', undefined, 'GameStore');
+			return;
+		}
+		
+		const currentRound = currentGame.rounds[currentGame.currentRoundIndex];
+		if (!currentRound) {
+			logger.error('No active round for setting actual location', undefined, 'GameStore');
+			return;
+		}
+		
+		try {
+			// Update the actual location
+			currentRound.actualLocation = location;
+			
+			// Update the state
+			set({ currentGame: { ...currentGame } });
+			
+			// Save the game
+			await get().saveGame();
+			
+			logger.info('📍 Actual location set successfully', {
+				location,
+				roundId: currentRound.id,
+				roundIndex: currentGame.currentRoundIndex
+			}, 'GameStore');
+			
+		} catch (error) {
+			logger.error('Failed to set actual location', error, 'GameStore');
 		}
 	}
 }));
