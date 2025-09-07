@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CountrySelection } from '@/components/country-selection';
 import { CountrySettings, UserGameSettings } from '@/lib/types';
-import { Eye, EyeOff, MapPin, Settings, Compass, Plane } from 'lucide-react';
+import { Eye, EyeOff, Settings, Compass } from 'lucide-react';
 
 interface SettingsCardProps {
   countrySettings: CountrySettings;

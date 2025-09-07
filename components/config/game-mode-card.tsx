@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Play, MapPin, Trophy, Infinity as InfinityIcon, Compass, Mountain } from 'lucide-react';
+import { Play, MapPin, Trophy, Infinity as InfinityIcon } from 'lucide-react';
 import { GameMode } from '@/lib/types';
 
 interface GameModeCardProps {
