@@ -146,58 +146,69 @@ export function CountrySelection({ countrySettings, onSettingsChange }: CountryS
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Card className="w-full max-w-sm mx-auto cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-blue-200">
-          <CardContent className="p-4">
+        <Card className="w-full max-w-sm sm:max-w-lg mx-auto cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-blue-200">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {displayIcon}
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="p-2 sm:p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                  {React.cloneElement(displayIcon, { 
+                    className: "w-5 h-5 sm:w-6 sm:h-6 text-blue-600" 
+                  })}
+                </div>
                 <div className="text-left">
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <p className="text-sm sm:text-lg font-medium text-gray-900 dark:text-gray-100">
                     {displayText}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Tap to change
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                    Click to change location preferences
                   </p>
                 </div>
               </div>
-              <Settings className="w-4 h-4 text-gray-400" />
+              <div className="flex items-center gap-2">
+                <div className="hidden sm:block text-right">
+                  <p className="text-xs text-gray-400">Settings</p>
+                </div>
+                <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+              </div>
             </div>
           </CardContent>
         </Card>
       </DialogTrigger>
       
-      <DialogContent className="sm:max-w-md max-w-[95vw] max-h-[80vh] overflow-hidden">
+      <DialogContent className="sm:max-w-lg max-w-[95vw] max-h-[80vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Globe className="w-5 h-5 text-blue-500" />
-            Location Settings
+          <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Globe className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
+            Location Preferences
           </DialogTitle>
-          <DialogDescription>
-            Choose random countries or select a specific location.
+          <DialogDescription className="text-sm sm:text-base">
+            Choose random countries or select a specific location for your game.
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
-          {/* Random Toggle - Compact */}
-          <div className={`flex items-center justify-between p-3 rounded-lg border transition-all duration-200 ${
+          {/* Random Toggle - Responsive */}
+          <div className={`flex items-center justify-between p-3 sm:p-4 rounded-lg border transition-all duration-200 ${
             countrySettings.isRandomCountry 
               ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700' 
               : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600'
           }`}>
-            <div className="flex items-center gap-2 flex-1">
-              <Globe className={`w-4 h-4 flex-shrink-0 ${
-                countrySettings.isRandomCountry ? 'text-blue-600' : 'text-gray-500'
-              }`} />
+            <div className="flex items-center gap-3 sm:gap-4 flex-1">
+              <div className="p-2 rounded-lg bg-white dark:bg-gray-700">
+                <Globe className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${
+                  countrySettings.isRandomCountry ? 'text-blue-600' : 'text-gray-500'
+                }`} />
+              </div>
               <div className="min-w-0">
-                <Label htmlFor="random-toggle" className="text-sm font-medium cursor-pointer">
-                  Random Mode
+                <Label htmlFor="random-toggle" className="text-sm sm:text-base font-medium cursor-pointer">
+                  Random Country Mode
                 </Label>
-                <p className={`text-xs ${
+                <p className={`text-xs sm:text-sm ${
                   countrySettings.isRandomCountry 
                     ? 'text-blue-600 dark:text-blue-400' 
                     : 'text-gray-500 dark:text-gray-400'
                 }`}>
-                  {countrySettings.isRandomCountry ? '✓ Active' : 'Select specific'}
+                  {countrySettings.isRandomCountry ? '✓ Exploring random locations worldwide' : 'Choose specific countries or regions'}
                 </p>
               </div>
             </div>
@@ -238,7 +249,7 @@ export function CountrySelection({ countrySettings, onSettingsChange }: CountryS
               </div>
 
               {/* Country/Region List */}
-              <div className="border rounded-lg h-48 overflow-y-auto">
+              <div className="border rounded-lg h-48 sm:h-64 overflow-y-auto">
                 {!showRegions ? (
                   // Country List
                   filteredCountries.length > 0 ? (
