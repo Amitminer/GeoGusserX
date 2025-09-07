@@ -7,7 +7,7 @@
 ### Quick Commands
 ```bash
 npm run test:algorithm          # Quick benchmark (1k iterations)
-npm run test:algorithm:full     # Full benchmark (10k iterations) 
+npm run test:algorithm:full     # Full benchmark (10k iterations)
 npm run test:algorithm:countries # Country lookup tests (1k per country)
 npm run test:algorithm:scale    # Scalability (100k iterations)
 ```
@@ -38,6 +38,9 @@ pip install -r requirements.txt
 
 # Generate new regions data
 python generate_regions.py
+
+# generate real coordinates using free APIs
+python generate-hybrid-regions.py
 ```
 
 **Purpose**: Generates `lib/locations/regions.json` with geographic region data for location generation algorithm.

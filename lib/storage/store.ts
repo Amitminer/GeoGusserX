@@ -29,7 +29,7 @@ interface GameStore {
 	nextRound: () => void;
 	endGame: () => void;
 	resetGame: () => void;
-	restoreActiveGame: () => Promise<boolean>;
+	restoreActiveGame: (showToast?: boolean) => Promise<boolean>;
 	cleanupStorage: () => Promise<void>;
 
 
@@ -255,7 +255,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 			showResults: false
 		});
 
-		get().saveGame();
+		// Defer save operation to avoid blocking UI
+		requestIdleCallback(() => {
+			get().saveGame();
+		});
 
 		logger.info('Advanced to next round', {
 			roundIndex: nextIndex
@@ -276,8 +279,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
 			showResults: false
 		});
 
-		get().saveGame();
-		get().updateStats();
+		// Defer heavy operations to avoid blocking UI
+		requestIdleCallback(() => {
+			get().saveGame();
+			get().updateStats();
+		});
 
 		logger.info('Game ended', {
 			gameId: currentGame.id,
@@ -303,7 +309,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	},
 
 	// Session restoration
-	restoreActiveGame: async (): Promise<boolean> => {
+	restoreActiveGame: async (showToast: boolean = true): Promise<boolean> => {
 		logger.startTimer('restore-active-game');
 		set({ isLoading: true, error: null });
 
@@ -315,6 +321,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 			const activeGame = await storageManager.getActiveGame();
 
 			if (activeGame) {
+				// Check if this game was just created (within the last 5 seconds)
+				const gameAge = Date.now() - activeGame.startTime;
+				const isRecentlyCreated = gameAge < 5000; // 5 seconds
+
 				// Restore the game state
 				set({
 					currentGame: activeGame,
@@ -327,15 +337,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
 				logger.perf('Restore active game', duration, {
 					gameId: activeGame.id,
 					mode: activeGame.mode,
-					roundIndex: activeGame.currentRoundIndex
+					roundIndex: activeGame.currentRoundIndex,
+					isRecentlyCreated
 				});
 
-				get().addToast({
-					title: '🎮 Game Restored!',
-					description: `Continuing your ${activeGame.mode} game (Round ${activeGame.currentRoundIndex + 1})`,
-					type: 'success',
-					duration: 3000 // Show for 3 seconds
-				});
+				// Only show toast if requested and game is not recently created
+				if (showToast && !isRecentlyCreated) {
+					get().addToast({
+						title: '🎮 Game Restored!',
+						description: `Continuing your ${activeGame.mode} game (Round ${activeGame.currentRoundIndex + 1})`,
+						type: 'success',
+						duration: 3000 // Show for 3 seconds
+					});
+				}
 
 				return true;
 			} else {
@@ -399,11 +413,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
 			toasts: [...state.toasts, newToast]
 		}));
 
-		// Auto remove after duration
+		// Auto remove after duration - use requestIdleCallback for better performance
 		const duration = toast.duration || 3000;
-		setTimeout(() => {
-			get().removeToast(id);
-		}, duration);
+		if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+			// Use requestIdleCallback when available for better performance
+			setTimeout(() => {
+				requestIdleCallback(() => {
+					get().removeToast(id);
+				});
+			}, duration);
+		} else {
+			// Fallback to setTimeout
+			setTimeout(() => {
+				get().removeToast(id);
+			}, duration);
+		}
 	},
 
 	removeToast: (id: string) => {

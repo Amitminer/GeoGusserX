@@ -1,1 +1,0 @@
-export { HorizontalSlider } from './horizontal-slider';

@@ -66,30 +66,6 @@ interface PerformanceStats {
 
 /**
  * Enhanced logging utility with performance monitoring and memory tracking
- *
- * Features:
- * - Development/production environment awareness
- * - Automatic memory usage tracking
- * - Performance timing capabilities
- * - Log filtering and export functionality
- * - Circular buffer to prevent memory leaks
- *
- * @example
- * ```typescript
- * import { logger } from './logger';
- *
- * // Basic logging
- * logger.info('User logged in', { userId: 123 });
- * logger.error('API call failed', error, 'api-service');
- *
- * // Performance timing
- * logger.startTimer('api-call');
- * await fetchData();
- * logger.endTimer('api-call', 'API call completed');
- *
- * // Get statistics
- * console.log(logger.getSummary());
- * ```
  */
 class Logger {
 	/** Whether we're running in development mode */
@@ -116,9 +92,12 @@ class Logger {
 	/** Queue for pending file writes to avoid race conditions */
 	private writeQueue: Promise<void> = Promise.resolve();
 
+	/** Debug message throttling */
+	private debugThrottle = new Map<string, number>();
+	private debugThrottleInterval = 5000; // 5 seconds
+
 	/**
 	 * Gets current memory usage in MB
-	 * @returns Memory usage in megabytes, or 0 if not available
 	 */
 	private getMemoryUsage(): number {
 		// @ts-expect-error - performance.memory might not be available in all browsers
@@ -127,13 +106,6 @@ class Logger {
 
 	/**
 	 * Creates a new log entry with current timestamp and memory usage
-	 * @param level - Log severity level
-	 * @param message - Log message
-	 * @param data - Optional additional data
-	 * @param source - Optional source identifier
-	 * @param errorInfo - React error boundary information
-	 * @param duration - Optional performance duration
-	 * @returns Formatted log entry
 	 */
 	private createLogEntry(
 		level: LogLevel,
@@ -157,7 +129,6 @@ class Logger {
 
 	/**
 	 * Writes a log entry to the file system (server-side only)
-	 * @param entry - Log entry to write to file
 	 */
 	private async writeLogToFile(entry: LogEntry): Promise<void> {
 		if (!this.isServerSide || !fs) {
@@ -185,8 +156,6 @@ class Logger {
 
 	/**
 	 * Adds a log entry to the internal storage and writes to file
-	 * Maintains circular buffer by removing oldest entries when limit is exceeded
-	 * @param entry - Log entry to add
 	 */
 	private addLog(entry: LogEntry) {
 		this.logs.push(entry);
@@ -199,14 +168,23 @@ class Logger {
 	}
 
 	/**
+	 * Check if a debug message should be throttled
+	 */
+	private shouldThrottleDebug(message: string, source?: string): boolean {
+		const key = `${source || 'default'}:${message}`;
+		const now = Date.now();
+		const lastLogged = this.debugThrottle.get(key);
+
+		if (!lastLogged || now - lastLogged > this.debugThrottleInterval) {
+			this.debugThrottle.set(key, now);
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Starts a performance timer with the given name
-	 * @param name - Unique identifier for the timer
-	 * @example
-	 * ```typescript
-	 * logger.startTimer('data-processing');
-	 * // ... do work ...
-	 * logger.endTimer('data-processing', 'Data processing completed');
-	 * ```
 	 */
 	startTimer(name: string) {
 		this.performanceTimers.set(name, performance.now());
@@ -214,16 +192,6 @@ class Logger {
 
 	/**
 	 * Ends a performance timer and optionally logs the duration
-	 * @param name - Timer identifier that was used with startTimer
-	 * @param message - Optional message to log with the timing result
-	 * @returns Duration in milliseconds, or 0 if timer wasn't found
-	 * @example
-	 * ```typescript
-	 * const duration = logger.endTimer('api-call', 'API request completed');
-	 * if (duration > 1000) {
-	 *   logger.warn('Slow API call detected', { duration });
-	 * }
-	 * ```
 	 */
 	endTimer(name: string, message?: string): number {
 		const startTime = this.performanceTimers.get(name);
@@ -243,33 +211,37 @@ class Logger {
 	}
 
 	/**
-	 * Logs a debug message (only shown in development)
-	 * @param message - Debug message
-	 * @param data - Optional additional data to log
-	 * @param source - Optional source identifier
-	 * @example
-	 * ```typescript
-	 * logger.debug('Component rendered', { props, state }, 'MyComponent');
-	 * ```
+	 * Logs a debug message (only shown in development and throttled)
 	 */
 	debug(message: string, data?: unknown, source?: string) {
+		// Throttle debug messages to prevent spam
+		if (this.shouldThrottleDebug(message, source)) {
+			return;
+		}
+
 		const entry = this.createLogEntry('debug', message, data, source);
 		this.addLog(entry);
 
+		// Only show debug logs in development
 		if (this.isDevelopment) {
-			console.debug(`[DEBUG] ${entry.timestamp} - ${message}`, data || '');
+			// Reduce console noise for Street View failures
+			if (message.includes('Street View not available') || message.includes('Using random search radius')) {
+				// Only log every 5th occurrence
+				const key = `${source || 'default'}:${message}`;
+				const count = (this.debugThrottle.get(key + ':count') || 0) + 1;
+				this.debugThrottle.set(key + ':count', count);
+				
+				if (count % 5 === 0) {
+					console.debug(`[DEBUG] ${entry.timestamp} - ${message} (${count} occurrences)`, data || '');
+				}
+			} else {
+				console.debug(`[DEBUG] ${entry.timestamp} - ${message}`, data || '');
+			}
 		}
 	}
 
 	/**
 	 * Logs an informational message
-	 * @param message - Info message
-	 * @param data - Optional additional data to log
-	 * @param source - Optional source identifier
-	 * @example
-	 * ```typescript
-	 * logger.info('User action completed', { action: 'save', itemId: 123 });
-	 * ```
 	 */
 	info(message: string, data?: unknown, source?: string) {
 		const entry = this.createLogEntry('info', message, data, source);
@@ -282,13 +254,6 @@ class Logger {
 
 	/**
 	 * Logs a warning message
-	 * @param message - Warning message
-	 * @param data - Optional additional data to log
-	 * @param source - Optional source identifier
-	 * @example
-	 * ```typescript
-	 * logger.warn('Deprecated API used', { apiName: 'oldEndpoint' }, 'api-client');
-	 * ```
 	 */
 	warn(message: string, data?: unknown, source?: string) {
 		const entry = this.createLogEntry('warn', message, data, source);
@@ -301,18 +266,6 @@ class Logger {
 
 	/**
 	 * Logs an error message
-	 * @param message - Error message
-	 * @param data - Optional additional data to log
-	 * @param source - Optional source identifier
-	 * @param errorInfo - React error boundary information
-	 * @example
-	 * ```typescript
-	 * try {
-	 *   await riskyOperation();
-	 * } catch (error) {
-	 *   logger.error('Operation failed', error, 'data-service');
-	 * }
-	 * ```
 	 */
 	error(message: string, data?: unknown, source?: string, errorInfo?: React.ErrorInfo) {
 		const entry = this.createLogEntry('error', message, data, source, errorInfo);
@@ -327,16 +280,6 @@ class Logger {
 
 	/**
 	 * Logs performance timing information
-	 * @param operation - Name of the operation being timed
-	 * @param duration - Duration in milliseconds
-	 * @param data - Optional additional performance data
-	 * @example
-	 * ```typescript
-	 * const start = performance.now();
-	 * await heavyComputation();
-	 * const duration = performance.now() - start;
-	 * logger.perf('data-computation', duration, { itemsProcessed: 1000 });
-	 * ```
 	 */
 	perf(operation: string, duration: number, data?: object) {
 		this.info(`Performance: ${operation}`, {
@@ -347,13 +290,6 @@ class Logger {
 
 	/**
 	 * Retrieves comprehensive performance and usage statistics
-	 * @returns Performance statistics object
-	 * @example
-	 * ```typescript
-	 * const stats = logger.getPerformanceStats();
-	 * console.log(`Total errors: ${stats.logsByLevel.error}`);
-	 * console.log(`Average memory: ${stats.averageMemoryUsage.toFixed(1)}MB`);
-	 * ```
 	 */
 	getPerformanceStats(): PerformanceStats {
 		const logsByLevel: Record<LogLevel, number> = {
@@ -389,20 +325,6 @@ class Logger {
 
 	/**
 	 * Retrieves logs with optional filtering
-	 * @param level - Filter by log level
-	 * @param source - Filter by source identifier
-	 * @returns Array of filtered log entries
-	 * @example
-	 * ```typescript
-	 * // Get all error logs
-	 * const errors = logger.getLogs('error');
-	 *
-	 * // Get all logs from a specific component
-	 * const componentLogs = logger.getLogs(undefined, 'UserProfile');
-	 *
-	 * // Get error logs from a specific source
-	 * const apiErrors = logger.getLogs('error', 'api-client');
-	 * ```
 	 */
 	getLogs(level?: LogLevel, source?: string): LogEntry[] {
 		let filtered = [...this.logs];
@@ -420,28 +342,14 @@ class Logger {
 
 	/**
 	 * Clears all stored log entries
-	 * @example
-	 * ```typescript
-	 * // Clear logs after exporting or when starting a new test
-	 * const exportData = logger.exportLogs();
-	 * logger.clearLogs();
-	 * ```
 	 */
 	clearLogs() {
 		this.logs = [];
+		this.debugThrottle.clear();
 	}
 
 	/**
 	 * Exports all logs and statistics as a JSON string
-	 * @returns JSON string containing logs and performance statistics
-	 * @example
-	 * ```typescript
-	 * // Export logs for debugging or analysis
-	 * const logData = logger.exportLogs();
-	 *
-	 * // Save to file or send to logging service
-	 * downloadFile('app-logs.json', logData);
-	 * ```
 	 */
 	exportLogs(): string {
 		const stats = this.getPerformanceStats();
@@ -453,12 +361,6 @@ class Logger {
 
 	/**
 	 * Clears the log file (server-side only)
-	 * @returns Promise that resolves when the file is cleared
-	 * @example
-	 * ```typescript
-	 * // Clear the log file at the start of a new session
-	 * await logger.clearLogFile();
-	 * ```
 	 */
 	async clearLogFile(): Promise<void> {
 		if (!this.isServerSide || !fs) {
@@ -479,13 +381,6 @@ class Logger {
 
 	/**
 	 * Reads the entire log file content (server-side only)
-	 * @returns Promise that resolves to the file content or empty string if not available
-	 * @example
-	 * ```typescript
-	 * // Read all logs from file
-	 * const fileContent = await logger.readLogFile();
-	 * console.log(fileContent);
-	 * ```
 	 */
 	async readLogFile(): Promise<string> {
 		if (!this.isServerSide || !fs) {
@@ -507,11 +402,6 @@ class Logger {
 
 	/**
 	 * Gets the log file path
-	 * @returns The absolute path to the log file
-	 * @example
-	 * ```typescript
-	 * console.log('Logs are stored at:', logger.getLogFilePath());
-	 * ```
 	 */
 	getLogFilePath(): string {
 		return this.logFilePath;
@@ -519,13 +409,6 @@ class Logger {
 
 	/**
 	 * Checks if file logging is available (server-side only)
-	 * @returns True if running on server-side and can write to files
-	 * @example
-	 * ```typescript
-	 * if (logger.isFileLoggingAvailable()) {
-	 *   console.log('Logs will be saved to file');
-	 * }
-	 * ```
 	 */
 	isFileLoggingAvailable(): boolean {
 		return this.isServerSide && fs !== null;
@@ -533,13 +416,6 @@ class Logger {
 
 	/**
 	 * Flushes any pending log writes to ensure they are written to disk
-	 * @returns Promise that resolves when all pending writes are complete
-	 * @example
-	 * ```typescript
-	 * // Ensure all logs are written before shutting down
-	 * await logger.flushLogs();
-	 * process.exit(0);
-	 * ```
 	 */
 	async flushLogs(): Promise<void> {
 		if (!this.isServerSide || !fs) {
@@ -555,13 +431,6 @@ class Logger {
 
 	/**
 	 * Generates a concise summary of logging session for quick debugging
-	 * @returns Formatted summary string with key metrics
-	 * @example
-	 * ```typescript
-	 * // Quick health check
-	 * console.log(logger.getSummary());
-	 * // Output: "Logger Summary: Total Logs: 45, Session Duration: 120.5s, ..."
-	 * ```
 	 */
 	getSummary(): string {
 		const stats = this.getPerformanceStats();
@@ -579,40 +448,6 @@ Log File: ${this.logFilePath}`;
 
 /**
  * Global logger instance
- *
- * Use this singleton instance throughout your application for consistent logging.
- *
- * @example
- * ```typescript
- * import { logger } from './logger';
- *
- * // In a React component
- * function MyComponent() {
- *   useEffect(() => {
- *     logger.info('Component mounted', undefined, 'MyComponent');
- *     return () => logger.info('Component unmounted', undefined, 'MyComponent');
- *   }, []);
- *
- *   const handleClick = () => {
- *     logger.startTimer('button-click');
- *     doSomething();
- *     logger.endTimer('button-click', 'Button click handled');
- *   };
- * }
- *
- * // In an async function
- * async function fetchUserData(id: string) {
- *   logger.startTimer('fetch-user');
- *   try {
- *     const user = await api.getUser(id);
- *     logger.endTimer('fetch-user', 'User data fetched successfully');
- *     return user;
- *   } catch (error) {
- *     logger.error('Failed to fetch user data', { userId: id, error }, 'user-service');
- *     throw error;
- *   }
- * }
- * ```
  */
 export const logger = new Logger();
 

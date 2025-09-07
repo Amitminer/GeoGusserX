@@ -59,7 +59,7 @@ function secureRandom(): number {
 
 The algorithm uses a comprehensive region-based approach with advanced indexing:
 
-- **100+ predefined regions** covering all major countries and territories
+- **32+ predefined regions** covering all major countries and territories
 - **Multiple region types**: Countries, states, and specific geographic areas
 - **O(1) hash map lookups** for instant country/region access
 - **Weighted selection with binary search** for O(log n) performance

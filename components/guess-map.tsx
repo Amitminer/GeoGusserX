@@ -176,9 +176,12 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 
 	// Initialize map when needed
 	useEffect(() => {
+		let isMounted = true;
+		
 		const initializeMap = async () => {
-			if (!containerRef.current) return;
+			if (!containerRef.current || !isMounted) return;
 
+			// Clean up existing map instance first
 			if (mapRef.current) {
 				google.maps.event.clearInstanceListeners(mapRef.current);
 				mapRef.current = null;
@@ -189,7 +192,7 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 			}
 
 			try {
-				if (!isExpanding) {
+				if (!isExpanding && isMounted) {
 					setIsLoading(true);
 				}
 				setError(null);
@@ -199,38 +202,51 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 					await mapsManager.initialize();
 				}
 
+				if (!isMounted) return;
+
 				// Create map with initial center and zoom
 				const initialCenter = minimapStateRef.current?.center || { lat: 20, lng: 0 };
 				const initialZoom = minimapStateRef.current?.zoom || 2;
 
-				if (containerRef.current) {
+				if (containerRef.current && isMounted) {
 					containerRef.current.innerHTML = '';
 					
 					const rect = containerRef.current.getBoundingClientRect();
 					if (rect.width === 0 || rect.height === 0) {
-						setTimeout(() => {
-							if (mapSize !== 'mini' && mapSize !== 'hidden') {
+						// Wait for container to be visible using requestAnimationFrame
+						const animationId = requestAnimationFrame(() => {
+							if (mapSize !== 'mini' && mapSize !== 'hidden' && isMounted) {
 								initializeMap();
 							}
-						}, 100);
-						return;
+						});
+						return () => cancelAnimationFrame(animationId);
 					}
 				}
 
-				const map = new google.maps.Map(containerRef.current, {
+				if (!isMounted) return;
+
+				// Create map configuration - don't set styles when mapId is present
+				const mapId = mapsManager.getMapId();
+				const mapConfig: google.maps.MapOptions = {
 					zoom: initialZoom,
 					center: initialCenter,
 					mapTypeId: getMapTypeId(mapType),
-					mapId: mapsManager.getMapId()!,
 					disableDefaultUI: true,
 					gestureHandling: 'greedy',
 					backgroundColor: '#1f2937',
 					zoomControl: true,
 					zoomControlOptions: {
 						position: google.maps.ControlPosition.RIGHT_BOTTOM
-					},
-					// Fallback dark styles
-					styles: [
+					}
+				};
+
+				// Add mapId if available
+				if (mapId) {
+					mapConfig.mapId = mapId;
+					// When mapId is present, styles are controlled via Cloud Console
+				} else {
+					// Only add fallback styles when no mapId is present
+					mapConfig.styles = [
 						{ elementType: "geometry", stylers: [{ color: "#212121" }] },
 						{ elementType: "labels.icon", stylers: [{ visibility: "off" }] },
 						{ elementType: "labels.text.fill", stylers: [{ color: "#757575" }] },
@@ -249,33 +265,49 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 						{ featureType: "transit", elementType: "labels.text.fill", stylers: [{ color: "#757575" }] },
 						{ featureType: "water", elementType: "geometry", stylers: [{ color: "#000000" }] },
 						{ featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#3d3d3d" }] }
-					]
-				});
+					];
+				}
+
+				const map = new google.maps.Map(containerRef.current, mapConfig);
+
+				if (!isMounted) {
+					// Clean up if component unmounted during initialization
+					google.maps.event.clearInstanceListeners(map);
+					return;
+				}
 
 				mapRef.current = map;
 
 				map.addListener('click', handleMapClick);
 				map.addListener('zoom_changed', handleZoomChanged);
 
-				setIsLoading(false);
-				setIsExpanding(false);
-				setMapLoaded(true);
-				logger.info('Guess map initialized successfully', undefined, 'GuessMap');
+				if (isMounted) {
+					setIsLoading(false);
+					setIsExpanding(false);
+					setMapLoaded(true);
+					logger.info('Guess map initialized successfully', undefined, 'GuessMap');
+				}
 
 			} catch (err) {
-				setError('Failed to initialize map');
-				setIsLoading(false);
-				setIsExpanding(false);
-				setRetryCount(prev => prev + 1);
-				logger.error('Guess map initialization failed', err, 'GuessMap');
+				if (isMounted) {
+					setError('Failed to initialize map');
+					setIsLoading(false);
+					setIsExpanding(false);
+					setRetryCount(prev => prev + 1);
+					logger.error('Guess map initialization failed', err, 'GuessMap');
+				}
 			}
 		};
 
 		if (mapSize !== 'mini' && mapSize !== 'hidden') {
 			initializeMap();
-		} else {
+		} else if (isMounted) {
 			setMapLoaded(false);
 		}
+
+		return () => {
+			isMounted = false;
+		};
 	}, [mapSize, handleMapClick, handleZoomChanged, mapType, setMapLoaded, isExpanding]);
 
 	// Cleanup effect when transitioning to mini or hidden state
@@ -320,17 +352,17 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 	
 	useEffect(() => {
 		if (mapRef.current && prevMapSizeRef.current !== mapSize && mapSize !== 'mini' && mapSize !== 'hidden') {
-			// Capture the map's current center before the timeout
+			// Capture the map's current center before the animation frame
 			const savedCenter = mapRef.current.getCenter();
 			
-			const timeout = setTimeout(() => {
+			const animationId = requestAnimationFrame(() => {
 				if (mapRef.current && savedCenter) {
 					// Force a safe redraw by setting the center
 					mapRef.current.setCenter(savedCenter);
 				}
-			}, 50);
+			});
 
-			return () => clearTimeout(timeout);
+			return () => cancelAnimationFrame(animationId);
 		}
 		prevMapSizeRef.current = mapSize;
 	}, [mapSize]);
@@ -351,10 +383,7 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 
 	const handleMakeGuess = useCallback(() => {
 		if (guessLocation && !disabled) {
-			// Add a small delay to ensure smooth transition
-			setTimeout(() => {
-				onGuess(guessLocation);
-			}, 50);
+			onGuess(guessLocation);
 		}
 	}, [guessLocation, disabled, onGuess]);
 
@@ -373,9 +402,10 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 			isZoomingRef.current = true;
 			const newZoom = Math.min(currentZoom + 1, 20);
 			mapRef.current.setZoom(newZoom);
-			setTimeout(() => {
+			// Use a single requestAnimationFrame for better performance
+			requestAnimationFrame(() => {
 				isZoomingRef.current = false;
-			}, 100);
+			});
 		}
 	}, [currentZoom]);
 
@@ -384,9 +414,10 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 			isZoomingRef.current = true;
 			const newZoom = Math.max(currentZoom - 1, 1);
 			mapRef.current.setZoom(newZoom);
-			setTimeout(() => {
+			// Use a single requestAnimationFrame for better performance
+			requestAnimationFrame(() => {
 				isZoomingRef.current = false;
-			}, 100);
+			});
 		}
 	}, [currentZoom]);
 
@@ -395,9 +426,9 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 			isZoomingRef.current = true;
 			mapRef.current.setCenter({ lat: 20, lng: 0 });
 			mapRef.current.setZoom(2);
-			setTimeout(() => {
+			requestAnimationFrame(() => {
 				isZoomingRef.current = false;
-			}, 100);
+			});
 		}
 	}, []);
 
@@ -406,9 +437,10 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 			isZoomingRef.current = true;
 			mapRef.current.setCenter(guessLocation);
 			mapRef.current.setZoom(Math.max(currentZoom, 8));
-			setTimeout(() => {
+			// Use a single requestAnimationFrame for better performance
+			requestAnimationFrame(() => {
 				isZoomingRef.current = false;
-			}, 100);
+			});
 		}
 	}, [guessLocation, currentZoom]);
 
@@ -438,9 +470,10 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 		dispatch({ type: 'SET_MAP_SIZE', payload: 'mini' });
 		
 		// Restore the original mapSize to trigger re-initialization
-		setTimeout(() => {
+		// Use requestAnimationFrame for better performance
+		requestAnimationFrame(() => {
 			dispatch({ type: 'SET_MAP_SIZE', payload: currentMapSize });
-		}, 50);
+		});
 		
 		logger.info('Map reload triggered', { mapSize }, 'GuessMap');
 	}, [mapSize, setMapLoaded]);

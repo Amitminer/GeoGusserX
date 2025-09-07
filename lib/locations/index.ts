@@ -351,7 +351,7 @@ export function generateLocationByCountry(countryName: string, maxAttempts: numb
  * Benchmark the location generation performance
  */
 export function benchmarkLocationGeneration(iterations: number = 1000) {
-  console.log(`🚀 Benchmarking location generation with ${iterations} iterations...`);
+  logger.info(`Benchmarking location generation with ${iterations} iterations`, undefined, 'LocationBenchmark');
   
   // Benchmark random location generation
   const start1 = performance.now();
@@ -367,11 +367,11 @@ export function benchmarkLocationGeneration(iterations: number = 1000) {
   }
   const time2 = performance.now() - start2;
 
-  console.log(`Random Generation: ${time1.toFixed(2)}ms (${(iterations/time1*1000).toFixed(0)} ops/sec)`);
-  console.log(`Country Generation: ${time2.toFixed(2)}ms (${(iterations/time2*1000).toFixed(0)} ops/sec)`);
+  logger.info(`Random Generation: ${time1.toFixed(2)}ms (${(iterations/time1*1000).toFixed(0)} ops/sec)`, undefined, 'LocationBenchmark');
+  logger.info(`Country Generation: ${time2.toFixed(2)}ms (${(iterations/time2*1000).toFixed(0)} ops/sec)`, undefined, 'LocationBenchmark');
   
   // Show region manager stats
-  console.log('📊 Region Manager Stats:', optimizedRegionManager.getStats());
+  logger.info('Region Manager Stats', optimizedRegionManager.getStats(), 'LocationBenchmark');
 }
 
 // Export distribution strategies for external use

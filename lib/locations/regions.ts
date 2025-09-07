@@ -13,6 +13,7 @@ export interface GeographicRegion {
 	name: string;
 	continent: string;
 	type: 'country' | 'state' | 'region';
+	country?: string; // The country this region belongs to (for states/regions)
 }
 
 /**
@@ -295,7 +296,7 @@ export function getCountriesOnly(): string[] {
 export function getStatesForCountry(countryName: string): GeographicRegion[] {
 	return GEOGRAPHIC_REGIONS.filter(region => 
 		(region.type === 'state' || region.type === 'region') &&
-		region.name.toLowerCase().includes(countryName.toLowerCase())
+		region.country?.toLowerCase() === countryName.toLowerCase()
 	);
 }
 

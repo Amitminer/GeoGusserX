@@ -21,25 +21,30 @@ You can play the live version here: **[GeoGusserX Live](https://geogusserx.verce
 
 <div align="center">
 
-### 🏠 Main Menu
+### 🏠 Homepage
 
-![Main Menu](./public/screenshots/main-menu.png)
-*Choose your mode and dive in*
+![Homepage](./public/screenshots/homepage.png)
+*Modern homepage with game modes and features*
+
+### ⚙️ Configuration
+
+![Config Page](./public/screenshots/config-page.png)
+*Customize your game settings and preferences*
 
 ### 🗺️ Gameplay
 
 ![Gameplay](./public/screenshots/gameplay.png)
 *Explore Street View & guess the location*
 
-### 📊 Results
+### 📊 Round Results
 
-![Results](./public/screenshots/results.png)
+![Round Complete](./public/screenshots/round-complete.png)
 *Score breakdown after each round*
 
-### 🏆 Game Complete
+### 🏆 Final Results
 
-![Game Complete](./public/screenshots/game-complete.png)
-*Final results & stats*
+![Final Results](./public/screenshots/final-results.png)
+*Complete game statistics and performance*
 
 </div>
 

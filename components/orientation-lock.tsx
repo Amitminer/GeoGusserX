@@ -18,7 +18,7 @@ export function OrientationLock({ children }: { children: React.ReactNode }) {
 		// Listen for orientation changes
 		const handleOrientationChange = () => {
 			// Small delay to ensure dimensions are updated
-			setTimeout(checkOrientation, 100);
+			requestAnimationFrame(checkOrientation);
 		};
 
 		window.addEventListener('resize', handleOrientationChange);

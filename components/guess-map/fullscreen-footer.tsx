@@ -25,7 +25,7 @@ export function FullscreenFooter({
         <div className="bg-gray-900/95 backdrop-blur-sm rounded-lg p-3 sm:p-4 shadow-lg border border-gray-700/50">
           {/* Mobile-first responsive layout */}
           <div className="space-y-3">
-            {/* Information text - more compact on mobile */}
+            {/* Information text */}
             <div className="text-center sm:text-left">
               {guessLocation ? (
                 <div>
@@ -60,10 +60,10 @@ export function FullscreenFooter({
                   >
                     Clear
                   </Button>
-                  <Button
-                    onClick={onMakeGuess}
-                    className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 font-medium shadow-lg transition-all duration-200 h-10"
-                  >
+										<Button
+											onClick={onMakeGuess}
+											className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 font-medium shadow-lg transition-all duration-200 h-10"
+										>
                     Submit Guess
                   </Button>
                 </div>

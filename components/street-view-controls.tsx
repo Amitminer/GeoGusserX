@@ -2,18 +2,19 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HorizontalSlider } from '@/components/ui/joystick';
 import { Gamepad2, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { HorizontalSlider } from '@/components/ui/horizontal-slider';
+import { useGameStore } from '@/lib/storage/store';
 
 interface StreetViewControlsProps {
 	panorama: google.maps.StreetViewPanorama | null;
 	showControls?: boolean;
 }
 
-export function StreetViewControls({ 
-	panorama, 
-	showControls = true 
+export function StreetViewControls({
+	panorama,
+	showControls = true
 }: StreetViewControlsProps) {
 	const [isMobile, setIsMobile] = useState(false);
 	const [isSliderVisible, setIsSliderVisible] = useState(true);
@@ -21,6 +22,9 @@ export function StreetViewControls({
 	const animationFrameRef = useRef<number | undefined>(undefined);
 	const movementRef = useRef({ x: 0, y: 0 });
 	const inactivityTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+	
+	// Import game state to stop animations when game ends
+	const { showGameComplete } = useGameStore();
 
 	// Detect mobile device
 	useEffect(() => {
@@ -33,10 +37,12 @@ export function StreetViewControls({
 		return () => window.removeEventListener('resize', checkMobile);
 	}, []);
 
-	// Animation loop for smooth camera movement
+	// Animation loop for smooth camera movement - only run when needed
 	useEffect(() => {
+		let isAnimating = false;
+		
 		const animate = () => {
-			if (panorama && (movementRef.current.x !== 0 || movementRef.current.y !== 0)) {
+			if (panorama && (movementRef.current.x !== 0 || movementRef.current.y !== 0) && !showGameComplete) {
 				const currentPov = panorama.getPov();
 
 				// Calculate movement speed (optimized for smooth control)
@@ -50,19 +56,34 @@ export function StreetViewControls({
 					heading: newHeading,
 					pitch: newPitch
 				});
+				
+				// Continue animation if still moving
+				animationFrameRef.current = requestAnimationFrame(animate);
+			} else {
+				// Stop animation when no movement
+				isAnimating = false;
+				animationFrameRef.current = undefined;
 			}
-
-			animationFrameRef.current = requestAnimationFrame(animate);
 		};
 
-		animationFrameRef.current = requestAnimationFrame(animate);
+		// Start animation only when movement begins
+		const startAnimation = () => {
+			if (!isAnimating && panorama) {
+				isAnimating = true;
+				animationFrameRef.current = requestAnimationFrame(animate);
+			}
+		};
+
+		// Expose start function for use in slider handlers
+		(window as Window & { startStreetViewAnimation?: () => void }).startStreetViewAnimation = startAnimation;
 
 		return () => {
 			if (animationFrameRef.current) {
 				cancelAnimationFrame(animationFrameRef.current);
 			}
+			(window as Window & { startStreetViewAnimation?: () => void }).startStreetViewAnimation = undefined;
 		};
-	}, [panorama]);
+	}, [panorama, showGameComplete]);
 
 	// Cleanup timeout on unmount
 	useEffect(() => {
@@ -83,11 +104,16 @@ export function StreetViewControls({
 
 	const handleSliderMove = (position: { x: number; y: number }) => {
 		movementRef.current = position;
+		// Start animation when movement begins
+		const windowWithAnimation = window as Window & { startStreetViewAnimation?: () => void };
+		if ((position.x !== 0 || position.y !== 0) && windowWithAnimation.startStreetViewAnimation) {
+			windowWithAnimation.startStreetViewAnimation();
+		}
 	};
 
 	const handleSliderEnd = () => {
 		movementRef.current = { x: 0, y: 0 };
-		
+
 		// Set timeout to make slider transparent after inactivity
 		inactivityTimeoutRef.current = setTimeout(() => {
 			setIsSliderActive(false);
@@ -98,8 +124,6 @@ export function StreetViewControls({
 		setIsSliderVisible(!isSliderVisible);
 	};
 
-
-
 	if (!showControls || !isMobile) return null;
 
 	return (
@@ -109,9 +133,9 @@ export function StreetViewControls({
 				{isSliderVisible && (
 					<motion.div
 						initial={{ opacity: 0, scale: 0.8 }}
-						animate={{ 
-							opacity: isSliderActive ? 1 : 0.3, 
-							scale: 1 
+						animate={{
+							opacity: isSliderActive ? 1 : 0.3,
+							scale: 1
 						}}
 						exit={{ opacity: 0, scale: 0.8 }}
 						transition={{ duration: 0.3 }}
@@ -158,11 +182,10 @@ export function StreetViewControls({
 					variant="secondary"
 					size="sm"
 					onClick={toggleSliderVisibility}
-					className={`${
-						isSliderVisible 
-							? 'bg-blue-600/80 hover:bg-blue-700/80 text-white' 
-							: 'bg-black/70 hover:bg-black/80 text-white'
-					} border-white/20 backdrop-blur-sm transition-colors`}
+					className={`${isSliderVisible
+						? 'bg-blue-600/80 hover:bg-blue-700/80 text-white'
+						: 'bg-black/70 hover:bg-black/80 text-white'
+						} border-white/20 backdrop-blur-sm transition-colors`}
 					title={isSliderVisible ? 'Hide slider' : 'Show slider'}
 				>
 					{isSliderVisible ? <EyeOff className="w-4 h-4" /> : <Gamepad2 className="w-4 h-4" />}

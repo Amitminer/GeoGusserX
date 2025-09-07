@@ -14,31 +14,51 @@ interface StreetViewProps {
 	location: StreetViewLocation;
 	onLocationChange?: (location: StreetViewLocation) => void;
 	onCountryInfoChange?: (countryInfo: GeocodeResult | null) => void;
+	onStreetViewError?: (error: string) => void;
 }
 
-export function StreetView({ location, onLocationChange, onCountryInfoChange }: StreetViewProps) {
+export function StreetView({ location, onLocationChange, onCountryInfoChange, onStreetViewError }: StreetViewProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const panoramaRef = useRef<google.maps.StreetViewPanorama | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [countryInfo, setCountryInfo] = useState<GeocodeResult | null>(null);
-	const { setStreetViewLoaded, gameSettings } = useGameStore();
+	const { setStreetViewLoaded, gameSettings, showGameComplete } = useGameStore();
 
 	useEffect(() => {
+		let isMounted = true;
+
 		const initializeStreetView = async () => {
-			if (!containerRef.current) return;
+			if (!containerRef.current || !isMounted || showGameComplete) return;
+
+			// Clean up existing panorama first
+			if (panoramaRef.current) {
+				google.maps.event.clearInstanceListeners(panoramaRef.current);
+				panoramaRef.current = null;
+			}
 
 			try {
-				setIsLoading(true);
-				setError(null);
+				if (isMounted) {
+					setIsLoading(true);
+					setError(null);
+				}
 
 				// Ensure Google Maps is loaded
 				if (!mapsManager.isInitialized()) {
 					await mapsManager.initialize();
 				}
 
+				if (!isMounted) return;
+
 				// Create Street View panorama
 				const panorama = mapsManager.createStreetView(containerRef.current, location);
+
+				if (!isMounted) {
+					// Clean up if component unmounted during initialization
+					google.maps.event.clearInstanceListeners(panorama);
+					return;
+				}
+
 				panoramaRef.current = panorama;
 
 				// Set up event listeners
@@ -80,62 +100,116 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange }: 
 
 				// Wait for Street View to load
 				panorama.addListener('status_changed', async () => {
+					if (!isMounted) return;
+
 					const status = panorama.getStatus();
 					if (status === google.maps.StreetViewStatus.OK) {
-						setIsLoading(false);
-						setStreetViewLoaded(true);
-						logger.info('Street View loaded successfully', { location }, 'StreetView');
+						if (isMounted) {
+							setIsLoading(false);
+							setStreetViewLoaded(true);
+							logger.info('Street View loaded successfully', { location }, 'StreetView');
+						}
 
-						// Get country information (for display and AI hints)
-						try {
-							const geocodingService = mapsManager.getGeocodingService();
-							if (geocodingService) {
-								// Use panorama's actual position instead of initial prop coordinates
-								const panoramaPosition = panorama.getPosition();
-								if (panoramaPosition) {
-									// Convert panorama position to lat/lng format expected by geocoding service
-									const actualCoordinates = {
-										lat: panoramaPosition.lat(),
-										lng: panoramaPosition.lng()
-									};
+						// Get country information (for display and AI hints) - use requestIdleCallback for better performance
+						if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+							requestIdleCallback(async () => {
+								if (!isMounted || showGameComplete) return;
+								try {
+									const geocodingService = mapsManager.getGeocodingService();
+									if (geocodingService) {
+										// Use panorama's actual position instead of initial prop coordinates
+										const panoramaPosition = panorama.getPosition();
+										if (panoramaPosition) {
+											// Convert panorama position to lat/lng format expected by geocoding service
+											const actualCoordinates = {
+												lat: panoramaPosition.lat(),
+												lng: panoramaPosition.lng()
+											};
 
-									const result = await geocodingService.getCountryFromCoordinates(actualCoordinates);
-									if (result) {
-										setCountryInfo(result);
-										if (onCountryInfoChange) {
-											onCountryInfoChange(result);
+											const result = await geocodingService.getCountryFromCoordinates(actualCoordinates);
+											if (result && isMounted && !showGameComplete) {
+												setCountryInfo(result);
+												if (onCountryInfoChange) {
+													onCountryInfoChange(result);
+												}
+												logger.info('Country information retrieved', {
+													country: result.country,
+													actualCoordinates,
+													initialCoordinates: location.location
+												}, 'StreetView');
+											}
+										} else {
+											logger.warn('Panorama position is null, cannot geocode', {}, 'StreetView');
+											if (onCountryInfoChange && isMounted && !showGameComplete) {
+												onCountryInfoChange(null);
+											}
 										}
-										logger.info('Country information retrieved', {
-											country: result.country,
-											actualCoordinates,
-											initialCoordinates: location.location
-										}, 'StreetView');
 									}
-								} else {
-									logger.warn('Panorama position is null, cannot geocode', {}, 'StreetView');
-									if (onCountryInfoChange) {
+								} catch (error) {
+									logger.error('Failed to get country information', error, 'StreetView');
+									// Still call the callback with null to indicate failure
+									if (onCountryInfoChange && isMounted && !showGameComplete) {
 										onCountryInfoChange(null);
 									}
 								}
-							}
-						} catch (error) {
-							logger.error('Failed to get country information', error, 'StreetView');
-							// Still call the callback with null to indicate failure
-							if (onCountryInfoChange) {
-								onCountryInfoChange(null);
-							}
+							});
+						} else {
+							// Fallback for browsers without requestIdleCallback
+							setTimeout(async () => {
+								if (!isMounted || showGameComplete) return;
+								try {
+									const geocodingService = mapsManager.getGeocodingService();
+									if (geocodingService) {
+										const panoramaPosition = panorama.getPosition();
+										if (panoramaPosition) {
+											const actualCoordinates = {
+												lat: panoramaPosition.lat(),
+												lng: panoramaPosition.lng()
+											};
+											const result = await geocodingService.getCountryFromCoordinates(actualCoordinates);
+											if (result && isMounted && !showGameComplete) {
+												setCountryInfo(result);
+												if (onCountryInfoChange) {
+													onCountryInfoChange(result);
+												}
+											}
+										}
+									}
+								} catch (error) {
+									logger.error('Failed to get country information', error, 'StreetView');
+									if (onCountryInfoChange && isMounted && !showGameComplete) {
+										onCountryInfoChange(null);
+									}
+								}
+							}, 100);
 						}
 					} else {
-						setError('Street View not available for this location');
-						setIsLoading(false);
-						logger.error('Street View failed to load', { status, location }, 'StreetView');
+						if (isMounted) {
+							const errorMessage = 'Street View not available for this location';
+							setError(errorMessage);
+							setIsLoading(false);
+							logger.error('Street View failed to load', { status, location }, 'StreetView');
+
+							// Notify parent component about the error so it can retry with a new location
+							if (onStreetViewError) {
+								onStreetViewError(errorMessage);
+							}
+						}
 					}
 				});
 
 			} catch (err) {
-				setError('Failed to initialize Street View');
-				setIsLoading(false);
-				logger.error('Street View initialization failed', err, 'StreetView');
+				if (isMounted) {
+					const errorMessage = 'Failed to initialize Street View';
+					setError(errorMessage);
+					setIsLoading(false);
+					logger.error('Street View initialization failed', err, 'StreetView');
+
+					// Notify parent component about the error so it can retry with a new location
+					if (onStreetViewError) {
+						onStreetViewError(errorMessage);
+					}
+				}
 			}
 		};
 
@@ -143,8 +217,10 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange }: 
 
 		// Cleanup
 		return () => {
+			isMounted = false;
 			if (panoramaRef.current) {
 				google.maps.event.clearInstanceListeners(panoramaRef.current);
+				panoramaRef.current = null;
 			}
 			setStreetViewLoaded(false);
 			setCountryInfo(null);
@@ -152,14 +228,9 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange }: 
 				onCountryInfoChange(null);
 			}
 		};
-	}, [location, onLocationChange, onCountryInfoChange, setStreetViewLoaded]);
+	}, [location, onLocationChange, onCountryInfoChange, onStreetViewError, setStreetViewLoaded, showGameComplete]);
 
-	// Separate effect to handle country name overlay visibility changes
-	// This prevents panorama re-initialization when only the overlay setting changes
 	useEffect(() => {
-		// This effect intentionally only watches gameSettings.showCountryName
-		// The overlay visibility is handled in the JSX render below
-		// No panorama re-initialization needed for overlay toggle
 		logger.debug('Country name overlay setting changed', {
 			showCountryName: gameSettings.showCountryName
 		}, 'StreetView');
@@ -225,19 +296,21 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange }: 
 				</motion.div>
 			)}
 
-			{/* Country Name Overlay - Fixed Position */}
+			{/* Country Name Overlay - Better Positioning */}
 			{!isLoading && !error && gameSettings.showCountryName && countryInfo && (
 				<motion.div
 					initial={{ opacity: 0, y: -20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ delay: 1 }}
-					className="fixed top-26 lg:top-20 left-2.5 bg-blue-600/90 text-white px-4 py-2 rounded-lg shadow-lg backdrop-blur-sm z-40"
+					className="absolute top-4 left-4 bg-blue-600/95 text-white px-3 py-2 rounded-xl shadow-lg backdrop-blur-sm z-30 border border-blue-500/30"
 				>
 					<div className="flex items-center gap-2">
-						<MapPin className="w-4 h-4" />
+						<MapPin className="w-4 h-4 text-blue-200" />
 						<div>
 							<div className="font-semibold text-sm">{countryInfo.country}</div>
-							<div className="text-xs text-blue-100">{countryInfo.countryCode}</div>
+							{countryInfo.countryCode && (
+								<div className="text-xs text-blue-200">{countryInfo.countryCode}</div>
+							)}
 						</div>
 					</div>
 				</motion.div>
