@@ -82,6 +82,10 @@ export default function RootLayout({
         <meta name="theme-color" content="#3b82f6" />
         <meta name="color-scheme" content="light dark" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {/* Preload critical resources for Google Maps */}
+        <link rel="preconnect" href="https://maps.googleapis.com" />
+        <link rel="preconnect" href="https://streetviewpixels-pa.googleapis.com" />
+        <link rel="dns-prefetch" href="https://maps.gstatic.com" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
