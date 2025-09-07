@@ -134,6 +134,17 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 			lng: event.latLng.lng()
 		};
 
+		// Debug logging to track location selection
+		logger.info('🎯 Map clicked - Location selected', {
+			location,
+			rawLatLng: {
+				lat: event.latLng.lat(),
+				lng: event.latLng.lng()
+			},
+			mapSize,
+			timestamp: Date.now()
+		}, 'GuessMap');
+
 		setGuessLocation(location);
 
 		// Remove existing marker
@@ -162,8 +173,12 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 
 		markerRef.current = marker;
 
-		logger.info('Guess location selected', location, 'GuessMap');
-	}, [disabled]);
+		// Verify marker position
+		logger.info('🎯 Marker created at position', {
+			markerPosition: marker.position,
+			originalLocation: location
+		}, 'GuessMap');
+	}, [disabled, mapSize]);
 
 	const isZoomingRef = useRef(false);
 
@@ -313,6 +328,13 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 	// Cleanup effect when transitioning to mini or hidden state
 	useEffect(() => {
 		if (mapSize === 'mini' || mapSize === 'hidden') {
+			// Debug logging for state transition
+			logger.info('🔄 Map transitioning to mini/hidden', {
+				mapSize,
+				currentGuessLocation: guessLocation,
+				timestamp: Date.now()
+			}, 'GuessMap');
+			
 			// Clean up the main map instance when going back to mini/hidden
 			if (mapRef.current) {
 				google.maps.event.clearInstanceListeners(mapRef.current);
@@ -322,10 +344,14 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 				markerRef.current.map = null;
 				markerRef.current = null;
 			}
-			setGuessLocation(null);
+			
+			// IMPORTANT: Don't clear guess location when transitioning to mini
+			// This was potentially causing the bug!
+			// setGuessLocation(null);
+			
 			setMapLoaded(false);
 		}
-	}, [mapSize, setMapLoaded]);
+	}, [mapSize, setMapLoaded, guessLocation]);
 
 	// Separate cleanup effect for component unmount
 	useEffect(() => {
@@ -383,9 +409,15 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 
 	const handleMakeGuess = useCallback(() => {
 		if (guessLocation && !disabled) {
+			// Debug logging before submitting guess
+			logger.info('🚀 Submitting guess', {
+				guessLocation,
+				timestamp: Date.now(),
+				mapSize
+			}, 'GuessMap');
 			onGuess(guessLocation);
 		}
-	}, [guessLocation, disabled, onGuess]);
+	}, [guessLocation, disabled, onGuess, mapSize]);
 
 	const handleClearGuess = useCallback(() => {
 		if (disabled) return;
@@ -479,9 +511,17 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 	}, [mapSize, setMapLoaded]);
 
 	const handleMapStateChange = useCallback((center: { lat: number; lng: number }, zoom: number) => {
+		// Debug logging for minimap state changes
+		logger.info('🗺️ MiniMap state changed', {
+			center,
+			zoom,
+			currentGuessLocation: guessLocation,
+			timestamp: Date.now()
+		}, 'GuessMap');
+		
 		minimapStateRef.current = { center, zoom };
 		dispatch({ type: 'SET_ZOOM', payload: zoom });
-	}, []);
+	}, [guessLocation]);
 
 	if (mapSize === 'mini') {
 		return (

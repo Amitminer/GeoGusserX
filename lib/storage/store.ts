@@ -165,6 +165,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
 			throw new Error('No active round');
 		}
 
+		// Debug logging to track guess processing in store
+		logger.info('🎲 GameStore processing guess', {
+			guessedLocation,
+			actualLocation: currentRound.actualLocation,
+			roundIndex: currentGame.currentRoundIndex,
+			roundId: currentRound.id,
+			timestamp: Date.now()
+		}, 'GameStore');
+
 		try {
 			logger.startTimer('calculate-distance');
 			const distance = calculateDistance(
@@ -178,6 +187,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
 			logger.startTimer('calculate-score');
 			const score = calculateScore(distance);
 			const scoreCalcDuration = logger.endTimer('calculate-score');
+
+			// Debug logging before updating round
+			logger.info('📊 Calculated distance and score', {
+				distance,
+				score,
+				actualLocation: currentRound.actualLocation,
+				guessedLocation
+			}, 'GameStore');
 
 			// Update round
 			currentRound.guessedLocation = guessedLocation;
@@ -194,6 +211,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
 				actualLocation: currentRound.actualLocation,
 				guessedLocation
 			};
+
+			// Debug logging before returning result
+			logger.info('🏁 Final result created', {
+				result,
+				updatedRound: {
+					id: currentRound.id,
+					actualLocation: currentRound.actualLocation,
+					guessedLocation: currentRound.guessedLocation,
+					distance: currentRound.distance,
+					score: currentRound.score
+				}
+			}, 'GameStore');
 
 			// Batch all state updates into a single set call to prevent multiple re-renders
 			set({

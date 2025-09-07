@@ -21,6 +21,13 @@ function ResultsMapComponent({ actualLocation, guessedLocation }: ResultsMapProp
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Debug logging to track what locations the results map receives
+  logger.info('🗺️ ResultsMap received locations', {
+    actualLocation,
+    guessedLocation,
+    timestamp: Date.now()
+  }, 'ResultsMap');
+
   // Memoize location key to prevent unnecessary re-renders
   const locationKey = useMemo(() => 
     `${actualLocation.lat},${actualLocation.lng}-${guessedLocation.lat},${guessedLocation.lng}`,

@@ -202,8 +202,23 @@ export default function PlayPage() {
 	const handleMakeGuess = async (guessedLocation: Location) => {
 		if (!currentGame) return;
 
+		// Debug logging to track guess processing
+		logger.info('🎮 PlayPage received guess', {
+			guessedLocation,
+			currentRoundIndex: currentGame.currentRoundIndex,
+			currentRound: currentGame.rounds[currentGame.currentRoundIndex],
+			timestamp: Date.now()
+		}, 'PlayPage');
+
 		try {
 			const result = await makeGuess(guessedLocation);
+			
+			// Debug logging for result
+			logger.info('🏆 Guess result received', {
+				result,
+				timestamp: Date.now()
+			}, 'PlayPage');
+			
 			setLastResult(result);
 		} catch (error) {
 			logger.error('Failed to process guess', error, 'PlayPage');
