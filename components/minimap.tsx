@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Globe, Expand, EyeOff } from 'lucide-react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { Globe, Expand, EyeOff, Send } from 'lucide-react';
 import { mapsManager } from '@/lib/maps';
 import { darkMapStyles } from '@/lib/utils';
 
@@ -8,12 +8,61 @@ interface MiniMapProps {
 	onHide?: () => void;
 	className?: string;
 	onMapStateChange?: (center: { lat: number; lng: number }, zoom: number) => void;
+	onQuessPlaced?: (location: { lat: number; lng: number }) => void;
+	onSubmitGuess?: () => void;
+	hasGuess?: boolean;
+	disabled?: boolean;
 }
 
-export function MiniMap({ onExpand, onHide, className, onMapStateChange }: MiniMapProps) {
+export function MiniMap({ onExpand, onHide, className, onMapStateChange, onQuessPlaced, onSubmitGuess, hasGuess = false, disabled = false }: MiniMapProps) {
 	const mapRef = useRef<HTMLDivElement>(null);
 	const mapInstanceRef = useRef<google.maps.Map | null>(null);
+	const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
 	const [isMapLoaded, setIsMapLoaded] = useState(false);
+
+	// Handle single click to place guess (not submit) - memoized to prevent re-renders
+	const handleMapClick = useCallback((event: google.maps.MapMouseEvent) => {
+		if (disabled || !event.latLng || !onQuessPlaced || !mapInstanceRef.current) return;
+
+		const location = {
+			lat: event.latLng.lat(),
+			lng: event.latLng.lng()
+		};
+
+		// Remove existing marker
+		if (markerRef.current) {
+			markerRef.current.map = null;
+			markerRef.current = null;
+		}
+
+		// Create custom marker using AdvancedMarkerElement (works without Map ID)
+		const markerContent = document.createElement('div');
+		markerContent.innerHTML = `
+			<div style="
+				position: relative;
+				width: 24px;
+				height: 24px;
+				cursor: pointer;
+				filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+			">
+				<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#ef4444" stroke="#ffffff" stroke-width="1"/>
+					<circle cx="12" cy="9" r="2.5" fill="white"/>
+				</svg>
+			</div>
+		`;
+
+		const marker = new google.maps.marker.AdvancedMarkerElement({
+			position: event.latLng,
+			map: mapInstanceRef.current,
+			content: markerContent,
+			title: 'Your Guess'
+		});
+
+		markerRef.current = marker;
+
+		onQuessPlaced(location);
+	}, [disabled, onQuessPlaced]);
 
 	// Handle double-click to expand
 	const handleDoubleClick = (e: React.MouseEvent) => {
@@ -34,14 +83,23 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange }: MiniM
 				mapInstanceRef.current = null;
 			}
 
+			// Clean up existing marker
+			if (markerRef.current) {
+				markerRef.current.map = null;
+				markerRef.current = null;
+			}
+
 			try {
 				// Ensure Google Maps is loaded
 				if (!mapsManager.isInitialized()) {
 					await mapsManager.initialize();
 				}
 
-				// Create a simple world map for the minimap
-				map = new google.maps.Map(mapRef.current, {
+				// Get Map ID to prevent warnings
+				const mapId = mapsManager.getMapId();
+
+				// Create minimap with Map ID to prevent warnings
+				const mapConfig: google.maps.MapOptions = {
 					zoom: 1,
 					center: { lat: 20, lng: 0 },
 					mapTypeId: google.maps.MapTypeId.ROADMAP,
@@ -54,33 +112,19 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange }: MiniM
 					mapTypeControl: false,
 					scaleControl: false,
 					streetViewControl: false,
-					fullscreenControl: false,
-					styles: darkMapStyles
-				});
+					fullscreenControl: false
+				};
 
-				// Add listeners for map state changes
-				if (onMapStateChange) {
-					map.addListener('center_changed', () => {
-						const center = map!.getCenter();
-						const zoom = map!.getZoom();
-						if (center && zoom) {
-							onMapStateChange(
-								{ lat: center.lat(), lng: center.lng() },
-								zoom
-							);
-						}
-					});
-					map.addListener('zoom_changed', () => {
-						const center = map!.getCenter();
-						const zoom = map!.getZoom();
-						if (center && zoom) {
-							onMapStateChange(
-								{ lat: center.lat(), lng: center.lng() },
-								zoom
-							);
-						}
-					});
+				// Add Map ID if available
+				if (mapId) {
+					mapConfig.mapId = mapId;
 				}
+
+				map = new google.maps.Map(mapRef.current, mapConfig);
+
+				// Override with custom dark styles after map creation
+				// I do not know why it doesnt let me override the styles
+				map.setOptions({ styles: darkMapStyles });
 
 				mapInstanceRef.current = map;
 				setIsMapLoaded(true);
@@ -100,8 +144,65 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange }: MiniM
 				google.maps.event.clearInstanceListeners(mapInstanceRef.current);
 				mapInstanceRef.current = null;
 			}
+			if (markerRef.current) {
+				markerRef.current.map = null;
+				markerRef.current = null;
+			}
 		};
+	}, []); // Empty dependency array - only initialize once
+
+	// Separate effect to handle click listener updates without re-initializing the map
+	useEffect(() => {
+		if (!mapInstanceRef.current) return;
+
+		// Remove existing click listeners
+		google.maps.event.clearListeners(mapInstanceRef.current, 'click');
+
+		// Add click listener if needed
+		if (onQuessPlaced && !disabled) {
+			mapInstanceRef.current.addListener('click', handleMapClick);
+		}
+	}, [onQuessPlaced, disabled, handleMapClick]);
+
+	// Separate effect to handle map state change listeners
+	useEffect(() => {
+		if (!mapInstanceRef.current || !onMapStateChange) return;
+
+		// Remove existing listeners
+		google.maps.event.clearListeners(mapInstanceRef.current, 'center_changed');
+		google.maps.event.clearListeners(mapInstanceRef.current, 'zoom_changed');
+
+		// Add new listeners
+		const map = mapInstanceRef.current;
+		map.addListener('center_changed', () => {
+			const center = map.getCenter();
+			const zoom = map.getZoom();
+			if (center && zoom) {
+				onMapStateChange(
+					{ lat: center.lat(), lng: center.lng() },
+					zoom
+				);
+			}
+		});
+		map.addListener('zoom_changed', () => {
+			const center = map.getCenter();
+			const zoom = map.getZoom();
+			if (center && zoom) {
+				onMapStateChange(
+					{ lat: center.lat(), lng: center.lng() },
+					zoom
+				);
+			}
+		});
 	}, [onMapStateChange]);
+
+	// Effect to clear marker when guess is cleared or component is disabled
+	useEffect(() => {
+		if (!hasGuess && markerRef.current) {
+			markerRef.current.map = null;
+			markerRef.current = null;
+		}
+	}, [hasGuess]);
 
 	return (
 		<div
@@ -113,7 +214,7 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange }: MiniM
 					<div className="flex items-center gap-1 md:gap-1.5">
 						<Globe className="h-4 w-4 md:h-4 md:w-4 text-blue-500" />
 						<span className="text-[11px] md:text-xs font-medium text-gray-100">
-							Make your guess (zoomable)
+							{onQuessPlaced && !disabled ? 'Click to place guess' : 'Make your guess (zoomable)'}
 						</span>
 					</div>
 					<div className="flex items-center gap-1">
@@ -152,10 +253,34 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange }: MiniM
 					<div
 						ref={mapRef}
 						className="w-full h-full"
-						style={{ opacity: isMapLoaded ? 1 : 0 }}
+						style={{
+							opacity: isMapLoaded ? 1 : 0,
+							cursor: disabled ? 'not-allowed' : (onQuessPlaced ? 'crosshair' : 'pointer')
+						}}
 						onDoubleClick={handleDoubleClick}
 					/>
+					{/* Disabled overlay */}
+					{disabled && (
+						<div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+							<div className="bg-gray-900/90 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-gray-700/50">
+								<span className="text-xs font-medium text-gray-300">Guess submitted!</span>
+							</div>
+						</div>
+					)}
 				</div>
+
+				{/* Submit Button - appears when guess is placed */}
+				{hasGuess && !disabled && onSubmitGuess && (
+					<div className="px-3 py-2 border-t bg-gray-800/90 backdrop-blur-sm">
+						<button
+							onClick={onSubmitGuess}
+							className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200"
+						>
+							<Send className="h-4 w-4" />
+							Submit Guess
+						</button>
+					</div>
+				)}
 			</div>
 		</div>
 	);
