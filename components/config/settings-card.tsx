@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CountrySelection } from '@/components/country-selection';
 import { CountrySettings, UserGameSettings } from '@/lib/types';
-import { Eye, EyeOff, Globe, Settings } from 'lucide-react';
+import { Eye, EyeOff, MapPin, Settings, Compass, Plane } from 'lucide-react';
 
 interface SettingsCardProps {
   countrySettings: CountrySettings;
@@ -28,22 +28,25 @@ export function SettingsCard({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <Card className="border-2 border-gray-200/50 dark:border-gray-700/50 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm shadow-xl rounded-2xl overflow-hidden">
+        <Card className="border-2 border-blue-200/50 dark:border-blue-700/50 bg-gradient-to-br from-blue-50/80 to-cyan-50/80 dark:from-blue-900/40 dark:to-cyan-900/40 backdrop-blur-sm shadow-xl rounded-2xl overflow-hidden">
           <CardHeader className="pb-3 sm:pb-6">
             <CardTitle className="flex items-center gap-2 sm:gap-3">
               <motion.div 
-                className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl flex items-center justify-center text-white shadow-lg"
-                whileHover={{ rotate: 360 }}
-                transition={{ duration: 0.6 }}
+                className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 via-cyan-500 to-teal-500 rounded-xl flex items-center justify-center text-white shadow-lg"
+                whileHover={{ 
+                  rotate: [0, -10, 10, -10, 0],
+                  scale: [1, 1.1, 1]
+                }}
+                transition={{ duration: 0.8 }}
               >
-                <Globe className="w-4 h-4 sm:w-5 sm:h-5" />
+                <Compass className="w-4 h-4 sm:w-5 sm:h-5" />
               </motion.div>
               <div className="min-w-0 flex-1">
-                <div className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200">
-                  Location Preference
+                <div className="text-base sm:text-lg font-semibold bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-400 dark:to-cyan-400 bg-clip-text text-transparent">
+                  🌍 Adventure Destinations
                 </div>
-                <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                  Choose your exploration area
+                <div className="text-xs sm:text-sm text-blue-600/70 dark:text-blue-400/70">
+                  ✈️ Pick your next exploration journey
                 </div>
               </div>
             </CardTitle>
@@ -63,22 +66,25 @@ export function SettingsCard({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <Card className="border-2 border-gray-200/50 dark:border-gray-700/50 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm shadow-xl rounded-2xl overflow-hidden">
+        <Card className="border-2 border-purple-200/50 dark:border-purple-700/50 bg-gradient-to-br from-purple-50/80 to-pink-50/80 dark:from-purple-900/40 dark:to-pink-900/40 backdrop-blur-sm shadow-xl rounded-2xl overflow-hidden">
           <CardHeader className="pb-3 sm:pb-6">
             <CardTitle className="flex items-center gap-2 sm:gap-3">
               <motion.div 
-                className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-500 to-violet-600 rounded-xl flex items-center justify-center text-white shadow-lg"
-                whileHover={{ rotate: 360 }}
-                transition={{ duration: 0.6 }}
+                className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 rounded-xl flex items-center justify-center text-white shadow-lg"
+                whileHover={{ 
+                  rotate: [0, 180, 360],
+                  scale: [1, 1.2, 1]
+                }}
+                transition={{ duration: 0.8 }}
               >
                 <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
               </motion.div>
               <div className="min-w-0 flex-1">
-                <div className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200">
-                  Game Settings
+                <div className="text-base sm:text-lg font-semibold bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+                  🎮 Explorer Settings
                 </div>
-                <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                  Customize your gameplay experience
+                <div className="text-xs sm:text-sm text-purple-600/70 dark:text-purple-400/70">
+                  🎆 Customize your adventure experience
                 </div>
               </div>
             </CardTitle>

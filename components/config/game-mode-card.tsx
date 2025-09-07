@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Play, MapPin, Trophy, Infinity as InfinityIcon } from 'lucide-react';
+import { Play, MapPin, Trophy, Infinity as InfinityIcon, Compass, Mountain } from 'lucide-react';
 import { GameMode } from '@/lib/types';
 
 interface GameModeCardProps {
@@ -39,9 +39,9 @@ export function GameModeCard({ mode, isSelected, onSelect }: GameModeCardProps) 
       <Card
         className={`cursor-pointer transition-all duration-300 hover:shadow-xl border-2 ${
           isSelected
-            ? 'ring-2 ring-blue-500 shadow-lg border-blue-300 bg-blue-50/50 dark:bg-blue-900/20'
-            : 'border-gray-200/50 dark:border-gray-700/50 hover:border-blue-200 dark:hover:border-blue-700 bg-white/60 dark:bg-gray-800/60'
-        } backdrop-blur-sm rounded-2xl overflow-hidden group`}
+            ? 'ring-2 ring-blue-500 shadow-lg border-blue-300 bg-gradient-to-br from-blue-50/80 to-cyan-50/80 dark:from-blue-900/30 dark:to-cyan-900/30'
+            : 'border-gray-200/50 dark:border-gray-700/50 hover:border-blue-200 dark:hover:border-blue-700 bg-gradient-to-br from-white/80 to-gray-50/80 dark:from-gray-800/80 dark:to-gray-900/80'
+        } backdrop-blur-sm rounded-2xl overflow-hidden group hover:scale-[1.02] transform`}
         onClick={() => onSelect(mode.mode)}
       >
         <CardHeader className="pb-2 sm:pb-3">

@@ -15,36 +15,36 @@ import Link from 'next/link';
 const gameModes = [
   {
     mode: '4-rounds' as GameMode,
-    title: 'Quick Game',
-    description: 'Perfect for a quick geography challenge during breaks',
-    rounds: '4 Rounds',
+    title: '🏃‍♂️ Quick Expedition',
+    description: 'Perfect for a swift geographic adventure during breaks',
+    rounds: '4 Locations',
     estimatedTime: '~10 min',
     color: 'from-green-500 to-emerald-600',
     icon: 'Play' as const
   },
   {
     mode: '5-rounds' as GameMode,
-    title: 'Classic',
-    description: 'The traditional GeoGuessr experience with balanced gameplay',
-    rounds: '5 Rounds',
+    title: '🎯 Classic Journey',
+    description: 'The traditional explorer experience with balanced discovery',
+    rounds: '5 Locations',
     estimatedTime: '~15 min',
     color: 'from-blue-500 to-cyan-600',
     icon: 'MapPin' as const
   },
   {
     mode: '8-rounds' as GameMode,
-    title: 'Extended',
-    description: 'For serious geography enthusiasts who want more challenge',
-    rounds: '8 Rounds',
+    title: '🏔️ Epic Adventure',
+    description: 'For serious explorers who crave extended geographic challenges',
+    rounds: '8 Locations',
     estimatedTime: '~25 min',
     color: 'from-purple-500 to-violet-600',
     icon: 'Trophy' as const
   },
   {
     mode: 'infinite' as GameMode,
-    title: 'Infinite',
-    description: 'Keep playing until you want to stop - endless exploration',
-    rounds: '∞ Rounds',
+    title: '♾️ Endless Exploration',
+    description: 'Unlimited geographic discovery - explore until your heart\'s content',
+    rounds: '∞ Locations',
     estimatedTime: 'Unlimited',
     color: 'from-orange-500 to-red-600',
     icon: 'InfinityIcon' as const
@@ -116,11 +116,11 @@ export default function ConfigPage() {
                 <Settings className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
               </motion.div>
               <div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent dark:from-gray-200 dark:to-gray-400">
-                  Game Configuration
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 bg-clip-text text-transparent dark:from-blue-400 dark:via-purple-400 dark:to-cyan-400">
+                  🎮 Adventure Setup
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base lg:text-lg">
-                  Customize your GeoGusserX experience
+                <p className="text-blue-600/80 dark:text-blue-400/80 text-sm sm:text-base lg:text-lg">
+                  🌍 Prepare for your geographic expedition
                 </p>
               </div>
             </div>
@@ -151,11 +151,11 @@ export default function ConfigPage() {
               transition={{ delay: 0.1 }}
             >
               <div className="mb-6 sm:mb-8 text-center">
-                <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 dark:text-gray-200 mb-2 sm:mb-3">
-                  Choose Your Game Mode
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 dark:from-blue-400 dark:to-teal-400 bg-clip-text text-transparent mb-2 sm:mb-3">
+                  🎯 Choose Your Adventure Mode
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto px-4">
-                  Select the perfect game mode that matches your available time and desired challenge level
+                <p className="text-blue-600/70 dark:text-blue-400/70 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto px-4">
+                  🎆 Pick your exploration style - from quick expeditions to endless journeys
                 </p>
               </div>
 
@@ -184,11 +184,11 @@ export default function ConfigPage() {
               transition={{ delay: 0.6 }}
             >
               <div className="mb-6 sm:mb-8 text-center">
-                <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 dark:text-gray-200 mb-2 sm:mb-3">
-                  Game Settings
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-green-600 to-teal-600 dark:from-green-400 dark:to-teal-400 bg-clip-text text-transparent mb-2 sm:mb-3">
+                  ⚙️ Explorer Preferences
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto px-4">
-                  Fine-tune your gameplay experience with these customization options
+                <p className="text-green-600/70 dark:text-green-400/70 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto px-4">
+                  🌎 Fine-tune your geographic adventure experience
                 </p>
               </div>
 
@@ -218,21 +218,21 @@ export default function ConfigPage() {
                     onClick={handleStartGame}
                     disabled={!selectedMode || isStarting}
                     size="lg"
-                    className={`w-full py-3 sm:py-4 text-base sm:text-lg font-semibold shadow-xl transition-all duration-300 ${
+                    className={`w-full py-3 sm:py-4 text-base sm:text-lg font-semibold shadow-xl transition-all duration-300 rounded-xl ${
                       selectedMode && !isStarting
-                        ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 hover:shadow-2xl text-white'
+                        ? 'bg-gradient-to-r from-blue-500 via-teal-500 to-cyan-500 hover:from-blue-600 hover:via-teal-600 hover:to-cyan-600 hover:shadow-2xl text-white hover:scale-105'
                         : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                     }`}
                   >
                     {isStarting ? (
                       <div className="flex items-center gap-2">
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Starting Game...
+                        🚀 Launching Adventure...
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
                         <Play className="w-5 h-5" />
-                        {selectedMode ? `Start ${gameModes.find(m => m.mode === selectedMode)?.title}` : 'Select a Game Mode'}
+                        {selectedMode ? `🌍 Begin ${gameModes.find(m => m.mode === selectedMode)?.title}` : '🎯 Select Your Adventure Mode'}
                       </div>
                     )}
                   </Button>
@@ -243,9 +243,9 @@ export default function ConfigPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 1 }}
-                    className="text-sm text-gray-500 dark:text-gray-400 mt-3"
+                    className="text-sm text-blue-500/70 dark:text-blue-400/70 mt-3"
                   >
-                    Please select a game mode above to continue
+                    🎨 Please choose your adventure mode above to begin exploring
                   </motion.p>
                 )}
               </div>
