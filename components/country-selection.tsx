@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,89 +9,139 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { CountrySettings } from '@/lib/types';
-import { getAvailableCountries, getCountriesOnly, getRegionsByType } from '@/lib/locations/regions';
-import { Settings, Globe, MapPin, Search, Check, X } from 'lucide-react';
+import { getCountriesOnly, getStatesForCountry } from '@/lib/locations/regions';
+import { Settings, Globe, MapPin, Search, X } from 'lucide-react';
 
 interface CountrySelectionProps {
   countrySettings: CountrySettings;
   onSettingsChange: (settings: CountrySettings) => void;
 }
 
+// Simple debounce hook
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 export function CountrySelection({ countrySettings, onSettingsChange }: CountrySelectionProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [localSettings, setLocalSettings] = useState<CountrySettings>(countrySettings);
   const [searchTerm, setSearchTerm] = useState('');
-  const [availableCountries] = useState(() => getAvailableCountries());
-  const [showOnlyCountries, setShowOnlyCountries] = useState(false);
-
-  // Filter countries based on search term and filter preference
-  const baseList = showOnlyCountries ? getCountriesOnly() : availableCountries;
-  const filteredCountries = baseList.filter(country =>
-    country.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
+  const [showRegions, setShowRegions] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   
-  // Group countries by type for better display
-  const groupedCountries = {
-    countries: filteredCountries.filter(name => {
-      const regions = getRegionsByType('country');
-      return regions.some(r => r.name === name);
-    }),
-    states: filteredCountries.filter(name => {
-      const regions = getRegionsByType('state');
-      return regions.some(r => r.name === name);
-    }),
-    regions: filteredCountries.filter(name => {
-      const regions = getRegionsByType('region');
-      return regions.some(r => r.name === name);
-    })
-  };
+  // Simple debounced search
+  const debouncedSearch = useDebounce(searchTerm, 200);
 
-  // Update local settings when props change
+  // Get only actual countries (not states/regions) and remove duplicates
+  const allCountries = useMemo(() => {
+    const countries = getCountriesOnly();
+    // Remove duplicates and sort
+    return [...new Set(countries)].sort();
+  }, []);
+
+  // Get regions for selected country
+  const countryRegions = useMemo(() => {
+    if (!selectedCountry) return [];
+    return getStatesForCountry(selectedCountry);
+  }, [selectedCountry]);
+
+  // Filter regions when searching inside a country
+  const filteredRegions = useMemo(() => {
+    if (!showRegions || !debouncedSearch.trim()) return countryRegions;
+    const searchLower = debouncedSearch.toLowerCase();
+    return countryRegions.filter(region =>
+      region.name.toLowerCase().includes(searchLower)
+    );
+  }, [countryRegions, showRegions, debouncedSearch]);
+
+  // Simple filtering with working search
+  const filteredCountries = useMemo(() => {
+    if (!debouncedSearch.trim()) return allCountries;
+    const searchLower = debouncedSearch.toLowerCase();
+    return allCountries.filter(country =>
+      country.toLowerCase().includes(searchLower)
+    );
+  }, [allCountries, debouncedSearch]);
+
+  // Auto-focus search when dialog opens (desktop only)
   useEffect(() => {
-    setLocalSettings(countrySettings);
-  }, [countrySettings]);
+    if (isOpen) {
+      setSearchTerm('');
+      setSelectedCountry(null);
+      setShowRegions(false);
+      // Only auto-focus on desktop (screen width > 768px)
+      if (window.innerWidth > 768) {
+        setTimeout(() => searchInputRef.current?.focus(), 100);
+      }
+    }
+  }, [isOpen]);
 
-  const handleSave = () => {
-    onSettingsChange(localSettings);
-    setIsOpen(false);
-  };
-
-  const handleCancel = () => {
-    setLocalSettings(countrySettings);
+  // Clear search when switching between country and region views
+  useEffect(() => {
     setSearchTerm('');
-    setIsOpen(false);
-  };
+  }, [showRegions]);
 
-  const handleRandomToggle = (checked: boolean) => {
-    setLocalSettings(prev => ({
-      ...prev,
-      isRandomCountry: checked,
-      targetCountry: checked ? null : prev.targetCountry
-    }));
-  };
+  // Handle country click - show regions if available
+  const handleCountryClick = useCallback((country: string) => {
+    const regions = getStatesForCountry(country);
+    if (regions.length > 0) {
+      setSelectedCountry(country);
+      setShowRegions(true);
+    } else {
+      // No regions, select the country directly
+      onSettingsChange({
+        targetCountry: country,
+        isRandomCountry: false
+      });
+      setIsOpen(false);
+    }
+  }, [onSettingsChange]);
 
-  const handleCountrySelect = (country: string) => {
-    setLocalSettings(prev => ({
-      ...prev,
-      targetCountry: country,
+  // Handle region selection - auto-save and close
+  const handleRegionSelect = useCallback((region: string) => {
+    onSettingsChange({
+      targetCountry: region,
       isRandomCountry: false
-    }));
+    });
+    setIsOpen(false);
+  }, [onSettingsChange]);
+
+  // Go back to country list
+  const handleBackToCountries = useCallback(() => {
+    setShowRegions(false);
+    setSelectedCountry(null);
+  }, []);
+
+  // Handle random toggle - auto-save and close if enabled
+  const handleRandomToggle = useCallback((checked: boolean) => {
+    onSettingsChange({
+      isRandomCountry: checked,
+      targetCountry: checked ? null : countrySettings.targetCountry
+    });
+    if (checked) setIsOpen(false);
+  }, [countrySettings.targetCountry, onSettingsChange]);
+
+  // Clear search
+  const clearSearch = useCallback(() => {
     setSearchTerm('');
-  };
+    searchInputRef.current?.focus();
+  }, []);
 
-  const getCurrentDisplayText = () => {
-    if (countrySettings.isRandomCountry) {
-      return 'Random Country';
-    }
-    return countrySettings.targetCountry || 'Select Country';
-  };
+  // Display helpers
+  const displayText = countrySettings.isRandomCountry
+    ? 'Random Country'
+    : countrySettings.targetCountry || 'Select Country';
 
-  const getDisplayIcon = () => {
-    if (countrySettings.isRandomCountry) {
-      return <Globe className="w-4 h-4 text-blue-500" />;
-    }
-    return <MapPin className="w-4 h-4 text-green-500" />;
-  };
+  const displayIcon = countrySettings.isRandomCountry
+    ? <Globe className="w-4 h-4 text-blue-500" />
+    : <MapPin className="w-4 h-4 text-green-500" />;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -100,13 +150,13 @@ export function CountrySelection({ countrySettings, onSettingsChange }: CountryS
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {getDisplayIcon()}
+                {displayIcon}
                 <div className="text-left">
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {getCurrentDisplayText()}
+                    {displayText}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Tap to change location settings
+                    Tap to change
                   </p>
                 </div>
               </div>
@@ -116,233 +166,168 @@ export function CountrySelection({ countrySettings, onSettingsChange }: CountryS
         </Card>
       </DialogTrigger>
       
-      <DialogContent className="sm:max-w-md max-w-[95vw] max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="space-y-3">
-          <DialogTitle className="flex items-center gap-2 text-lg">
+      <DialogContent className="sm:max-w-md max-w-[95vw] max-h-[80vh] overflow-hidden">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
             <Globe className="w-5 h-5 text-blue-500" />
             Location Settings
           </DialogTitle>
-          <DialogDescription className="text-sm text-gray-600 dark:text-gray-300">
-            Choose whether to explore random countries or focus on a specific country for your Street View adventure.
+          <DialogDescription>
+            Choose random countries or select a specific location.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-6 py-4">
-          {/* Random Country Toggle - Always Visible */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-600 shadow-sm">
-              <div className="flex-1 space-y-1 pr-4">
-                <Label htmlFor="random-toggle" className="text-sm font-semibold cursor-pointer text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-blue-500" />
-                  Random Country Mode
+        <div className="space-y-4">
+          {/* Random Toggle - Compact */}
+          <div className={`flex items-center justify-between p-3 rounded-lg border transition-all duration-200 ${
+            countrySettings.isRandomCountry 
+              ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700' 
+              : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600'
+          }`}>
+            <div className="flex items-center gap-2 flex-1">
+              <Globe className={`w-4 h-4 flex-shrink-0 ${
+                countrySettings.isRandomCountry ? 'text-blue-600' : 'text-gray-500'
+              }`} />
+              <div className="min-w-0">
+                <Label htmlFor="random-toggle" className="text-sm font-medium cursor-pointer">
+                  Random Mode
                 </Label>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Explore locations from any available country worldwide
+                <p className={`text-xs ${
+                  countrySettings.isRandomCountry 
+                    ? 'text-blue-600 dark:text-blue-400' 
+                    : 'text-gray-500 dark:text-gray-400'
+                }`}>
+                  {countrySettings.isRandomCountry ? '✓ Active' : 'Select specific'}
                 </p>
               </div>
-              <div className="flex-shrink-0 ml-4">
-                <Switch
-                  id="random-toggle"
-                  checked={localSettings.isRandomCountry}
-                  onCheckedChange={handleRandomToggle}
-                  className="data-[state=checked]:bg-blue-600 data-[state=unchecked]:bg-gray-300"
-                />
-              </div>
             </div>
-
-            {/* Current Selection Indicator */}
-            <div className={`flex items-center gap-2 p-3 rounded-lg border transition-colors ${
-              localSettings.isRandomCountry 
-                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' 
-                : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-            }`}>
-              {localSettings.isRandomCountry ? (
-                <>
-                  <Globe className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                    Random countries enabled
-                  </span>
-                </>
-              ) : (
-                <>
-                  <MapPin className="w-4 h-4 text-green-600 dark:text-green-400" />
-                  <span className="text-sm font-medium text-green-800 dark:text-green-200">
-                    {localSettings.targetCountry ? `Selected: ${localSettings.targetCountry}` : 'Choose a specific country below'}
-                  </span>
-                </>
-              )}
-            </div>
+            <Switch
+              id="random-toggle"
+              checked={countrySettings.isRandomCountry}
+              onCheckedChange={handleRandomToggle}
+              className="data-[state=checked]:bg-blue-600 flex-shrink-0"
+            />
           </div>
 
           {/* Country Selection */}
-          <AnimatePresence>
-            {!localSettings.isRandomCountry && (
-              <motion.div
-                initial={{ opacity: 0, height: 0, overflow: 'hidden' }}
-                animate={{ opacity: 1, height: 'auto', overflow: 'visible' }}
-                exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-                className="space-y-4"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Select Location</Label>
-                    <button
-                      onClick={() => setShowOnlyCountries(!showOnlyCountries)}
-                      className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
-                    >
-                      {showOnlyCountries ? 'Show All Regions' : 'Countries Only'}
-                    </button>
-                  </div>
-                  
+          {!countrySettings.isRandomCountry && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-3"
+            >
+              {/* Search */}
                   {/* Search Input */}
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
-                      placeholder={showOnlyCountries ? "Search countries..." : "Search countries, states, regions..."}
+                      ref={searchInputRef}
+                      placeholder={showRegions ? `Search regions in ${selectedCountry}...` : "Search countries..."}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 h-10"
+                      className="pl-10"
                     />
-                    {searchTerm && (
-                      <button
-                        onClick={() => setSearchTerm('')}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
+                {searchTerm && (
+                  <button
+                    onClick={clearSearch}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
 
-                {/* Location List */}
-                <div className="space-y-1">
-                  <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
-                    {filteredCountries.length > 0 ? (
-                      <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                        {/* Countries */}
-                        {groupedCountries.countries.length > 0 && (
-                          <div>
-                            {!showOnlyCountries && (
-                              <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700">
-                                <span className="text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wide">Countries</span>
-                              </div>
-                            )}
-                            {groupedCountries.countries.map((country) => (
-                              <button
-                                key={country}
-                                onClick={() => handleCountrySelect(country)}
-                                className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-between ${
-                                  localSettings.targetCountry === country
-                                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                                    : 'text-gray-900 dark:text-gray-100'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <Globe className="w-4 h-4 text-blue-500" />
-                                  <span className="text-sm font-medium">{country}</span>
-                                </div>
-                                {localSettings.targetCountry === country && (
-                                  <Check className="w-4 h-4 text-blue-600" />
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                        
-                        {/* States */}
-                        {!showOnlyCountries && groupedCountries.states.length > 0 && (
-                          <div>
-                            <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700">
-                              <span className="text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wide">States & Provinces</span>
-                            </div>
-                            {groupedCountries.states.map((state) => (
-                              <button
-                                key={state}
-                                onClick={() => handleCountrySelect(state)}
-                                className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-between ${
-                                  localSettings.targetCountry === state
-                                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                                    : 'text-gray-900 dark:text-gray-100'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <MapPin className="w-4 h-4 text-green-500" />
-                                  <span className="text-sm">{state}</span>
-                                </div>
-                                {localSettings.targetCountry === state && (
-                                  <Check className="w-4 h-4 text-blue-600" />
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                        
-                        {/* Regions */}
-                        {!showOnlyCountries && groupedCountries.regions.length > 0 && (
-                          <div>
-                            <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700">
-                              <span className="text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wide">Regions</span>
-                            </div>
-                            {groupedCountries.regions.map((region) => (
-                              <button
-                                key={region}
-                                onClick={() => handleCountrySelect(region)}
-                                className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-between ${
-                                  localSettings.targetCountry === region
-                                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                                    : 'text-gray-900 dark:text-gray-100'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <Settings className="w-4 h-4 text-purple-500" />
-                                  <span className="text-sm">{region}</span>
-                                </div>
-                                {localSettings.targetCountry === region && (
-                                  <Check className="w-4 h-4 text-blue-600" />
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+              {/* Country/Region List */}
+              <div className="border rounded-lg h-48 overflow-y-auto">
+                {!showRegions ? (
+                  // Country List
+                  filteredCountries.length > 0 ? (
+                    filteredCountries.map((country) => {
+                      const hasRegions = getStatesForCountry(country).length > 0;
+                      return (
+                        <button
+                          key={country}
+                          onClick={() => handleCountryClick(country)}
+                      className={`w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 border-b last:border-b-0 transition-colors flex items-center justify-between text-sm ${
+                        countrySettings.targetCountry === country
+                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                          : ''
+                      }`}
+                        >
+                          <span>{country}</span>
+                          {hasRegions && (
+                            <span className="text-xs text-gray-400">→</span>
+                          )}
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="p-8 text-center text-gray-500">
+                      <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No countries found</p>
+                    </div>
+                  )
+                ) : (
+                  // Region List
+                  <div>
+                    {/* Back button - Compact */}
+                    <button
+                      onClick={handleBackToCountries}
+                      className="w-full text-left px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-700 font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors flex items-center gap-2 text-sm"
+                    >
+                      <MapPin className="w-4 h-4" />
+                      ← Back
+                    </button>
+                    
+                    {/* Country header - Compact */}
+                    <div className="px-3 py-2 bg-green-50 dark:bg-green-900/20 border-b border-green-200 dark:border-green-700">
+                      <div className="flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-green-600 dark:text-green-400" />
+                        <p className="text-sm font-semibold text-green-800 dark:text-green-200">
+                          {selectedCountry}
+                        </p>
                       </div>
-                    ) : (
-                      <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                        <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">No locations found</p>
-                        <p className="text-xs">Try a different search term</p>
-                      </div>
-                    )}
+                    </div>
+                    
+                    {/* Whole country option - Compact */}
+                    <button
+                      onClick={() => handleRegionSelect(selectedCountry!)}
+                      className={`w-full text-left px-3 py-2 hover:bg-green-50 dark:hover:bg-green-900/20 border-b border-green-100 dark:border-green-800 font-medium text-green-700 dark:text-green-300 transition-colors flex items-center gap-2 text-sm ${
+                        countrySettings.targetCountry === selectedCountry
+                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                          : ''
+                      }`}
+                    >
+                      <Globe className="w-4 h-4" />
+                      Entire Country
+                    </button>
+                    
+                    {/* Region options - Filter out the country itself */}
+                    {filteredRegions
+                      .filter(region => region.name !== selectedCountry)
+                      .map((region) => (
+                        <button
+                          key={region.name}
+                          onClick={() => handleRegionSelect(region.name)}
+                          className={`w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 border-b last:border-b-0 transition-colors text-sm ${
+                            countrySettings.targetCountry === region.name
+                              ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                              : ''
+                          }`}
+                        >
+                          {region.name}
+                        </button>
+                      ))}
                   </div>
-                  
-                  {filteredCountries.length > 0 && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                      {filteredCountries.length} of {baseList.length} locations
-                      {showOnlyCountries && ' (countries only)'}
-                    </p>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                )}
+              </div>
+            </motion.div>
+          )}
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <Button 
-              onClick={handleSave} 
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white order-2 sm:order-1"
-              disabled={!localSettings.isRandomCountry && !localSettings.targetCountry}
-            >
-              <Check className="w-4 h-4 mr-2" />
-              Save Settings
-            </Button>
-            <Button 
-              onClick={handleCancel} 
-              variant="outline" 
-              className="flex-1 order-1 sm:order-2"
-            >
-              <X className="w-4 h-4 mr-2" />
-              Cancel
+          {/* Close Button */}
+          <div className="flex justify-end pt-4 border-t">
+            <Button onClick={() => setIsOpen(false)} variant="outline">
+              Close
             </Button>
           </div>
         </div>

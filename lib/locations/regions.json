@@ -2461,16 +2461,6 @@
 			"type": "country"
 		},
 		{
-			"id": 700,
-			"name": "India",
-			"country": "India",
-			"continent": "Asia",
-			"lat": 22.3511,
-			"lng": 78.6677,
-			"radius": 800,
-			"type": "country"
-		},
-		{
 			"id": 570,
 			"name": "Indiana, United States",
 			"country": "United States",
