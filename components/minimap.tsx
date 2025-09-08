@@ -104,7 +104,7 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange, onQuess
 					center: { lat: 20, lng: 0 },
 					mapTypeId: google.maps.MapTypeId.ROADMAP,
 					disableDefaultUI: true,
-					gestureHandling: 'cooperative', // Allow zoom with Ctrl+scroll or two-finger scroll
+					gestureHandling: 'greedy', // Allow zoom on scroll without modifier keys
 					zoomControl: true, // Enable zoom controls
 					zoomControlOptions: {
 						position: google.maps.ControlPosition.TOP_RIGHT
