@@ -294,10 +294,26 @@ export function getCountriesOnly(): string[] {
  * Get states/regions for a specific country
  */
 export function getStatesForCountry(countryName: string): GeographicRegion[] {
-	return GEOGRAPHIC_REGIONS.filter(region => 
-		(region.type === 'state' || region.type === 'region') &&
-		region.country?.toLowerCase() === countryName.toLowerCase()
-	);
+	return GEOGRAPHIC_REGIONS.filter(region => {
+		// Check if it's a state or region type
+		if (region.type !== 'state' && region.type !== 'region') {
+			return false;
+		}
+		
+		// First check if the region has a country property (for directional regions)
+		if (region.country) {
+			return region.country.toLowerCase() === countryName.toLowerCase();
+		}
+		
+		// For states without country property, check if name ends with ", CountryName"
+		const nameParts = region.name.split(', ');
+		if (nameParts.length >= 2) {
+			const regionCountry = nameParts[nameParts.length - 1]; // Get the last part after comma
+			return regionCountry.toLowerCase() === countryName.toLowerCase();
+		}
+		
+		return false;
+	});
 }
 
 // Export optimized functions for internal use
