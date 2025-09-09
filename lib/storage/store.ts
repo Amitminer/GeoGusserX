@@ -27,6 +27,7 @@ interface GameStore {
 	startNewGame: (mode: GameMode) => Promise<void>;
 	makeGuess: (guessedLocation: Location) => Promise<GuessResult>;
 	nextRound: () => void;
+	skipRound: () => void;
 	endGame: () => void;
 	resetGame: () => void;
 	restoreActiveGame: (showToast?: boolean) => Promise<boolean>;
@@ -76,7 +77,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		targetCountry: null
 	},
 	gameSettings: {
-		showCountryName: false, // Default to false as requested
+		showCountryName: false, // Default to false
 		preferredGameMode: '4-rounds' // Default to Quick Game for new users
 	},
 	toasts: [],
@@ -294,6 +295,45 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
 		logger.info('Advanced to next round', {
 			roundIndex: nextIndex
+		}, 'GameStore');
+	},
+
+	skipRound: () => {
+		const { currentGame } = get();
+
+		if (!currentGame || currentGame.mode !== 'infinite') return;
+
+		const currentRound = currentGame.rounds[currentGame.currentRoundIndex];
+		if (!currentRound || currentRound.completed) return;
+
+		// Mark current round as completed with skip values
+		currentRound.completed = true;
+		currentRound.guessedLocation = null;
+		currentRound.distance = null;
+		currentRound.score = 0; // No points for skipping
+		currentRound.timeSpent = Date.now() - (currentGame.startTime + (currentGame.currentRoundIndex * 30000)); // Rough estimate
+
+		// Update the game state to trigger re-render
+		set({
+			currentGame: { ...currentGame }
+		});
+
+		// Show toast notification
+		get().addToast({
+			title: '⏭️ Location Skipped',
+			description: 'Loading new location...',
+			type: 'warning',
+			duration: 2000
+		});
+
+		// Save the game state
+		requestIdleCallback(() => {
+			get().saveGame();
+		});
+
+		logger.info('Skipped round in infinite mode', {
+			roundIndex: currentGame.currentRoundIndex,
+			roundId: currentRound.id
 		}, 'GameStore');
 	},
 
@@ -632,12 +672,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	// Hint Actions
 	purchaseHint: async (cost: number): Promise<boolean> => {
 		const { currentGame } = get();
-		
+
 		if (!currentGame) {
 			logger.error('No active game for hint purchase', undefined, 'GameStore');
 			return false;
 		}
-		
+
 		if (currentGame.totalScore < cost) {
 			logger.warn('Insufficient score for hint purchase', {
 				currentScore: currentGame.totalScore,
@@ -645,22 +685,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
 			}, 'GameStore');
 			return false;
 		}
-		
+
 		try {
 			// Deduct the cost from total score
 			currentGame.totalScore = Math.max(0, currentGame.totalScore - cost);
-			
+
 			// Update the state
 			set({ currentGame: { ...currentGame } });
-			
+
 			// Save the game
 			await get().saveGame();
-			
+
 			logger.info('Hint purchased successfully', {
 				cost,
 				remainingScore: currentGame.totalScore
 			}, 'GameStore');
-			
+
 			return true;
 		} catch (error) {
 			logger.error('Failed to purchase hint', error, 'GameStore');
@@ -671,34 +711,34 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	// Location Actions
 	setActualLocation: async (location: Location): Promise<void> => {
 		const { currentGame } = get();
-		
+
 		if (!currentGame) {
 			logger.error('No active game for setting actual location', undefined, 'GameStore');
 			return;
 		}
-		
+
 		const currentRound = currentGame.rounds[currentGame.currentRoundIndex];
 		if (!currentRound) {
 			logger.error('No active round for setting actual location', undefined, 'GameStore');
 			return;
 		}
-		
+
 		try {
 			// Update the actual location
 			currentRound.actualLocation = location;
-			
+
 			// Update the state
 			set({ currentGame: { ...currentGame } });
-			
+
 			// Save the game
 			await get().saveGame();
-			
+
 			logger.info('📍 Actual location set successfully', {
 				location,
 				roundId: currentRound.id,
 				roundIndex: currentGame.currentRoundIndex
 			}, 'GameStore');
-			
+
 		} catch (error) {
 			logger.error('Failed to set actual location', error, 'GameStore');
 		}

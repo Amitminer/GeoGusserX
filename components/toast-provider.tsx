@@ -20,10 +20,10 @@ const toastIcons = {
 };
 
 const toastVariants = {
-	success: 'border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-900 dark:text-green-200',
-	error: 'border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-900 dark:text-red-200',
-	warning: 'border-yellow-200 bg-yellow-50 text-yellow-800 dark:border-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-	info: 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-900 dark:text-blue-200',
+	success: 'border-2 border-green-500/70 bg-green-100/80 dark:bg-green-800/80 text-green-900 dark:text-green-100 shadow-2xl shadow-green-500/30 backdrop-blur-sm',
+	error: 'border-2 border-red-500/70 bg-red-100/80 dark:bg-red-800/80 text-red-900 dark:text-red-100 shadow-2xl shadow-red-500/30 backdrop-blur-sm',
+	warning: 'border-2 border-amber-500/70 bg-amber-100/80 dark:bg-amber-800/80 text-amber-900 dark:text-amber-100 shadow-2xl shadow-amber-500/30 backdrop-blur-sm',
+	info: 'border-2 border-blue-500/70 bg-blue-100/80 dark:bg-blue-800/80 text-blue-900 dark:text-blue-100 shadow-2xl shadow-blue-500/30 backdrop-blur-sm',
 };
 
 export function ToastSystem() {
@@ -36,19 +36,32 @@ export function ToastSystem() {
 				return (
 					<Toast
 						key={toast.id}
-						className={toastVariants[toast.type]}
+						className={`${toastVariants[toast.type]} rounded-lg transform transition-all duration-300 hover:scale-[1.02]`}
 						onOpenChange={(open) => {
 							if (!open) {
 								removeToast(toast.id);
 							}
 						}}
 					>
-						<div className="flex items-start gap-3">
-							<Icon className="w-5 h-5 mt-0.5 flex-shrink-0" />
+						<div className="flex items-center gap-3">
+							<div className={`
+								w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
+								${toast.type === 'success' ? 'bg-green-500 text-white' : ''}
+								${toast.type === 'error' ? 'bg-red-500 text-white' : ''}
+								${toast.type === 'warning' ? 'bg-amber-500 text-white' : ''}
+								${toast.type === 'info' ? 'bg-blue-500 text-white' : ''}
+							`}>
+								<Icon className="w-4 h-4" />
+							</div>
+
 							<div className="flex-1">
-								<ToastTitle>{toast.title}</ToastTitle>
+								<ToastTitle className="font-bold text-sm">
+									{toast.title}
+								</ToastTitle>
 								{toast.description && (
-									<ToastDescription>{toast.description}</ToastDescription>
+									<ToastDescription className="text-xs mt-1 opacity-90">
+										{toast.description}
+									</ToastDescription>
 								)}
 							</div>
 						</div>

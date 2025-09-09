@@ -15,9 +15,10 @@ interface StreetViewProps {
 	onLocationChange?: (location: StreetViewLocation) => void;
 	onCountryInfoChange?: (countryInfo: GeocodeResult | null) => void;
 	onStreetViewError?: (error: string) => void;
+	onSkipRound?: () => void;
 }
 
-export function StreetView({ location, onLocationChange, onCountryInfoChange, onStreetViewError }: StreetViewProps) {
+export function StreetView({ location, onLocationChange, onCountryInfoChange, onStreetViewError, onSkipRound }: StreetViewProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const panoramaRef = useRef<google.maps.StreetViewPanorama | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
@@ -281,6 +282,7 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange, on
 				<StreetViewControls
 					panorama={panoramaRef.current}
 					showControls={true}
+					onSkipRound={onSkipRound}
 				/>
 			)}
 
