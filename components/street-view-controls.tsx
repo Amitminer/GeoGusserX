@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gamepad2, EyeOff } from 'lucide-react';
+import { Gamepad2, EyeOff, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { HorizontalSlider } from '@/components/ui/horizontal-slider';
 import { useGameStore } from '@/lib/storage/store';
@@ -10,11 +10,13 @@ import { useGameStore } from '@/lib/storage/store';
 interface StreetViewControlsProps {
 	panorama: google.maps.StreetViewPanorama | null;
 	showControls?: boolean;
+	onSkipRound?: () => void;
 }
 
 export function StreetViewControls({
 	panorama,
-	showControls = true
+	showControls = true,
+	onSkipRound
 }: StreetViewControlsProps) {
 	const [isMobile, setIsMobile] = useState(false);
 	const [isSliderVisible, setIsSliderVisible] = useState(true);
@@ -22,9 +24,9 @@ export function StreetViewControls({
 	const animationFrameRef = useRef<number | undefined>(undefined);
 	const movementRef = useRef({ x: 0, y: 0 });
 	const inactivityTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
-	
+
 	// Import game state to stop animations when game ends
-	const { showGameComplete } = useGameStore();
+	const { showGameComplete, currentGame } = useGameStore();
 
 	// Detect mobile device
 	useEffect(() => {
@@ -40,7 +42,7 @@ export function StreetViewControls({
 	// Animation loop for smooth camera movement - only run when needed
 	useEffect(() => {
 		let isAnimating = false;
-		
+
 		const animate = () => {
 			if (panorama && (movementRef.current.x !== 0 || movementRef.current.y !== 0) && !showGameComplete) {
 				const currentPov = panorama.getPov();
@@ -56,7 +58,7 @@ export function StreetViewControls({
 					heading: newHeading,
 					pitch: newPitch
 				});
-				
+
 				// Continue animation if still moving
 				animationFrameRef.current = requestAnimationFrame(animate);
 			} else {
@@ -190,6 +192,19 @@ export function StreetViewControls({
 				>
 					{isSliderVisible ? <EyeOff className="w-4 h-4" /> : <Gamepad2 className="w-4 h-4" />}
 				</Button>
+
+				{/* Skip button - Only for infinite mode on mobile */}
+				{currentGame?.mode === 'infinite' && onSkipRound && (
+					<Button
+						variant="secondary"
+						size="sm"
+						onClick={onSkipRound}
+						className="bg-orange-600/80 hover:bg-orange-700/80 text-white border-white/20 backdrop-blur-sm transition-colors"
+						title="Skip this location"
+					>
+						<SkipForward className="w-4 h-4" />
+					</Button>
+				)}
 
 
 			</motion.div>

@@ -34,6 +34,7 @@ export default function PlayPage() {
 		countrySettings,
 		makeGuess,
 		nextRound,
+		skipRound,
 		endGame,
 		resetGame,
 		setError,
@@ -246,6 +247,11 @@ export default function PlayPage() {
 		nextRound();
 	};
 
+	const handleSkipRound = () => {
+		setCurrentLocation(null); // Clear current location to trigger new location generation
+		skipRound();
+	};
+
 	const handleEndGame = () => {
 		endGame();
 	};
@@ -361,6 +367,7 @@ export default function PlayPage() {
 						>
 							<GameHeader
 								onEndGame={handleEndGame}
+								onSkipRound={handleSkipRound}
 								currentLocation={currentLocation?.location || null}
 								countryInfo={countryInfo}
 							/>
@@ -371,6 +378,7 @@ export default function PlayPage() {
 									location={currentLocation}
 									onCountryInfoChange={setCountryInfo}
 									onStreetViewError={handleStreetViewError}
+									onSkipRound={handleSkipRound}
 								/>
 
 								{/* Floating Guess Map - positioned in bottom right */}

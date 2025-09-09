@@ -4,17 +4,18 @@ import { motion } from 'framer-motion';
 import { useGameStore } from '@/lib/storage/store';
 import { Button } from '@/components/ui/button';
 import { formatScore } from '@/lib/utils';
-import { Trophy, MapPin, Clock, Home } from 'lucide-react';
+import { Trophy, MapPin, Clock, Home, SkipForward } from 'lucide-react';
 import { HintsDialog } from '@/components/hints-dialog';
 import type { GeocodeResult } from '@/lib/maps/geocoding';
 
 interface GameHeaderProps {
 	onEndGame?: () => void;
+	onSkipRound?: () => void;
 	currentLocation?: { lat: number; lng: number } | null;
 	countryInfo?: GeocodeResult | null;
 }
 
-export function GameHeader({ onEndGame, currentLocation, countryInfo }: GameHeaderProps) {
+export function GameHeader({ onEndGame, onSkipRound, currentLocation, countryInfo }: GameHeaderProps) {
 	const { currentGame } = useGameStore();
 
 	if (!currentGame) return null;
@@ -28,7 +29,7 @@ export function GameHeader({ onEndGame, currentLocation, countryInfo }: GameHead
 			<motion.header
 				initial={{ opacity: 0, y: -20 }}
 				animate={{ opacity: 1, y: 0 }}
-				className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md px-3 sm:px-4 py-2.5 sm:py-3 sticky top-0 z-50"
+				className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md px-4 sm:px-4 py-3 sm:py-3 sticky top-0 z-50"
 			>
 				<div className="max-w-7xl mx-auto flex items-center justify-between">
 					{/* Logo and Game Info */}
@@ -41,7 +42,7 @@ export function GameHeader({ onEndGame, currentLocation, countryInfo }: GameHead
 							<div className="w-6 h-6 sm:w-7 sm:h-7 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-lg flex items-center justify-center shadow-lg">
 								<MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
 							</div>
-							<span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+							<span className="text-base sm:text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
 								GeoGusserX
 							</span>
 						</motion.div>
@@ -70,26 +71,32 @@ export function GameHeader({ onEndGame, currentLocation, countryInfo }: GameHead
 					</div>
 
 					{/* Controls */}
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-1.5 sm:gap-2">
 						{/* Mobile Round Info */}
 						<motion.div
-							className="sm:hidden flex items-center gap-1 px-1.5 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-lg"
+							className="sm:hidden flex items-center gap-0.5 px-1.5 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-md min-w-0"
 							whileHover={{ scale: 1.02 }}
 						>
-							<Clock className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-							<span className="text-blue-700 dark:text-blue-300 font-medium text-xs">
-								{currentRound}/{totalRounds}
+							<Clock className="w-3 h-3 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+							<span className="text-blue-700 dark:text-blue-300 font-medium text-xs truncate">
+								{currentGame.mode === 'infinite' 
+									? `R${currentRound}` 
+									: `${currentRound}/${totalRounds}`
+								}
 							</span>
 						</motion.div>
 
 						{/* Mobile Score */}
 						<motion.div
-							className="sm:hidden flex items-center gap-1 px-1.5 py-1 bg-amber-50 dark:bg-amber-900/30 rounded-lg"
+							className="sm:hidden flex items-center gap-0.5 px-1.5 py-1 bg-amber-50 dark:bg-amber-900/30 rounded-md min-w-0"
 							whileHover={{ scale: 1.02 }}
 						>
-							<Trophy className="w-3 h-3 text-amber-600 dark:text-amber-400" />
-							<span className="text-amber-700 dark:text-amber-300 font-medium text-xs">
-								{formatScore(currentGame.totalScore)}
+							<Trophy className="w-3 h-3 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+							<span className="text-amber-700 dark:text-amber-300 font-medium text-xs truncate">
+								{currentGame.totalScore >= 1000 
+									? `${Math.floor(currentGame.totalScore / 1000)}k` 
+									: formatScore(currentGame.totalScore)
+								}
 							</span>
 						</motion.div>
 
@@ -100,6 +107,21 @@ export function GameHeader({ onEndGame, currentLocation, countryInfo }: GameHead
 								countryInfo={countryInfo}
 								disabled={false}
 							/>
+						)}
+
+						{/* Skip Button - Only for infinite mode */}
+						{currentGame.mode === 'infinite' && onSkipRound && (
+							<motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={onSkipRound}
+									className="flex items-center gap-1 sm:gap-2 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-300/50 dark:border-gray-600/50 hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:border-orange-300 dark:hover:border-orange-600 transition-all duration-200 px-2 sm:px-3 py-1.5"
+								>
+									<SkipForward className="w-3 h-3 sm:w-4 sm:h-4" />
+									<span className="hidden sm:inline font-medium text-xs sm:text-sm">Skip</span>
+								</Button>
+							</motion.div>
 						)}
 
 						{/* End Game Button */}
