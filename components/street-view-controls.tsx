@@ -193,14 +193,14 @@ export function StreetViewControls({
 					{isSliderVisible ? <EyeOff className="w-4 h-4" /> : <Gamepad2 className="w-4 h-4" />}
 				</Button>
 
-				{/* Skip button - Only for infinite mode on mobile */}
-				{currentGame?.mode === 'infinite' && onSkipRound && (
+				{/* Skip button - Available for all game modes on mobile */}
+				{currentGame && onSkipRound && (
 					<Button
 						variant="secondary"
 						size="sm"
 						onClick={onSkipRound}
 						className="bg-orange-600/80 hover:bg-orange-700/80 text-white border-white/20 backdrop-blur-sm transition-colors"
-						title="Skip this location"
+						title={currentGame.mode === 'infinite' ? 'Skip to new location' : 'Skip to next round'}
 					>
 						<SkipForward className="w-4 h-4" />
 					</Button>

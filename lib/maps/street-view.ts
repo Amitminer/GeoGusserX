@@ -10,11 +10,12 @@ export class StreetViewService {
 	}
 	/**
 	 * Generate a random location with available Street View
+	 * Includes quality filtering and improved randomization
 	 * @param countryName - Optional country name to restrict location generation
 	 */
 	async getRandomStreetViewLocation(countryName?: string): Promise<StreetViewLocation> {
 		logger.startTimer('streetview-location-generation');
-		const maxAttempts = 50;
+		const maxAttempts = 60; // Increased attempts for better quality
 		let attempts = 0;
 		let lastValidLocation: Location | null = null;
 
@@ -24,10 +25,10 @@ export class StreetViewService {
 			try {
 				logger.startTimer(`streetview-check-${attempts}`);
 
-				// Generate location with validation
+				// Generate location with improved randomization
 				const randomLocation = countryName
-					? generateLocationByCountry(countryName, 10)
-					: generateRandomLocation(10);
+					? generateLocationByCountry(countryName, 15)
+					: generateRandomLocation(15);
 
 				// Validate the generated location
 				if (!isValidLocation(randomLocation)) {

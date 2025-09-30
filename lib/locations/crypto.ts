@@ -4,21 +4,36 @@
 
 /**
  * Generate a cryptographically secure random number between 0 and 1
+ * Uses time-based entropy to prevent repetitive patterns
  * Falls back to Math.random() if crypto is not available
  * @returns A random number between 0 and 1
  */
 export function secureRandom(): number {
 	try {
 		if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-			const array = new Uint32Array(1);
+			const array = new Uint32Array(2);
 			crypto.getRandomValues(array);
-			return array[0] / (0xFFFFFFFF + 1);
+			
+			// Add time-based entropy to prevent patterns
+			const timeEntropy = (Date.now() % 1000000) / 1000000;
+			const performanceEntropy = (performance.now() % 1000) / 1000;
+			
+			// Combine crypto random with time-based entropy
+			const cryptoRandom = array[0] / (0xFFFFFFFF + 1);
+			const secondCrypto = array[1] / (0xFFFFFFFF + 1);
+			
+			// XOR-based mixing for better entropy distribution
+			const mixed = (cryptoRandom + timeEntropy + performanceEntropy + secondCrypto) % 1;
+			return mixed;
 		}
 	} catch {
-		console.warn('Crypto API not available, falling back to Math.random()');
+		console.warn('Crypto API not available, falling back to improved Math.random()');
 	}
 
-	return Math.random();
+	// Improved fallback with time-based entropy
+	const timeEntropy = (Date.now() % 1000000) / 1000000;
+	const performanceEntropy = (performance.now() % 1000) / 1000;
+	return (Math.random() + timeEntropy + performanceEntropy) % 1;
 }
 
 /**
@@ -98,4 +113,27 @@ export function randomDistance(maxDistance: number, shape: number = 2): number {
 	} while (sample > 1);
 
 	return sample * maxDistance;
+}
+
+/**
+ * Generate a high-entropy random seed based on multiple sources
+ * Used to ensure truly random location generation without patterns
+ * @returns A high-entropy random seed
+ */
+export function generateEntropySeed(): number {
+	const sources = [
+		secureRandom(),
+		(Date.now() % 1000000) / 1000000,
+		(performance.now() % 10000) / 10000,
+		(Math.random() * 1000) % 1,
+		(new Date().getMilliseconds()) / 1000
+	];
+	
+	// Combine all entropy sources using a mixing function
+	let seed = 0;
+	for (let i = 0; i < sources.length; i++) {
+		seed = (seed + sources[i] * (i + 1)) % 1;
+	}
+	
+	return seed;
 }

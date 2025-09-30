@@ -301,7 +301,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	skipRound: () => {
 		const { currentGame } = get();
 
-		if (!currentGame || currentGame.mode !== 'infinite') return;
+		if (!currentGame) return;
 
 		const currentRound = currentGame.rounds[currentGame.currentRoundIndex];
 		if (!currentRound || currentRound.completed) return;
@@ -313,15 +313,37 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		currentRound.score = 0; // No points for skipping
 		currentRound.timeSpent = Date.now() - (currentGame.startTime + (currentGame.currentRoundIndex * 30000)); // Rough estimate
 
-		// Update the game state to trigger re-render
-		set({
-			currentGame: { ...currentGame }
-		});
+		// Handle different game modes
+		if (currentGame.mode === 'infinite') {
+			// For infinite mode, just update state to trigger new location generation
+			set({
+				currentGame: { ...currentGame }
+			});
+		} else {
+			// For finite modes, advance to next round or end game
+			const nextIndex = currentGame.currentRoundIndex + 1;
+			
+			if (nextIndex >= currentGame.rounds.length) {
+				// Game completed
+				set({
+					currentGame: { ...currentGame }
+				});
+				// Use queueMicrotask to avoid calling endGame during render
+				queueMicrotask(() => get().endGame());
+			} else {
+				// Advance to next round
+				currentGame.currentRoundIndex = nextIndex;
+				set({
+					currentGame: { ...currentGame },
+					showResults: false
+				});
+			}
+		}
 
 		// Show toast notification
 		get().addToast({
 			title: '⏭️ Location Skipped',
-			description: 'Loading new location...',
+			description: currentGame.mode === 'infinite' ? 'Loading new location...' : 'Moving to next round...',
 			type: 'warning',
 			duration: 2000
 		});
@@ -331,9 +353,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 			get().saveGame();
 		});
 
-		logger.info('Skipped round in infinite mode', {
+		logger.info('Skipped round', {
 			roundIndex: currentGame.currentRoundIndex,
-			roundId: currentRound.id
+			roundId: currentRound.id,
+			gameMode: currentGame.mode
 		}, 'GameStore');
 	},
 

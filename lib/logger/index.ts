@@ -65,7 +65,7 @@ interface PerformanceStats {
 }
 
 /**
- * Enhanced logging utility with performance monitoring and memory tracking
+ * Advanced logging utility with performance monitoring and memory tracking
  */
 class Logger {
 	/** Whether we're running in development mode */

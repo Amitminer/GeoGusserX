@@ -109,14 +109,15 @@ export function GameHeader({ onEndGame, onSkipRound, currentLocation, countryInf
 							/>
 						)}
 
-						{/* Skip Button - Only for infinite mode */}
-						{currentGame.mode === 'infinite' && onSkipRound && (
+						{/* Skip Button - Available for all game modes */}
+						{onSkipRound && (
 							<motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
 								<Button
 									variant="outline"
 									size="sm"
 									onClick={onSkipRound}
 									className="flex items-center gap-1 sm:gap-2 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-300/50 dark:border-gray-600/50 hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:border-orange-300 dark:hover:border-orange-600 transition-all duration-200 px-2 sm:px-3 py-1.5"
+									title={currentGame.mode === 'infinite' ? 'Skip to new location' : 'Skip to next round'}
 								>
 									<SkipForward className="w-3 h-3 sm:w-4 sm:h-4" />
 									<span className="hidden sm:inline font-medium text-xs sm:text-sm">Skip</span>

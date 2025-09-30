@@ -173,7 +173,7 @@ class StorageManager {
 		}
 	}
 
-	// Enhanced Cleanup Methods
+	// Advanced Cleanup Methods
 	async clearAllData(): Promise<void> {
 		try {
 			const db = this.ensureDB();
