@@ -231,7 +231,7 @@ function getDifficultyGuidance(hintNumber: number): string {
 	}
 }
 
-// Parse AI response with improved error handling
+// Parse AI response with error handling
 function parseSingleHintResponse(text: string, hintNumber: number): SingleHintResponse {
 	try {
 		// Try multiple JSON extraction patterns

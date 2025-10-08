@@ -33,8 +33,8 @@ export const features = [
 		gradient: 'from-purple-500 to-violet-600'
 	},
 	{
-		title: 'Country Selection',
-		description: 'Focus on specific countries or explore the entire world - the choice is yours.',
+		title: 'Global Coverage',
+		description: 'Explore 32 countries with 858+ regions including cities, landmarks, and diverse landscapes worldwide.',
 		icon: 'Eye',
 		gradient: 'from-pink-500 to-rose-600'
 	},

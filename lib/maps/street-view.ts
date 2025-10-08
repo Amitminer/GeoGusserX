@@ -10,7 +10,7 @@ export class StreetViewService {
 	}
 	/**
 	 * Generate a random location with available Street View
-	 * Includes quality filtering and improved randomization
+	 * Includes quality filtering and randomization
 	 * @param countryName - Optional country name to restrict location generation
 	 */
 	async getRandomStreetViewLocation(countryName?: string): Promise<StreetViewLocation> {
@@ -25,7 +25,7 @@ export class StreetViewService {
 			try {
 				logger.startTimer(`streetview-check-${attempts}`);
 
-				// Generate location with improved randomization
+				// Generate location with randomization
 				const randomLocation = countryName
 					? generateLocationByCountry(countryName, 15)
 					: generateRandomLocation(15);

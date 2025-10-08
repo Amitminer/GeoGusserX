@@ -27,10 +27,10 @@ export function secureRandom(): number {
 			return mixed;
 		}
 	} catch {
-		console.warn('Crypto API not available, falling back to improved Math.random()');
+		console.warn('Crypto API not available, falling back to Math.random()');
 	}
 
-	// Improved fallback with time-based entropy
+	// Fallback with time-based entropy
 	const timeEntropy = (Date.now() % 1000000) / 1000000;
 	const performanceEntropy = (performance.now() % 1000) / 1000;
 	return (Math.random() + timeEntropy + performanceEntropy) % 1;

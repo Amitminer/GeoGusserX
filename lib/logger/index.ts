@@ -65,7 +65,7 @@ interface PerformanceStats {
 }
 
 /**
- * Advanced logging utility with performance monitoring and memory tracking
+ * Logging utility with performance monitoring and memory tracking
  */
 class Logger {
 	/** Whether we're running in development mode */
@@ -289,7 +289,7 @@ class Logger {
 	}
 
 	/**
-	 * Retrieves comprehensive performance and usage statistics
+	 * Retrieves performance and usage statistics
 	 */
 	getPerformanceStats(): PerformanceStats {
 		const logsByLevel: Record<LogLevel, number> = {

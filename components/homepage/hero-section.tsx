@@ -49,8 +49,8 @@ export function HeroSection() {
 					transition={{ delay: 0.2, duration: 0.3 }}
 					className="mb-8 sm:mb-10 max-w-3xl leading-relaxed text-gray-700 dark:text-gray-300 text-lg sm:text-xl lg:text-2xl mx-auto font-light px-4"
 				>
-					Test your geography knowledge with this game inspired by GeoGuessr. Guess locations from Street View images
-					and compete for the highest score!
+					Test your geography knowledge with this game inspired by GeoGuessr. Explore 32 countries with over 858 carefully curated regions,
+					from bustling cities to remote landscapes. Guess locations from Street View images and compete for the highest score!
 				</motion.p>
 
 				{/* Game Mode Selection */}
@@ -103,8 +103,8 @@ export function HeroSection() {
 					className="mx-auto grid max-w-4xl grid-cols-2 gap-6 sm:grid-cols-4"
 				>
 					{[
-						{ value: '32+', label: 'Countries', color: 'text-blue-600' },
-						{ value: '∞', label: 'Locations', color: 'text-purple-600' },
+						{ value: '32', label: 'Countries', color: 'text-blue-600' },
+						{ value: '858+', label: 'Regions', color: 'text-purple-600' },
 						{ value: '5000', label: 'Max Score', color: 'text-green-600' },
 						{ value: '4', label: 'Game Modes', color: 'text-orange-600' }
 					].map((stat, index) => (
