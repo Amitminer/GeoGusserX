@@ -6,10 +6,13 @@ Solves the "jungle/highway bias" by focusing on architecture, landmarks, and urb
 """
 import json
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 import time
 import sys
 import math
 import random
+import os
 from typing import Dict, List, Optional, Tuple
 import subprocess
 import shutil
@@ -315,8 +318,19 @@ class HybridRegionGenerator:
         self.rate_limit_delay = 1.2
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'GeoGusserX-AdvancedGenerator/3.0 (Educational Geographic Project)'
+            'User-Agent': 'GeoGusserX-AdvancedGenerator/3.0 (+https://github.com/Amitminer/GeoGusserX)'
         })
+        # HTTP resiliency
+        retries = Retry(
+            total=5,
+            backoff_factor=1.0,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=frozenset(["GET"])
+        )
+        adapter = HTTPAdapter(max_retries=retries)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
+        self.http_timeout = (5, 20)  # connect, read
         self.api_success_rate = {'success': 0, 'total': 0}
         self.population_centers_cache = {}
         self.country_bounds_cache = {}
@@ -355,8 +369,9 @@ class HybridRegionGenerator:
                 'addressdetails': 1,
                 'extratags': 1
             }
+
             self.log(f"🔍 Looking up: {location_query}", "INFO")
-            response = self.session.get(f"{NOMINATIM_API}/search", params=params)
+            response = self.session.get(f"{NOMINATIM_API}/search", params=params, timeout=self.http_timeout)
             response.raise_for_status()
             time.sleep(self.rate_limit_delay)
             data = response.json()
@@ -369,21 +384,27 @@ class HybridRegionGenerator:
             else:
                 self.log(f"❌ Not found: {location_query}", "ERROR")
                 return None
-        except Exception as e:
+        except requests.RequestException as e:
             self.api_success_rate['total'] += 1
             self.log(f"⚠️ API error for {location_query}: {str(e)[:100]}", "WARN")
+            return None
+        except json.JSONDecodeError as e:
+            self.api_success_rate['total'] += 1
+            self.log(f"⚠️ JSON decode error for {location_query}: {str(e)[:100]}", "WARN")
             return None
 
     def get_country_info(self, country_name: str) -> Dict:
         """Get country metadata"""
         try:
-            response = self.session.get(f"{COUNTRIES_API}/name/{country_name}")
+            response = self.session.get(f"{COUNTRIES_API}/name/{country_name}", timeout=self.http_timeout)
             if response.status_code == 200:
                 data = response.json()
                 if data:
                     return data[0]
-        except Exception as e:
+        except requests.RequestException as e:
             self.log(f"Failed to get country info for {country_name}: {e}", "WARN")
+        except json.JSONDecodeError as e:
+            self.log(f"JSON decode error for country info {country_name}: {e}", "WARN")
         return {}
 
     def determine_continent(self, country_name: str, country_info: Optional[Dict] = None) -> str:
@@ -486,7 +507,8 @@ class HybridRegionGenerator:
                 'polygon_geojson': 1,
                 'addressdetails': 1
             }
-            response = self.session.get(f"{NOMINATIM_API}/search", params=params)
+
+            response = self.session.get(f"{NOMINATIM_API}/search", params=params, timeout=self.http_timeout)
             response.raise_for_status()
             time.sleep(self.rate_limit_delay)
             data = response.json()
@@ -503,8 +525,10 @@ class HybridRegionGenerator:
                     )
                     self.country_bounds_cache[country_name] = bounding_box
                     return bounding_box
-        except Exception as e:
+        except requests.RequestException as e:
             self.log(f"Failed to get bounding box for {country_name}: {e}", "WARN")
+        except json.JSONDecodeError as e:
+            self.log(f"JSON decode error for bounding box {country_name}: {e}", "WARN")
 
         return None
 
@@ -522,7 +546,8 @@ class HybridRegionGenerator:
                     'limit': 30,
                     'addressdetails': 1
                 }
-                response = self.session.get(f"{NOMINATIM_API}/search", params=params)
+
+                response = self.session.get(f"{NOMINATIM_API}/search", params=params, timeout=self.http_timeout)
                 if response.status_code == 200:
                     data = response.json()
                     for item in data:
@@ -538,8 +563,10 @@ class HybridRegionGenerator:
                             centers.append(center)
 
                 time.sleep(self.rate_limit_delay)
-        except Exception as e:
+        except requests.RequestException as e:
             self.log(f"Failed to get population centers for {country_name}: {e}", "WARN")
+        except json.JSONDecodeError as e:
+            self.log(f"JSON decode error for population centers {country_name}: {e}", "WARN")
 
         centers.sort(key=lambda x: x.importance, reverse=True)
         self.population_centers_cache[country_name] = centers[:40]
@@ -895,9 +922,10 @@ class HybridRegionGenerator:
             urban_landmarks = sum(1 for r in self.regions if r['type'] == 'urban_landmark')
             urban_grid = sum(1 for r in self.regions if r['type'] == 'urban_grid')
             urban = sum(1 for r in self.regions if r['type'] == 'urban')
+            commercial = sum(1 for r in self.regions if r['type'] == 'commercial')
             suburban = sum(1 for r in self.regions if r['type'] == 'suburban')
             rural = sum(1 for r in self.regions if r['type'] == 'rural')
-            subdivisions = len(self.regions) - countries - directional - urban_landmarks - urban_grid - urban - suburban - rural
+            subdivisions = len(self.regions) - countries - directional - urban_landmarks - urban_grid - urban - commercial - suburban - rural
 
             api_success_rate = (self.api_success_rate['success'] / max(1, self.api_success_rate['total'])) * 100
 
@@ -910,6 +938,7 @@ class HybridRegionGenerator:
                     "urban_landmarks": urban_landmarks,
                     "urban_grid_points": urban_grid,
                     "urban_zones": urban,
+                    "commercial_zones": commercial,
                     "suburban_areas": suburban,
                     "rural_areas": rural,
                     "subdivisions": subdivisions,
@@ -939,8 +968,12 @@ class HybridRegionGenerator:
             self.log(f"💾 Saved {len(self.regions)} regions!", "SUCCESS")
             self.generate_statistics()
 
-        except Exception as e:
-            self.log(f"Failed to save: {e}", "ERROR")
+        except (OSError, IOError) as e:
+            self.log(f"Failed to save file: {e}", "ERROR")
+            sys.exit(1)
+        except json.JSONEncodeError as e:
+            self.log(f"Failed to encode JSON: {e}", "ERROR")
+            sys.exit(1)
 
     def generate_statistics(self):
         """Generate statistics"""
@@ -1018,8 +1051,23 @@ def main():
         print("\n\033[0;33m⏹️ Interrupted\033[0m")
         if generator.regions:
             generator.save_regions("../lib/locations/regions_partial.json")
+    except requests.RequestException as e:
+        print(f"\n\033[0;31m❌ Network error: {e}\033[0m")
+        if generator.regions:
+            generator.save_regions("../lib/locations/regions_partial.json")
+        return 1
+    except (OSError, IOError) as e:
+        print(f"\n\033[0;31m❌ File system error: {e}\033[0m")
+        if generator.regions:
+            generator.save_regions("../lib/locations/regions_partial.json")
+        return 1
+    except json.JSONDecodeError as e:
+        print(f"\n\033[0;31m❌ JSON parsing error: {e}\033[0m")
+        if generator.regions:
+            generator.save_regions("../lib/locations/regions_partial.json")
+        return 1
     except Exception as e:
-        print(f"\n\033[0;31m❌ Failed: {e}\033[0m")
+        print(f"\n\033[0;31m❌ Unexpected error: {e}\033[0m")
         if generator.regions:
             generator.save_regions("../lib/locations/regions_partial.json")
         return 1
