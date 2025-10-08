@@ -50,7 +50,7 @@ export function FeaturesSection() {
 					variants={itemVariants}
 					className="mx-auto max-w-2xl text-lg text-gray-600 dark:text-gray-400 font-light leading-relaxed"
 				>
-					Experience the most advanced geography guessing game with cutting-edge features designed for explorers like you
+					Experience the ultimate geography guessing game with modern features designed for explorers like you
 				</motion.p>
 			</motion.div>
 

@@ -5,6 +5,7 @@ import { logger } from '../logger';
 
 /**
  * Geographic region definition for location generation
+ * Supports urban landmarks and dense city coverage
  */
 export interface GeographicRegion {
 	lat: number;
@@ -12,8 +13,14 @@ export interface GeographicRegion {
 	radius: number;
 	name: string;
 	continent: string;
-	type: 'country' | 'state' | 'region';
+	type: 'country' | 'state' | 'region' | 'directional' | 'urban' | 'suburban' | 'rural' | 'urban_landmark' | 'urban_grid' | 'commercial' | 'transport';
 	country?: string; // The country this region belongs to (for states/regions)
+	category?: string; // landmark, commercial, residential, industrial, transport
+	importance?: number; // Importance score for landmarks
+	city?: string; // City name for urban regions
+	area_classification?: string; // urban, suburban, rural, wilderness
+	direction?: string; // north, south, east, west, central (for directional regions)
+	osm_type?: string; // OSM element type for landmarks
 }
 
 /**
@@ -30,7 +37,7 @@ interface RegionsData {
 export const GEOGRAPHIC_REGIONS: GeographicRegion[] = (regionsData as RegionsData).regions;
 
 /**
- * Optimized Region Manager using modern algorithm libraries
+ * Region Manager using modern algorithm libraries
  * Provides O(1) lookups and O(log n) weighted selection for 100k+ users
  */
 class RegionManager {
@@ -49,7 +56,7 @@ class RegionManager {
 	}
 
 	/**
-	 * Build all optimized data structures in one pass - O(n)
+	 * Build all data structures in one pass - O(n)
 	 */
 	private buildOptimizedStructures(regions: GeographicRegion[]): void {
 		// Clear existing structures
@@ -142,7 +149,7 @@ class RegionManager {
 	/**
 	 * O(1) type lookup using hash map
 	 */
-	getRegionsByTypeOptimized(type: 'country' | 'state' | 'region'): GeographicRegion[] {
+	getRegionsByTypeOptimized(type: string): GeographicRegion[] {
 		return this.typeIndex.get(type) || [];
 	}
 
@@ -177,19 +184,19 @@ class RegionManager {
 	}
 
 	/**
-	 * Optimized weighted sampling using our own implementation
+	 * Weighted sampling using our own implementation
 	 * Falls back to binary search if needed
 	 */
 	getRandomRegionWithLibrary(): GeographicRegion {
-		// Use our optimized binary search method
+		// Use our binary search method
 		return this.getRandomRegionWeighted();
 	}
 
 	/**
-	 * Get multiple random regions efficiently
+	 * Get multiple random regions
 	 */
 	getMultipleRandomRegions(count: number): GeographicRegion[] {
-		// Use multiple single selections with our optimized method
+		// Use multiple single selections with our method
 		const results: GeographicRegion[] = [];
 		for (let i = 0; i < count; i++) {
 			results.push(this.getRandomRegionWeighted());
@@ -226,17 +233,17 @@ class RegionManager {
 		const time1 = performance.now() - start1;
 		logger.endTimer('binary-search-benchmark');
 
-		// Benchmark optimized method
-		logger.startTimer('optimized-method-benchmark');
+		// Benchmark our method
+		logger.startTimer('our-method-benchmark');
 		const start2 = performance.now();
 		for (let i = 0; i < iterations; i++) {
 			this.getRandomRegionWithLibrary();
 		}
 		const time2 = performance.now() - start2;
-		logger.endTimer('optimized-method-benchmark');
+		logger.endTimer('our-method-benchmark');
 
 		const binarySearchOpsPerSec = Math.round(iterations / time1 * 1000);
-		const optimizedOpsPerSec = Math.round(iterations / time2 * 1000);
+		const ourMethodOpsPerSec = Math.round(iterations / time2 * 1000);
 		const speedup = time1 / time2;
 
 		logger.info('Region Manager Benchmark Results', {
@@ -245,9 +252,9 @@ class RegionManager {
 				timeMs: time1,
 				opsPerSec: binarySearchOpsPerSec
 			},
-			optimizedMethod: {
+			ourMethod: {
 				timeMs: time2,
-				opsPerSec: optimizedOpsPerSec
+				opsPerSec: ourMethodOpsPerSec
 			},
 			speedup: speedup.toFixed(2) + 'x'
 		}, 'RegionManagerBenchmark');
@@ -266,17 +273,17 @@ export function getAvailableCountries(): string[] {
 
 /**
  * Get regions by country name (case-insensitive)
- * Uses optimized hash map lookup for better performance
+ * Uses hash map lookup for better performance
  */
 export function getRegionsByCountry(countryName: string): GeographicRegion[] {
 	return regionManager.getRegionsByCountryOptimized(countryName);
 }
 
 /**
- * Get regions by type (country, state, region)
- * Uses optimized hash map lookup
+ * Get regions by type (country, state, region, urban_landmark, etc.)
+ * Uses hash map lookup
  */
-export function getRegionsByType(type: 'country' | 'state' | 'region'): GeographicRegion[] {
+export function getRegionsByType(type: string): GeographicRegion[] {
 	return regionManager.getRegionsByTypeOptimized(type);
 }
 
@@ -299,33 +306,33 @@ export function getStatesForCountry(countryName: string): GeographicRegion[] {
 		if (region.type !== 'state' && region.type !== 'region') {
 			return false;
 		}
-		
+
 		// First check if the region has a country property (for directional regions)
 		if (region.country) {
 			return region.country.toLowerCase() === countryName.toLowerCase();
 		}
-		
+
 		// For states without country property, check if name ends with ", CountryName"
 		const nameParts = region.name.split(', ');
 		if (nameParts.length >= 2) {
 			const regionCountry = nameParts[nameParts.length - 1]; // Get the last part after comma
 			return regionCountry.toLowerCase() === countryName.toLowerCase();
 		}
-		
+
 		return false;
 	});
 }
 
-// Export optimized functions for internal use
+// Export functions for internal use
 export function getRegionsByCountryOptimized(countryName: string): GeographicRegion[] {
 	return regionManager.getRegionsByCountryOptimized(countryName);
 }
 
-export function getRandomRegionOptimized(): GeographicRegion {
+export function getRandomRegion(): GeographicRegion {
 	return regionManager.getRandomRegionWithLibrary();
 }
 
-export function getRegionsByTypeOptimized(type: 'country' | 'state' | 'region'): GeographicRegion[] {
+export function getRegionsByTypeOptimized(type: string): GeographicRegion[] {
 	return regionManager.getRegionsByTypeOptimized(type);
 }
 
@@ -334,4 +341,4 @@ export function getRegionsByContinent(continent: string): GeographicRegion[] {
 }
 
 // Export the manager for advanced usage
-export const optimizedRegionManager = regionManager;
+export const regionManagerInstance = regionManager;

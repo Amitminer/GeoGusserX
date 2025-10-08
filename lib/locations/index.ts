@@ -10,9 +10,9 @@ import {
   generateEntropySeed
 } from './crypto';
 import {
-  optimizedRegionManager,
+  regionManagerInstance,
   getRegionsByCountryOptimized,
-  getRandomRegionOptimized
+  getRandomRegion
 } from './regions';
 
 /**
@@ -48,10 +48,10 @@ enum DistributionStrategy {
 
 /**
  * Generate a location using uniform distribution within a circle
- * Uses improved randomization and entropy
+ * Uses randomization and entropy
  */
 function generateUniformLocation(region: GeographicRegion): Location {
-  // Use improved entropy for better randomization
+  // Use entropy for better randomization
   const entropySeed = generateEntropySeed();
   const distance = Math.sqrt(distributedRandom(5)) * region.radius * (0.7 + entropySeed * 0.3);
   const angle = randomAngle(0.05); // Slight bias for more natural distribution
@@ -143,8 +143,8 @@ function generateScatteredLocation(region: GeographicRegion): Location {
 }
 
 /**
- * Generate a random location within a specified region with improved randomness
- * OPTIMIZED VERSION - Uses the same core algorithm but with better region selection
+ * Generate a random location within a specified region with randomness
+ * Uses the same core algorithm but with better region selection
  */
 export function generateLocationInRegion(
   region: GeographicRegion,
@@ -237,14 +237,14 @@ export function generateLocationInRegion(
 }
 
 /**
- * OPTIMIZED: Generate a random location from all available regions
+ * Generate a random location from all available regions
  * Uses O(log n) weighted selection instead of O(n) linear scan
  */
 export function generateRandomLocation(maxAttempts: number = 25): Location {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      // Use optimized weighted random selection - O(log n) instead of O(n)
-      const selectedRegion = getRandomRegionOptimized();
+      // Use weighted random selection - O(log n) instead of O(n)
+      const selectedRegion = getRandomRegion();
 
       // Randomly choose distribution strategy
       const strategies = Object.values(DistributionStrategy);
@@ -286,7 +286,7 @@ export function generateRandomLocation(maxAttempts: number = 25): Location {
 }
 
 /**
- * OPTIMIZED: Generate a random location from a specific country
+ * Generate a random location from a specific country
  * Uses O(1) hash map lookup instead of O(n) filter operation
  */
 export function generateLocationByCountry(countryName: string, maxAttempts: number = 25): Location {
@@ -294,7 +294,7 @@ export function generateLocationByCountry(countryName: string, maxAttempts: numb
     throw new Error('Invalid country name provided');
   }
 
-  // Use optimized country lookup - O(1) hash map + fuzzy search fallback
+  // Use country lookup - O(1) hash map + fuzzy search fallback
   const countryRegions = getRegionsByCountryOptimized(countryName);
   if (countryRegions.length === 0) {
     logger.error('No regions found for country, falling back to random', { countryName }, 'LocationGenerator');
@@ -377,7 +377,7 @@ export function benchmarkLocationGeneration(iterations: number = 1000) {
   logger.info(`Country Generation: ${time2.toFixed(2)}ms (${(iterations/time2*1000).toFixed(0)} ops/sec)`, undefined, 'LocationBenchmark');
   
   // Show region manager stats
-  logger.info('Region Manager Stats', optimizedRegionManager.getStats(), 'LocationBenchmark');
+  logger.info('Region Manager Stats', regionManagerInstance.getStats(), 'LocationBenchmark');
 }
 
 // Export distribution strategies for external use
