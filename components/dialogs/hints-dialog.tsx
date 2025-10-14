@@ -10,6 +10,12 @@ import {
 	DialogTitle,
 	DialogTrigger
 } from '@/components/ui/dialog';
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -45,26 +51,26 @@ import {
  * Props for the `HintsDialog` component.
  */
 interface HintsDialogProps {
-  /** The geographical location for which to generate hints. */
-  location: Location;
-  /** Geocoded information about the location, including country details. */
-  countryInfo?: GeocodeResult | null;
-  /** Whether the hint buttons should be disabled. */
-  disabled?: boolean;
+	/** The geographical location for which to generate hints. */
+	location: Location;
+	/** Geocoded information about the location, including country details. */
+	countryInfo?: GeocodeResult | null;
+	/** Whether the hint buttons should be disabled. */
+	disabled?: boolean;
 }
 
 /**
  * Represents a hint that has been generated, including its cost and type.
  */
 interface HintWithCost {
-  /** The hint object, which can be either an AI-generated hint or a text-based hint. */
-  hint: SingleHintResponse | TextHintResponse;
-  /** The cost of the hint in points. */
-  cost: number;
-  /** The timestamp when the hint was generated. */
-  timestamp: number;
-  /** The type of the hint. */
-  type: 'ai' | 'text';
+	/** The hint object, which can be either an AI-generated hint or a text-based hint. */
+	hint: SingleHintResponse | TextHintResponse;
+	/** The cost of the hint in points. */
+	cost: number;
+	/** The timestamp when the hint was generated. */
+	timestamp: number;
+	/** The type of the hint. */
+	type: 'ai' | 'text';
 }
 
 // Mappings for styling hints based on their category and difficulty.
@@ -428,8 +434,8 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 						size="sm"
 						disabled={disabled || !isInitialized}
 						className={`
-              flex items-center gap-2 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm
-              border-gray-300/50 dark:border-gray-600/50 transition-all duration-200
+              flex items-center gap-1 sm:gap-2 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm
+              border-gray-300/50 dark:border-gray-600/50 transition-all duration-200 px-2 sm:px-3 py-1.5 flex-shrink-0
               ${hints.length > 0
 								? 'hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:border-amber-300 dark:hover:border-amber-600'
 								: 'hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-600'
@@ -439,21 +445,17 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 						<motion.div
 							animate={hints.length > 0 ? { rotate: [0, 10, -10, 0] } : {}}
 							transition={{ duration: 0.5 }}
+							className="flex-shrink-0"
 						>
 							{hints.length > 0 ? (
-								<Sparkles className="w-4 h-4 text-amber-500" />
+								<Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-amber-500" />
 							) : (
-								<Lightbulb className="w-4 h-4" />
+								<Lightbulb className="w-3 h-3 sm:w-4 sm:h-4" />
 							)}
 						</motion.div>
-						<span className="hidden sm:inline font-medium">
+						<span className="hidden md:inline font-medium text-xs sm:text-sm whitespace-nowrap">
 							{hints.length > 0 ? `Hints (${hints.length})` : 'Get Hint'}
 						</span>
-						{hints.length > 0 && (
-							<Badge variant="secondary" className="text-xs">
-								-{totalCost}
-							</Badge>
-						)}
 					</Button>
 				</motion.div>
 			</DialogTrigger>
@@ -469,18 +471,9 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 							<Zap className="w-3 h-3 text-white" />
 						</motion.div>
 						Game Hints
-						<Badge
-							variant="secondary"
-							className="ml-auto bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
-						>
-							<Coins className="w-3 h-3 mr-1" />
-							Free-{AI_HINT_COST} pts
-						</Badge>
 					</DialogTitle>
 					<DialogDescription>
-						Get hints to help you identify the location. Choose between progressive
-						text hints (first free, then 50 pts each) revealing country letters or
-						AI-powered strategic hints ({AI_HINT_COST} pts) with observable clues.
+						Get strategic hints to help identify your location.
 					</DialogDescription>
 				</DialogHeader>
 
@@ -712,24 +705,28 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 								</p>
 							)}
 
-							<div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-								<div className="flex items-center gap-2 mb-2">
-									<Lightbulb className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-									<span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-										Hint Options
-									</span>
-								</div>
-								<p className="text-xs text-blue-600 dark:text-blue-400 mb-2">
-									<strong>Text Hints (Free, then 50 pts):</strong> Progressive
-									reveal - first hint shows first/last letters (free), then each
-									additional hint reveals one more letter
-								</p>
-								<p className="text-xs text-blue-600 dark:text-blue-400">
-									<strong>AI Hints ({AI_HINT_COST} pts):</strong> Strategic hints
-									about observable details in Street View. Become more specific with
-									each purchase!
-								</p>
-							</div>
+							<Accordion type="single" collapsible className="w-full">
+								<AccordionItem value="hint-options" className="border border-blue-200 dark:border-blue-700 rounded-lg px-3">
+									<AccordionTrigger className="hover:no-underline py-3">
+										<div className="flex items-center gap-2">
+											<Lightbulb className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+											<span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+												Hint Options
+											</span>
+										</div>
+									</AccordionTrigger>
+									<AccordionContent className="text-xs text-blue-600 dark:text-blue-400 space-y-2 pb-3">
+										<div>
+											<strong>Text Hints (Free, then 50 pts):</strong>
+											<p className="ml-2 mt-1">Progressive reveal - first hint shows first/last letters (free), then each additional hint reveals one more letter</p>
+										</div>
+										<div>
+											<strong>AI Hints ({AI_HINT_COST} pts):</strong>
+											<p className="ml-2 mt-1">Strategic hints about observable details in Street View. Become more specific with each purchase!</p>
+										</div>
+									</AccordionContent>
+								</AccordionItem>
+							</Accordion>
 						</motion.div>
 					)}
 

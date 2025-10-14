@@ -4,8 +4,11 @@ import { motion } from 'framer-motion';
 import { useGameStore } from '@/lib/storage/store';
 import { Button } from '@/components/ui/button';
 import { formatScore } from '@/lib/utils';
-import { Trophy, MapPin, Clock, Home, SkipForward } from 'lucide-react';
-import { HintsDialog } from '@/components/hints-dialog';
+import { Trophy, MapPin, Clock, SkipForward } from 'lucide-react';
+import { HintsDialog } from '@/components/dialogs/hints-dialog';
+import { HelpDialog } from '@/components/dialogs/help-dialog';
+import { EndGameDialog } from '@/components/dialogs/end-game-dialog';
+import { MobileMenu } from '@/components/dialogs/mobile-menu';
 import type { GeocodeResult } from '@/lib/maps/geocoding';
 
 /**
@@ -43,30 +46,30 @@ export function GameHeader({ onEndGame, onSkipRound, currentLocation, countryInf
 				animate={{ opacity: 1, y: 0 }}
 				className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md px-4 sm:px-4 py-3 sm:py-3 sticky top-0 z-50"
 			>
-				<div className="max-w-7xl mx-auto flex items-center justify-between">
+				<div className="max-w-7xl mx-auto flex items-center justify-between min-w-0">
 					{/* The left side of the header, containing the logo and game stats. */}
-					<div className="flex items-center gap-2 sm:gap-3 md:gap-4">
+					<div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-shrink">
 						<motion.div
 							whileHover={{ scale: 1.05 }}
 							whileTap={{ scale: 0.95 }}
-							className="flex items-center gap-1.5 sm:gap-2"
+							className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0"
 						>
 							<div className="w-6 h-6 sm:w-7 sm:h-7 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-lg flex items-center justify-center shadow-lg">
 								<MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
 							</div>
-							<span className="text-base sm:text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+							<span className="text-sm sm:text-lg font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent whitespace-nowrap">
 								GeoGusserX
 							</span>
 						</motion.div>
 
 						{/* Game statistics, displayed on larger screens. */}
-						<div className="hidden sm:flex items-center gap-2 text-sm">
+						<div className="hidden lg:flex items-center gap-2 text-sm flex-shrink-0">
 							<motion.div
 								className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-lg"
 								whileHover={{ scale: 1.02 }}
 							>
 								<Clock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-								<span className="text-blue-700 dark:text-blue-300 font-medium text-sm">
+								<span className="text-blue-700 dark:text-blue-300 font-medium text-sm whitespace-nowrap">
 									{currentRound}/{totalRounds}
 								</span>
 							</motion.div>
@@ -75,7 +78,7 @@ export function GameHeader({ onEndGame, onSkipRound, currentLocation, countryInf
 								whileHover={{ scale: 1.02 }}
 							>
 								<Trophy className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-								<span className="text-amber-700 dark:text-amber-300 font-medium text-sm">
+								<span className="text-amber-700 dark:text-amber-300 font-medium text-sm whitespace-nowrap">
 									{formatScore(currentGame.totalScore)}
 								</span>
 							</motion.div>
@@ -83,14 +86,14 @@ export function GameHeader({ onEndGame, onSkipRound, currentLocation, countryInf
 					</div>
 
 					{/* The right side of the header, containing the game controls. */}
-					<div className="flex items-center gap-1.5 sm:gap-2">
-						{/* A more compact display of game stats for mobile screens. */}
+					<div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 flex-shrink-0 min-w-0">
+						{/* A more compact display of game stats for mobile/tablet screens. */}
 						<motion.div
-							className="sm:hidden flex items-center gap-0.5 px-1.5 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-md min-w-0"
+							className="lg:hidden flex items-center gap-0.5 px-1.5 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-md min-w-0 flex-shrink-0"
 							whileHover={{ scale: 1.02 }}
 						>
 							<Clock className="w-3 h-3 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-							<span className="text-blue-700 dark:text-blue-300 font-medium text-xs truncate">
+							<span className="text-blue-700 dark:text-blue-300 font-medium text-xs whitespace-nowrap">
 								{currentGame.mode === 'infinite' 
 									? `R${currentRound}` 
 									: `${currentRound}/${totalRounds}`
@@ -99,11 +102,11 @@ export function GameHeader({ onEndGame, onSkipRound, currentLocation, countryInf
 						</motion.div>
 
 						<motion.div
-							className="sm:hidden flex items-center gap-0.5 px-1.5 py-1 bg-amber-50 dark:bg-amber-900/30 rounded-md min-w-0"
+							className="lg:hidden flex items-center gap-0.5 px-1.5 py-1 bg-amber-50 dark:bg-amber-900/30 rounded-md min-w-0 flex-shrink-0"
 							whileHover={{ scale: 1.02 }}
 						>
 							<Trophy className="w-3 h-3 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-							<span className="text-amber-700 dark:text-amber-300 font-medium text-xs truncate">
+							<span className="text-amber-700 dark:text-amber-300 font-medium text-xs whitespace-nowrap">
 								{currentGame.totalScore >= 1000 
 									? `${Math.floor(currentGame.totalScore / 1000)}k` 
 									: formatScore(currentGame.totalScore)
@@ -111,45 +114,75 @@ export function GameHeader({ onEndGame, onSkipRound, currentLocation, countryInf
 							</span>
 						</motion.div>
 
-						{currentLocation && (
-							<HintsDialog
-								location={currentLocation}
-								countryInfo={countryInfo}
-								disabled={false}
-							/>
-						)}
 
-						{onSkipRound && (
-							<motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={onSkipRound}
-									className="flex items-center gap-1 sm:gap-2 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-300/50 dark:border-gray-600/50 hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:border-orange-300 dark:hover:border-orange-600 transition-all duration-200 px-2 sm:px-3 py-1.5"
-									title={currentGame.mode === 'infinite' ? 'Skip to new location' : 'Skip to next round'}
-								>
-									<SkipForward className="w-3 h-3 sm:w-4 sm:h-4" />
-									<span className="hidden sm:inline font-medium text-xs sm:text-sm">Skip</span>
-								</Button>
-							</motion.div>
-						)}
+						{/* Action buttons container with responsive behavior */}
+						<div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+							{currentLocation && (
+								<HintsDialog
+									location={currentLocation}
+									countryInfo={countryInfo}
+									disabled={false}
+								/>
+							)}
 
-						{onEndGame && (
-							<motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={onEndGame}
-									className="flex items-center gap-1 sm:gap-2 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-300/50 dark:border-gray-600/50 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 dark:hover:border-red-600 transition-all duration-200 px-2 sm:px-3 py-1.5"
-								>
-									<Home className="w-3 h-3 sm:w-4 sm:h-4" />
-									<span className="hidden sm:inline font-medium text-xs sm:text-sm">End Game</span>
-								</Button>
-							</motion.div>
-						)}
+							{/* Desktop: Show individual buttons */}
+							<div className="hidden md:flex items-center gap-1.5">
+								<div data-help-trigger>
+									<HelpDialog disabled={false} />
+								</div>
+								{onEndGame && (
+									<div data-end-game-trigger>
+										<EndGameDialog onEndGame={onEndGame} disabled={false} />
+									</div>
+								)}
+							</div>
+
+							{/* Mobile: Show 3-dot menu */}
+							<div className="md:hidden">
+								<MobileMenu 
+									onEndGame={onEndGame} 
+									onShowHelp={() => {
+										const helpTrigger = document.querySelector('[data-help-trigger]');
+										if (helpTrigger instanceof HTMLElement) {
+											helpTrigger.click();
+										}
+									}}
+									disabled={false} 
+								/>
+							</div>
+
+							{/* Hidden dialogs for mobile menu */}
+							<div className="hidden">
+								<div data-help-trigger>
+									<HelpDialog disabled={false} />
+								</div>
+								{onEndGame && (
+									<div data-end-game-trigger>
+										<EndGameDialog onEndGame={onEndGame} disabled={false} />
+									</div>
+								)}
+							</div>
+
+							{onSkipRound && (
+								<motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={onSkipRound}
+										className="flex items-center gap-1 sm:gap-2 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-300/50 dark:border-gray-600/50 hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:border-orange-300 dark:hover:border-orange-600 transition-all duration-200 px-2 sm:px-3 py-1.5 flex-shrink-0"
+										title={currentGame.mode === 'infinite' ? 'Skip to new location' : 'Skip to next round'}
+									>
+										<SkipForward className="w-3 h-3 sm:w-4 sm:h-4" />
+										<span className="hidden md:inline font-medium text-xs sm:text-sm whitespace-nowrap">Skip</span>
+									</Button>
+								</motion.div>
+							)}
+						</div>
 					</div>
 				</div>
 			</motion.header>
+
+
 
 			{/* A progress bar that shows the player's progress through the game. */}
 			{currentGame.mode !== 'infinite' && (
