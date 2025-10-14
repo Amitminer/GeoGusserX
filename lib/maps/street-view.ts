@@ -224,7 +224,7 @@ export class StreetViewService {
 				showRoadLabels: false,
 				motionTracking: false,
 				gestureHandling: 'greedy',
-				motionTrackingControl: false
+				motionTrackingControl: false,
 			};
 
 			const panorama = new google.maps.StreetViewPanorama(container, options);

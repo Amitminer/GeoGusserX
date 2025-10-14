@@ -111,14 +111,14 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange, on
 							logger.info('Street View loaded successfully', { location }, 'StreetView');
 						}
 
-						// Get country information (for display and AI hints) - use requestIdleCallback for better performance
+						// Get country information (for display and AI hints)
 						if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
 							requestIdleCallback(async () => {
 								if (!isMounted || showGameComplete) return;
 								try {
 									const geocodingService = mapsManager.getGeocodingService();
 									if (geocodingService) {
-										// Use panorama's actual position instead of initial prop coordinates
+										// Use panorama's actual position
 										const panoramaPosition = panorama.getPosition();
 										if (panoramaPosition) {
 											// Convert panorama position to lat/lng format expected by geocoding service
@@ -276,6 +276,9 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange, on
 				animate={{ opacity: isLoading ? 0 : 1 }}
 				transition={{ duration: 0.5 }}
 			/>
+
+			{/* 🧱 Click Blocker Overlay (disables Google watermark clicks) */}
+			<div className="absolute bottom-0 left-0 w-[120px] h-[40px] z-20 bg-transparent pointer-events-auto" />
 
 			{/* Virtual Joystick Controls */}
 			{!isLoading && !error && (

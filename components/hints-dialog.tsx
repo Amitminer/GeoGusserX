@@ -2,10 +2,25 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { hintsClient, type SingleHintResponse } from '@/lib/ai';
+import {
+	hintsClient,
+	type SingleHintResponse,
+	type TextHintResponse,
+	generateCountryLettersHint,
+	getTextHintCost,
+	canGenerateTextHint,
+	hasMoreTextHints
+} from '@/lib/ai';
 import { useGameStore } from '@/lib/storage/store';
 import { Location } from '@/lib/types';
 import { logger } from '@/lib/logger';
@@ -33,9 +48,10 @@ interface HintsDialogProps {
 }
 
 interface HintWithCost {
-	hint: SingleHintResponse;
+	hint: SingleHintResponse | TextHintResponse;
 	cost: number;
 	timestamp: number;
+	type: 'ai' | 'text';
 }
 
 const categoryIcons = {
@@ -60,7 +76,7 @@ const difficultyColors = {
 	hard: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
 };
 
-const HINT_COST = 300;
+const AI_HINT_COST = 300;
 
 export function HintsDialog({ location, countryInfo, disabled = false }: HintsDialogProps) {
 	const { currentGame, purchaseHint } = useGameStore();
@@ -70,6 +86,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 	const [error, setError] = useState<string | null>(null);
 	const [isInitialized, setIsInitialized] = useState(false);
 	const [totalCost, setTotalCost] = useState(0);
+	const [currentTextHintLevel, setCurrentTextHintLevel] = useState(0);
 
 	// Refs for stale state protection
 	const requestIdRef = useRef(0);
@@ -112,6 +129,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 		// Reset state
 		setHints([]);
 		setTotalCost(0);
+		setCurrentTextHintLevel(0);
 		setError(null);
 		setIsLoading(false);
 	}, [location]);
@@ -125,16 +143,89 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 		};
 	}, []);
 
-	const canAffordHint = (): boolean => {
-		return !!(currentGame && currentGame.totalScore >= HINT_COST);
+	const canAffordAIHint = (): boolean => {
+		return !!(currentGame && currentGame.totalScore >= AI_HINT_COST);
+	};
+
+	const canAffordTextHint = (): boolean => {
+		if (!currentGame || !countryInfo) return false;
+		const nextLevel = currentTextHintLevel + 1;
+		const cost = getTextHintCost(nextLevel);
+		return currentGame.totalScore >= cost;
 	};
 
 	const getNextHintNumber = () => {
 		return hints.length + 1;
 	};
 
-	const generateHint = async () => {
-		if (!currentGame || !isInitialized || !canAffordHint()) return;
+	const generateTextHint = async () => {
+		if (!currentGame || !canAffordTextHint()) return;
+
+		// Ensure we have country info before generating hint
+		if (!countryInfo || !canGenerateTextHint(countryInfo)) {
+			setError('Location information not available. Please wait for the map to load completely.');
+			return;
+		}
+
+		// Check if more text hints are available
+		if (!hasMoreTextHints(countryInfo, currentTextHintLevel)) {
+			setError('No more text hints available for this location.');
+			return;
+		}
+
+		setIsLoading(true);
+		setError(null);
+
+		try {
+			const nextLevel = currentTextHintLevel + 1;
+			const cost = getTextHintCost(nextLevel);
+
+			logger.info('Generating text hint', {
+				location,
+				cost,
+				hintLevel: nextLevel,
+				country: countryInfo.country
+			}, 'HintsDialog');
+
+			// Generate the text hint
+			const textHintResponse = generateCountryLettersHint(countryInfo, nextLevel);
+
+			// Purchase the hint (this will deduct points and save the game)
+			const purchaseSuccessful = await purchaseHint(cost);
+
+			if (!purchaseSuccessful) {
+				throw new Error('Failed to purchase hint - insufficient points or game error');
+			}
+
+			const newHint: HintWithCost = {
+				hint: textHintResponse,
+				cost,
+				timestamp: Date.now(),
+				type: 'text'
+			};
+
+			setHints(prev => [...prev, newHint]);
+			setTotalCost(prev => prev + cost);
+			setCurrentTextHintLevel(nextLevel);
+
+			logger.info('Text hint purchased', {
+				cost,
+				hintLevel: nextLevel,
+				hint: textHintResponse.hint,
+				remainingScore: currentGame?.totalScore || 0
+			}, 'HintsDialog');
+
+		} catch (error: unknown) {
+			logger.error('Failed to generate text hint', error, 'HintsDialog');
+			const errorMessage = getErrorMessage(error);
+			setError(errorMessage);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const generateAIHint = async () => {
+		if (!currentGame || !isInitialized || !canAffordAIHint()) return;
 
 		// Ensure we have country info before generating hint
 		if (!countryInfo) {
@@ -164,7 +255,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 				location: capturedLocation,
 				roundNumber: currentGame.currentRoundIndex + 1,
 				hintNumber,
-				cost: HINT_COST,
+				cost: AI_HINT_COST,
 				country: countryInfo.country,
 				requestId: currentRequestId
 			}, 'HintsDialog');
@@ -193,18 +284,24 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 			}
 
 			// Verify location hasn't changed
-			if (capturedLocation.lat !== currentLocationRef.current.lat ||
-				capturedLocation.lng !== currentLocationRef.current.lng) {
-				logger.info('Location changed during hint request, ignoring response', {
-					capturedLocation,
-					currentLocation: currentLocationRef.current,
-					requestId: currentRequestId
-				}, 'HintsDialog');
+			if (
+				capturedLocation.lat !== currentLocationRef.current.lat ||
+				capturedLocation.lng !== currentLocationRef.current.lng
+			) {
+				logger.info(
+					'Location changed during hint request, ignoring response',
+					{
+						capturedLocation,
+						currentLocation: currentLocationRef.current,
+						requestId: currentRequestId
+					},
+					'HintsDialog'
+				);
 				return;
 			}
 
 			// Purchase the hint (this will deduct points and save the game)
-			const purchaseSuccessful = await purchaseHint(HINT_COST);
+			const purchaseSuccessful = await purchaseHint(AI_HINT_COST);
 
 			if (!purchaseSuccessful) {
 				throw new Error('Failed to purchase hint - insufficient points or game error');
@@ -212,31 +309,39 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 
 			// Final check before committing state changes
 			if (abortController.signal.aborted || currentRequestId !== requestIdRef.current) {
-				logger.info('Hint request invalidated after purchase, skipping state update', {
-					requestId: currentRequestId
-				}, 'HintsDialog');
+				logger.info(
+					'Hint request invalidated after purchase, skipping state update',
+					{
+						requestId: currentRequestId
+					},
+					'HintsDialog'
+				);
 				return;
 			}
 
 			const newHint: HintWithCost = {
 				hint: response,
-				cost: HINT_COST,
-				timestamp: Date.now()
+				cost: AI_HINT_COST,
+				timestamp: Date.now(),
+				type: 'ai'
 			};
 
 			setHints(prev => [...prev, newHint]);
-			setTotalCost(prev => prev + HINT_COST);
+			setTotalCost(prev => prev + AI_HINT_COST);
 
-			logger.info('Hint purchased', {
-				hintNumber,
-				cost: HINT_COST,
-				category: response.category,
-				difficulty: response.difficulty,
-				confidence: response.confidence,
-				remainingScore: currentGame?.totalScore || 0,
-				requestId: currentRequestId
-			}, 'HintsDialog');
-
+			logger.info(
+				'AI hint purchased',
+				{
+					hintNumber,
+					cost: AI_HINT_COST,
+					category: response.category,
+					difficulty: response.difficulty,
+					confidence: response.confidence,
+					remainingScore: currentGame?.totalScore || 0,
+					requestId: currentRequestId
+				},
+				'HintsDialog'
+			);
 		} catch (error: unknown) {
 			// Check if the error is due to abortion
 			if (abortController.signal.aborted) {
@@ -246,10 +351,14 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 
 			// Check if request is still valid before setting error
 			if (currentRequestId !== requestIdRef.current) {
-				logger.info('Ignoring error from stale hint request', {
-					requestId: currentRequestId,
-					currentRequestId: requestIdRef.current
-				}, 'HintsDialog');
+				logger.info(
+					'Ignoring error from stale hint request',
+					{
+						requestId: currentRequestId,
+						currentRequestId: requestIdRef.current
+					},
+					'HintsDialog'
+				);
 				return;
 			}
 
@@ -298,11 +407,12 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 		}
 
 		setError(null);
-		generateHint();
+		// Default to AI hint for retry
+		generateAIHint();
 	};
 
-	const handleGenerateHint = () => {
-		if (!currentGame || !isInitialized || !canAffordHint() || !countryInfo) return;
+	const handleGenerateAIHint = () => {
+		if (!currentGame || !isInitialized || !canAffordAIHint() || !countryInfo) return;
 
 		// Cancel any existing request before starting a new one
 		if (abortControllerRef.current) {
@@ -310,25 +420,32 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 			abortControllerRef.current = null;
 		}
 
-		generateHint();
+		generateAIHint();
+	};
+
+	const handleGenerateTextHint = () => {
+		if (!currentGame || !canAffordTextHint() || !countryInfo) return;
+
+		generateTextHint();
 	};
 
 	const getDifficultyIcon = (difficulty: string) => {
 		switch (difficulty) {
-			case 'easy': return <Target className="w-3 h-3" />;
-			case 'medium': return <Eye className="w-3 h-3" />;
-			case 'hard': return <Zap className="w-3 h-3" />;
-			default: return <Lightbulb className="w-3 h-3" />;
+			case 'easy':
+				return <Target className="w-3 h-3" />;
+			case 'medium':
+				return <Eye className="w-3 h-3" />;
+			case 'hard':
+				return <Zap className="w-3 h-3" />;
+			default:
+				return <Lightbulb className="w-3 h-3" />;
 		}
 	};
 
 	return (
 		<Dialog open={isOpen} onOpenChange={setIsOpen}>
 			<DialogTrigger asChild>
-				<motion.div
-					whileHover={{ scale: 1.02 }}
-					whileTap={{ scale: 0.98 }}
-				>
+				<motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
 					<Button
 						variant="outline"
 						size="sm"
@@ -369,25 +486,30 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 					<DialogTitle className="flex items-center gap-2">
 						<motion.div
 							animate={{ rotate: [0, 360] }}
-							transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+							transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
 							className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center"
 						>
 							<Zap className="w-3 h-3 text-white" />
 						</motion.div>
-						Strategic AI Hints
-						<Badge variant="secondary" className="ml-auto bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+						Game Hints
+						<Badge
+							variant="secondary"
+							className="ml-auto bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+						>
 							<Coins className="w-3 h-3 mr-1" />
-							{HINT_COST} pts each
+							Free-{AI_HINT_COST} pts
 						</Badge>
 					</DialogTitle>
 					<DialogDescription>
-						Get AI-powered hints to help you identify the location. Each hint costs {HINT_COST} points and provides specific, observable clues about what you can see in Street View.
+						Get hints to help you identify the location. Choose between progressive
+						text hints (first free, then 50 pts each) revealing country letters or
+						AI-powered strategic hints ({AI_HINT_COST} pts) with observable clues.
 					</DialogDescription>
 				</DialogHeader>
 
-				<div className="space-y-4 flex-1 overflow-hidden flex flex-col">
+				<div className="flex-1 flex flex-col space-y-4 overflow-hidden">
 					{/* Score Warning */}
-					{currentGame && !canAffordHint() && (
+					{currentGame && !canAffordAIHint() && !canAffordTextHint() && (
 						<motion.div
 							initial={{ opacity: 0, y: 10 }}
 							animate={{ opacity: 1, y: 0 }}
@@ -400,7 +522,9 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 								</span>
 							</div>
 							<p className="text-xs text-red-600 dark:text-red-400">
-								You need at least {HINT_COST} points to purchase a hint. Current score: {currentGame.totalScore}
+								You need at least {getTextHintCost(currentTextHintLevel + 1)} points
+								for a text hint or {AI_HINT_COST} points for an AI hint. Current
+								score: {currentGame.totalScore}
 							</p>
 						</motion.div>
 					)}
@@ -426,16 +550,22 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 							className="flex-1 overflow-hidden flex flex-col"
 						>
 							<div className="flex items-center justify-between mb-3 flex-shrink-0">
-								<span className="text-sm font-medium">Your Hints ({hints.length})</span>
+								<span className="text-sm font-medium">
+									Your Hints ({hints.length})
+								</span>
 								<span className="text-xs text-gray-500">
 									Total Cost: -{totalCost} pts
 								</span>
 							</div>
 
-							<div className="flex-1 overflow-y-auto space-y-3 pr-2">
+							<div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
 								<AnimatePresence>
 									{hints.map((hintWithCost, index) => {
-										const CategoryIcon = categoryIcons[hintWithCost.hint.category];
+										// Handle different hint types
+										const isAIHint = hintWithCost.type === 'ai';
+										const CategoryIcon = isAIHint
+											? categoryIcons[(hintWithCost.hint as SingleHintResponse).category]
+											: Lightbulb;
 										return (
 											<motion.div
 												key={index}
@@ -444,29 +574,54 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 												transition={{ delay: index * 0.1 }}
 												className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex-shrink-0"
 											>
-												<div className="flex items-start justify-between mb-2">
+												<div className="flex items-start justify-between mb-2 flex-wrap gap-2"> {/* Added flex-wrap and gap */}
 													<div className="flex items-center gap-2">
 														<div className="w-6 h-6 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
 															<span className="text-xs font-bold text-blue-600 dark:text-blue-400">
 																{index + 1}
 															</span>
 														</div>
-														<Badge
-															variant="secondary"
-															className={`${categoryColors[hintWithCost.hint.category]} text-xs`}
-														>
-															<CategoryIcon className="w-3 h-3 mr-1" />
-															{hintWithCost.hint.category}
-														</Badge>
-														<Badge
-															variant="secondary"
-															className={`${difficultyColors[hintWithCost.hint.difficulty]} text-xs`}
-														>
-															{getDifficultyIcon(hintWithCost.hint.difficulty)}
-															{hintWithCost.hint.difficulty}
-														</Badge>
+														{isAIHint ? (
+															<>
+																<Badge
+																	variant="secondary"
+																	className={`${categoryColors[
+																		(hintWithCost.hint as SingleHintResponse)
+																			.category
+																		]
+																		} text-xs`}
+																>
+																	<CategoryIcon className="w-3 h-3 mr-1" />
+																	{(hintWithCost.hint as SingleHintResponse).category}
+																</Badge>
+																<Badge
+																	variant="secondary"
+																	className={`${difficultyColors[
+																		(hintWithCost.hint as SingleHintResponse)
+																			.difficulty
+																		]
+																		} text-xs`}
+																>
+																	{getDifficultyIcon(
+																		(hintWithCost.hint as SingleHintResponse)
+																			.difficulty
+																	)}
+																	{(hintWithCost.hint as SingleHintResponse).difficulty}
+																</Badge>
+															</>
+														) : (
+															<Badge
+																variant="secondary"
+																className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 text-xs"
+															>
+																<CategoryIcon className="w-3 h-3 mr-1" />
+																Text Hint
+															</Badge>
+														)}
 													</div>
-													<span className="text-xs text-red-500 font-medium">-{hintWithCost.cost}</span>
+													<span className="text-xs text-red-500 font-medium ml-auto sm:ml-0">
+														-{hintWithCost.cost}
+													</span>
 												</div>
 
 												<p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300 mb-2">
@@ -474,8 +629,27 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 												</p>
 
 												<div className="flex items-center justify-between text-xs text-gray-500">
-													<span>Confidence: {Math.round(hintWithCost.hint.confidence * 100)}%</span>
-													<span>{new Date(hintWithCost.timestamp).toLocaleTimeString()}</span>
+													{isAIHint ? (
+														<span>
+															Confidence:{' '}
+															{Math.round(
+																(hintWithCost.hint as SingleHintResponse).confidence *
+																100
+															)}
+															%
+														</span>
+													) : (
+														<span>
+															Level:{' '}
+															{(hintWithCost.hint as TextHintResponse).hintLevel}
+															{(hintWithCost.hint as TextHintResponse).isComplete
+																? ' (Complete)'
+																: ''}
+														</span>
+													)}
+													<span>
+														{new Date(hintWithCost.timestamp).toLocaleTimeString()}
+													</span>
 												</div>
 											</motion.div>
 										);
@@ -492,17 +666,19 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 							animate={{ opacity: 1, scale: 1 }}
 							exit={{ opacity: 0, scale: 0.95 }}
 							transition={{ duration: 0.2 }}
-							className="flex flex-col items-center justify-center py-8 text-center bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-blue-200/50 dark:border-blue-700/50"
+							className="flex flex-col items-center justify-center py-8 text-center bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-blue-200/50 dark:border-blue-700/50 flex-shrink-0"
 						>
 							<motion.div
 								animate={{ rotate: 360 }}
-								transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+								transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
 							>
 								<Loader2 className="w-8 h-8 text-blue-500 mb-3" />
 							</motion.div>
-							<h3 className="font-medium mb-2 text-blue-900 dark:text-blue-100">Analyzing Location...</h3>
+							<h3 className="font-medium mb-2 text-blue-900 dark:text-blue-100">
+								Analyzing Location...
+							</h3>
 							<p className="text-sm text-blue-700 dark:text-blue-300">
-								AI is examining Street View details and location data to craft a strategic hint worth {HINT_COST} points
+								Generating your hint...
 							</p>
 						</motion.div>
 					)}
@@ -514,7 +690,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 							animate={{ opacity: 1, y: 0 }}
 							exit={{ opacity: 0, y: -10 }}
 							transition={{ duration: 0.2 }}
-							className="flex flex-col items-center justify-center py-6 text-center bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200/50 dark:border-red-700/50"
+							className="flex flex-col items-center justify-center py-6 text-center bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200/50 dark:border-red-700/50 flex-shrink-0"
 						>
 							<AlertCircle className="w-8 h-8 text-red-500 mb-3" />
 							<h3 className="font-medium mb-2 text-red-600 dark:text-red-400">
@@ -528,7 +704,11 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 								variant="outline"
 								size="sm"
 								className="flex items-center gap-2"
-								disabled={!canAffordHint() || !countryInfo || isLoading}
+								disabled={
+									(!canAffordAIHint() && !canAffordTextHint()) ||
+									!countryInfo ||
+									isLoading
+								}
 							>
 								<Sparkles className="w-4 h-4" />
 								Try Again
@@ -544,16 +724,48 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 							transition={{ delay: 0.1 }}
 							className="space-y-3 flex-shrink-0"
 						>
+							<div className="space-y-2">
+								<Button
+									onClick={handleGenerateTextHint}
+									disabled={
+										!canAffordTextHint() ||
+										!countryInfo ||
+										!hasMoreTextHints(countryInfo, currentTextHintLevel)
+									}
+									variant="outline"
+									className={`w-full ${canAffordTextHint() &&
+											countryInfo &&
+											hasMoreTextHints(countryInfo, currentTextHintLevel)
+											? 'border-purple-300 hover:bg-purple-50 dark:border-purple-600 dark:hover:bg-purple-900/20 text-purple-700 dark:text-purple-300'
+											: 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
+										}`}
+								>
+									<Lightbulb className="w-4 h-4 mr-2" />
+									{currentTextHintLevel === 0
+										? 'Text Hint: Country Letters (FREE)'
+										: `Text Hint: Reveal Letter (-${getTextHintCost(
+											currentTextHintLevel + 1
+										)} pts)`}
+								</Button>
+
+								{countryInfo && !hasMoreTextHints(countryInfo, currentTextHintLevel) && (
+									<p className="text-xs text-amber-600 dark:text-amber-400 text-center">
+										All text hints revealed for this location
+									</p>
+								)}
+							</div>
+
+							{/* AI Hint Button */}
 							<Button
-								onClick={handleGenerateHint}
-								disabled={!canAffordHint() || !countryInfo}
-								className={`w-full ${canAffordHint() && countryInfo
+								onClick={handleGenerateAIHint}
+								disabled={!canAffordAIHint() || !countryInfo}
+								className={`w-full ${canAffordAIHint() && countryInfo
 										? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white'
 										: 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
 									}`}
 							>
 								<Sparkles className="w-4 h-4 mr-2" />
-								Get Hint #{getNextHintNumber()} (-{HINT_COST} pts)
+								AI Hint #{getNextHintNumber()} (-{AI_HINT_COST} pts)
 							</Button>
 
 							{!countryInfo && (
@@ -566,11 +778,18 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 								<div className="flex items-center gap-2 mb-2">
 									<Lightbulb className="w-4 h-4 text-blue-600 dark:text-blue-400" />
 									<span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-										Strategic Hints
+										Hint Options
 									</span>
 								</div>
+								<p className="text-xs text-blue-600 dark:text-blue-400 mb-2">
+									<strong>Text Hints (Free, then 50 pts):</strong> Progressive
+									reveal - first hint shows first/last letters (free), then each
+									additional hint reveals one more letter
+								</p>
 								<p className="text-xs text-blue-600 dark:text-blue-400">
-									Each hint costs {HINT_COST} points and focuses on observable details in Street View. Hints become more specific with each purchase!
+									<strong>AI Hints ({AI_HINT_COST} pts):</strong> Strategic hints
+									about observable details in Street View. Become more specific with
+									each purchase!
 								</p>
 							</div>
 						</motion.div>
@@ -588,7 +807,8 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 								AI Hints Unavailable
 							</h3>
 							<p className="text-sm text-gray-500 dark:text-gray-500">
-								The AI hints service is not configured. Please check your API settings.
+								The AI hints service is not configured. Please check your API
+								settings.
 							</p>
 						</motion.div>
 					)}

@@ -17,6 +17,14 @@ export interface SingleHintResponse {
   difficulty: 'easy' | 'medium' | 'hard';
 }
 
+export interface TextHintResponse {
+  hint: string;
+  type: 'country-letters';
+  cost: number;
+  hintLevel: number;
+  isComplete: boolean;
+}
+
 export interface LocationContext {
   country: string;
   countryCode: string;
