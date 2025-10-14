@@ -2,6 +2,10 @@ import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import { GameState, GameStats } from '@/lib/types';
 import { logger } from '@/lib/logger';
 
+/**
+ * Defines the schema for the IndexedDB database.
+ * This includes the object stores for games, stats, and settings.
+ */
 interface GeoGusserXDB extends DBSchema {
 	games: {
 		key: string;
@@ -18,24 +22,30 @@ interface GeoGusserXDB extends DBSchema {
 	};
 }
 
+/**
+ * A singleton class that manages all interactions with IndexedDB.
+ * It provides a simple and consistent API for saving, retrieving, and deleting
+ * game state, statistics, and user settings.
+ */
 class StorageManager {
 	private db: IDBPDatabase<GeoGusserXDB> | null = null;
 	private readonly dbName = 'geogusserx-db';
 	private readonly dbVersion = 1;
 
+	/**
+	 * Initializes the IndexedDB database. This method should be called before
+	 * any other methods of the `StorageManager` are used.
+	 */
 	async initialize(): Promise<void> {
 		logger.startTimer('storage-init');
 		try {
 			this.db = await openDB<GeoGusserXDB>(this.dbName, this.dbVersion, {
 				upgrade(db) {
-					// Games store
 					const gamesStore = db.createObjectStore('games', { keyPath: 'id' });
 					gamesStore.createIndex('by-date', 'startTime');
 
-					// Stats store
 					db.createObjectStore('stats', { keyPath: 'id' });
 
-					// Settings store
 					db.createObjectStore('settings', { keyPath: 'key' });
 				},
 			});
@@ -48,6 +58,10 @@ class StorageManager {
 		}
 	}
 
+	/**
+	 * A private helper method that ensures the database has been initialized.
+	 * @returns The database instance.
+	 */
 	private ensureDB(): IDBPDatabase<GeoGusserXDB> {
 		if (!this.db) {
 			throw new Error('Database not initialized. Call initialize() first.');
@@ -55,7 +69,10 @@ class StorageManager {
 		return this.db;
 	}
 
-	// Game State Management
+	/**
+	 * Saves the current game state to the database.
+	 * @param gameState The game state to be saved.
+	 */
 	async saveGameState(gameState: GameState): Promise<void> {
 		logger.startTimer('save-game-state');
 		try {
@@ -70,6 +87,11 @@ class StorageManager {
 		}
 	}
 
+	/**
+	 * Retrieves a game state from the database by its ID.
+	 * @param gameId The ID of the game to retrieve.
+	 * @returns A promise that resolves with the `GameState` object, or null if not found.
+	 */
 	async getGameState(gameId: string): Promise<GameState | null> {
 		logger.startTimer('get-game-state');
 		try {
@@ -85,6 +107,10 @@ class StorageManager {
 		}
 	}
 
+	/**
+	 * Retrieves all game states from the database, sorted by start time.
+	 * @returns A promise that resolves with an array of `GameState` objects.
+	 */
 	async getAllGames(): Promise<GameState[]> {
 		logger.startTimer('get-all-games');
 		try {
@@ -101,6 +127,10 @@ class StorageManager {
 		}
 	}
 
+	/**
+	 * Deletes a game state from the database by its ID.
+	 * @param gameId The ID of the game to delete.
+	 */
 	async deleteGame(gameId: string): Promise<void> {
 		logger.startTimer('delete-game');
 		try {
@@ -115,7 +145,10 @@ class StorageManager {
 		}
 	}
 
-	// Stats Management
+	/**
+	 * Retrieves the global game statistics from the database.
+	 * @returns A promise that resolves with the `GameStats` object, or null if not found.
+	 */
 	async getStats(): Promise<GameStats | null> {
 		logger.startTimer('get-stats');
 		try {
@@ -131,11 +164,14 @@ class StorageManager {
 		}
 	}
 
+	/**
+	 * Updates the global game statistics in the database.
+	 * @param stats The new game statistics.
+	 */
 	async updateStats(stats: GameStats): Promise<void> {
 		logger.startTimer('update-stats');
 		try {
 			const db = this.ensureDB();
-			// Create a stats object with id for storage
 			const statsWithId = { ...stats, id: 'global' };
 			await db.put('stats', statsWithId);
 			const duration = logger.endTimer('update-stats', 'Stats updated');
@@ -150,7 +186,11 @@ class StorageManager {
 		}
 	}
 
-	// Settings Management
+	/**
+	 * Retrieves a setting from the database by its key.
+	 * @param key The key of the setting to retrieve.
+	 * @returns A promise that resolves with the value of the setting, or null if not found.
+	 */
 	async getSetting<T>(key: string): Promise<T | null> {
 		try {
 			const db = this.ensureDB();
@@ -162,6 +202,11 @@ class StorageManager {
 		}
 	}
 
+	/**
+	 * Saves a setting to the database.
+	 * @param key The key of the setting to save.
+	 * @param value The value of the setting.
+	 */
 	async setSetting<T>(key: string, value: T): Promise<void> {
 		try {
 			const db = this.ensureDB();
@@ -173,7 +218,9 @@ class StorageManager {
 		}
 	}
 
-	// Advanced Cleanup Methods
+	/**
+	 * Clears all data from the database.
+	 */
 	async clearAllData(): Promise<void> {
 		try {
 			const db = this.ensureDB();
@@ -187,7 +234,9 @@ class StorageManager {
 		}
 	}
 
-	// Clean up old/completed games to prevent storage bloat
+	/**
+	 * Deletes old or completed games from the database to prevent storage bloat.
+	 */
 	async cleanupOldGames(): Promise<void> {
 		logger.startTimer('cleanup-old-games');
 		try {
@@ -195,30 +244,22 @@ class StorageManager {
 			const allGames = await db.getAll('games');
 			
 			const now = Date.now();
-			const EXPIRY_TIME = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
+			const EXPIRY_TIME = 4 * 60 * 60 * 1000; // 4 hours
 			
 			let deletedCount = 0;
 			
 			for (const game of allGames) {
 				const gameAge = now - game.startTime;
 				
-				// Delete if game is completed OR older than 4 hours
 				if (game.isCompleted || gameAge > EXPIRY_TIME) {
 					await db.delete('games', game.id);
 					deletedCount++;
-					logger.info('Deleted old/completed game', { 
-						gameId: game.id, 
-						isCompleted: game.isCompleted, 
-						ageHours: Math.round(gameAge / (60 * 60 * 1000)) 
-					}, 'StorageManager');
+					logger.info('Deleted old/completed game', { gameId: game.id, isCompleted: game.isCompleted, ageHours: Math.round(gameAge / (60 * 60 * 1000)) }, 'StorageManager');
 				}
 			}
 			
 			const duration = logger.endTimer('cleanup-old-games', `Cleaned up ${deletedCount} old games`);
-			logger.perf('Cleanup old games', duration, { 
-				totalGames: allGames.length, 
-				deletedCount 
-			});
+			logger.perf('Cleanup old games', duration, { totalGames: allGames.length, deletedCount });
 			
 		} catch (error) {
 			logger.endTimer('cleanup-old-games');
@@ -226,14 +267,16 @@ class StorageManager {
 		}
 	}
 
-	// Get the most recent active (incomplete) game
+	/**
+	 * Retrieves the most recent active (incomplete) game from the database.
+	 * @returns A promise that resolves with the active `GameState` object, or null if none is found.
+	 */
 	async getActiveGame(): Promise<GameState | null> {
 		logger.startTimer('get-active-game');
 		try {
 			const db = this.ensureDB();
 			const allGames = await db.getAll('games');
 			
-			// Find the most recent incomplete game
 			const activeGames = allGames
 				.filter(game => !game.isCompleted)
 				.sort((a, b) => b.startTime - a.startTime);
@@ -241,10 +284,7 @@ class StorageManager {
 			const activeGame = activeGames[0] || null;
 			
 			const duration = logger.endTimer('get-active-game');
-			logger.perf('Get active game', duration, { 
-				found: !!activeGame,
-				activeGamesCount: activeGames.length
-			});
+			logger.perf('Get active game', duration, { found: !!activeGame, activeGamesCount: activeGames.length });
 			
 			return activeGame;
 			
@@ -255,7 +295,9 @@ class StorageManager {
 		}
 	}
 
-	// Clean up all incomplete games (when starting a new game)
+	/**
+	 * Deletes all incomplete games from the database. This is typically called when starting a new game.
+	 */
 	async cleanupIncompleteGames(): Promise<void> {
 		logger.startTimer('cleanup-incomplete-games');
 		try {
@@ -281,6 +323,10 @@ class StorageManager {
 		}
 	}
 
+	/**
+	 * Retrieves the current storage usage and quota from the browser.
+	 * @returns A promise that resolves with an object containing the used and quota values.
+	 */
 	async getStorageUsage(): Promise<{ used: number; quota: number }> {
 		try {
 			if ('storage' in navigator && 'estimate' in navigator.storage) {
@@ -298,4 +344,7 @@ class StorageManager {
 	}
 }
 
+/**
+ * The singleton instance of the `StorageManager` class.
+ */
 export const storageManager = new StorageManager();

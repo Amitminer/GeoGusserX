@@ -1,9 +1,14 @@
 import { Loader2, MapPin } from 'lucide-react';
 
+/**
+ * A visually appealing loading screen component that is displayed while the application
+ * is fetching data or initializing. It features a variety of animations to keep the user
+ * engaged.
+ */
 export default function Loading() {
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center relative overflow-hidden">
-			{/* Floating background elements */}
+			{/* These elements create a subtle, animated background with floating dots. */}
 			<div className="absolute inset-0 opacity-20">
 				<div className="absolute top-20 left-20 w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
 				<div className="absolute top-40 right-32 w-1 h-1 bg-purple-400 rounded-full animate-ping"></div>
@@ -14,35 +19,33 @@ export default function Loading() {
 			</div>
 
 			<div className="text-center relative z-10">
-				{/* Logo container with animations */}
+				{/* The main logo container, featuring multiple layers of animations. */}
 				<div className="relative mb-8 flex items-center justify-center">
-					{/* Outer spinning ring */}
+					{/* An outer ring that spins continuously. */}
 					<div className="absolute w-24 h-24 border-2 border-blue-200 dark:border-blue-800 border-t-blue-500 rounded-full animate-spin"></div>
 
-					{/* Middle pulsing ring */}
+					{/* A middle ring that spins in the opposite direction. */}
 					<div className="absolute w-20 h-20 border border-purple-200 dark:border-purple-800 border-t-purple-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '3s' }}></div>
 
-					{/* Logo container with rotation and scale animation */}
+					{/* The central logo with a pulsing and bouncing animation. */}
 					<div className="relative">
 						<div className="w-16 h-16 bg-gradient-to-br from-blue-500 via-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto transform transition-all duration-1000 animate-pulse shadow-lg shadow-blue-500/25">
 							<MapPin className="w-8 h-8 text-white animate-bounce" suppressHydrationWarning style={{ animationDuration: '2s' }} />
 						</div>
 
-						{/* Orbiting loader */}
+						{/* An orbiting loader icon for an extra touch of motion. */}
 						<div className="absolute inset-0 animate-spin" style={{ animationDuration: '2s' }}>
 							<Loader2 className="w-6 h-6 absolute -top-3 left-1/2 transform -translate-x-1/2 text-blue-500 animate-pulse" suppressHydrationWarning />
 						</div>
 					</div>
 				</div>
 
-				{/* Title with typing effect */}
 				<div className="mb-2">
 					<h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent animate-pulse">
 						Loading GeoGusserX
 					</h2>
 				</div>
 
-				{/* Animated description */}
 				<div className="mb-6">
 					<p className="text-gray-600 dark:text-gray-300 animate-pulse">
 						Preparing your geography adventure...
@@ -52,7 +55,7 @@ export default function Loading() {
 					</p>
 				</div>
 
-				{/* Progress dots */}
+				{/* A series of bouncing dots to indicate progress. */}
 				<div className="flex justify-center mb-8">
 					<div className="flex space-x-2">
 						<div className="w-3 h-3 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full animate-bounce shadow-lg"></div>
@@ -62,14 +65,12 @@ export default function Loading() {
 					</div>
 				</div>
 
-				{/* Loading bar */}
 				<div className="max-w-xs mx-auto">
 					<div className="h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
 						<div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
 					</div>
 				</div>
 
-				{/* Floating tips */}
 				<div className="mt-8 animate-pulse">
 					<p className="text-sm text-gray-500 dark:text-gray-400 italic">
 						🗺️ Get ready to explore the world!

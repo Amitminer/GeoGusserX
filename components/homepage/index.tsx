@@ -1,12 +1,19 @@
 'use client';
 
+/**
+ * This file serves as an index for all the components that make up the homepage.
+ * It re-exports them so they can be easily imported from a single location.
+ */
 export { HeroSection } from './hero-section';
 export { FeaturesSection } from './features-section';
 export { CTASection } from './cta-section';
 export { Footer } from './footer';
 export { HomepageSkeleton } from './homepage-skeleton';
 
-
+/**
+ * An array of objects that define the key features of the application.
+ * This data is used to dynamically render the features section on the homepage.
+ */
 export const features = [
 	{
 		title: 'Real Street View',

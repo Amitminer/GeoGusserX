@@ -5,17 +5,32 @@ import { RotateCcw, ZoomIn, ZoomOut, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Location } from '@/lib/types';
 
+/**
+ * Props for the `MapControls` component.
+ */
 interface MapControlsProps {
+  /** The current map type (e.g., 'roadmap', 'satellite'). */
   mapType: string;
+  /** The current zoom level of the map. */
   currentZoom: number;
+  /** The location of the user's current guess. */
   guessLocation: Location | null;
+  /** A callback function to set the map type. */
   onSetMapType: (type: string) => void;
+  /** A callback function to zoom in. */
   onZoomIn: () => void;
+  /** A callback function to zoom out. */
   onZoomOut: () => void;
+  /** A callback function to reset the map view to its initial state. */
   onResetView: () => void;
+  /** A callback function to center the map on the user's guess. */
   onCenterOnGuess: () => void;
 }
 
+/**
+ * A component that displays the controls for the guess map, including map type selection,
+ * zoom controls, and other actions like resetting the view or centering on a guess.
+ */
 export function MapControls({
   mapType,
   currentZoom,
@@ -29,7 +44,7 @@ export function MapControls({
   return (
     <div className="flex items-center justify-between p-3 border-b bg-gray-800/90 backdrop-blur-sm flex-shrink-0">
       <div className="flex items-center gap-2">
-        {/* Map Type Selector */}
+        {/* A group of buttons for selecting the map type. */}
         <div className="flex items-center gap-1">
           <Button
             variant={mapType === 'roadmap' ? 'default' : 'ghost'}
@@ -71,7 +86,7 @@ export function MapControls({
       </div>
 
       <div className="flex items-center gap-1">
-        {/* Zoom Controls */}
+        {/* A set of controls for zooming in and out of the map. */}
         <Button
           variant="ghost"
           size="icon"
@@ -96,7 +111,7 @@ export function MapControls({
           <ZoomIn className="h-3 w-3" />
         </Button>
 
-        {/* Reset View */}
+        {/* A button to reset the map to its initial view. */}
         <Button
           variant="ghost"
           size="icon"
@@ -107,7 +122,7 @@ export function MapControls({
           <RotateCcw className="h-3 w-3" />
         </Button>
 
-        {/* Center on Guess */}
+        {/* A button to center the map on the user's current guess. */}
         {guessLocation && (
           <Button
             variant="ghost"

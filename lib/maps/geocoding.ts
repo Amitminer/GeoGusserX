@@ -1,12 +1,22 @@
 import { logger } from '../logger';
 import type { Location } from './types';
 
+/**
+ * Defines the structure for the result of a reverse geocoding operation.
+ */
 export interface GeocodeResult {
+  /** The full name of the country. */
   country: string;
+  /** The ISO 3166-1 alpha-2 country code. */
   countryCode: string;
+  /** The fully formatted address string. */
   formattedAddress: string;
 }
 
+/**
+ * A service class that encapsulates the Google Maps Geocoding API.
+ * It provides methods for reverse geocoding coordinates to determine the country.
+ */
 export class GeocodingService {
   private geocoder: google.maps.Geocoder | null = null;
 
@@ -17,7 +27,7 @@ export class GeocodingService {
   }
 
   /**
-   * Initialize the geocoding service
+   * Initializes the geocoding service.
    */
   initialize(): void {
     if (typeof google !== 'undefined' && google.maps) {
@@ -26,7 +36,11 @@ export class GeocodingService {
   }
 
   /**
-   * Get country information from coordinates using reverse geocoding
+   * Retrieves country information from a given set of coordinates using reverse geocoding.
+   * It iterates through the geocoding results to find the component that represents the country.
+   *
+   * @param location The geographical coordinates to be reverse geocoded.
+   * @returns A promise that resolves with a `GeocodeResult` object if successful, otherwise null.
    */
   async getCountryFromCoordinates(location: Location): Promise<GeocodeResult | null> {
     if (!this.geocoder) {
@@ -42,7 +56,7 @@ export class GeocodingService {
       });
 
       if (response.results && response.results.length > 0) {
-        // Find the country component
+        // The geocoding service can return multiple results. We iterate through them to find the most reliable country information.
         for (const result of response.results) {
           const countryComponent = result.address_components?.find(
             component => component.types.includes('country')
@@ -78,7 +92,8 @@ export class GeocodingService {
   }
 
   /**
-   * Check if geocoding service is available
+   * Checks if the geocoding service is available and has been initialized.
+   * @returns `true` if the service is available, `false` otherwise.
    */
   isAvailable(): boolean {
     return this.geocoder !== null;

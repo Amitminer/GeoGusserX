@@ -2,12 +2,17 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { MapPin, Home, Search } from 'lucide-react';
 
+/**
+ * A custom "Not Found" page that is displayed whenever a user navigates to a route
+ * that does not exist. It provides a user-friendly message and clear navigation
+ * options to guide the user back to the main parts of the application.
+ */
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       <div className="max-w-md w-full text-center">
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8">
-          {/* 404 Illustration */}
+          {/* A creative illustration that combines the 404 text with a map pin icon. */}
           <div className="relative mb-8">
             <div className="text-8xl font-bold text-gray-200 dark:text-gray-700 mb-4">404</div>
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
@@ -26,6 +31,7 @@ export default function NotFound() {
             but don&apos;t worry - there&apos;s a whole world to explore.
           </p>
 
+          {/* Navigation buttons to help the user find their way. */}
           <div className="space-y-3">
             <Link href="/">
               <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white">

@@ -3,102 +3,89 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Globe, MapPin, Trophy, Zap, Eye, Star } from 'lucide-react';
-import { features } from '.';
+import { Globe, MapPin, Trophy, Zap } from 'lucide-react';
 
-const iconMap = {
-	Globe,
-	MapPin,
-	Trophy,
-	Zap,
-	Eye,
-	Star,
-} as const;
+/**
+ * An array of objects that define the features to be displayed on the homepage.
+ * Each object contains the feature's title, description, icon, and color.
+ */
+const features = [
+  {
+    title: 'Explore the World',
+    description: 'Journey to random locations across the globe, from bustling cities to remote landscapes.',
+    icon: Globe,
+    color: 'from-blue-500 to-cyan-500'
+  },
+  {
+    title: 'Pinpoint Your Guess',
+    description: 'Use the interactive map to place your guess as close as possible to the actual location.',
+    icon: MapPin,
+    color: 'from-green-500 to-emerald-500'
+  },
+  {
+    title: 'Score Big',
+    description: 'The closer your guess, the more points you earn. Compete for the highest score!',
+    icon: Trophy,
+    color: 'from-yellow-500 to-amber-500'
+  },
+  {
+    title: 'Use Strategic Hints',
+    description: 'Stuck? Use AI-powered hints to get clues about your surroundings and improve your score.',
+    icon: Zap,
+    color: 'from-purple-500 to-violet-500'
+  }
+];
 
-const containerVariants = {
-	hidden: { opacity: 0 },
-	visible: {
-		opacity: 1,
-		transition: {
-			staggerChildren: 0.1
-		}
-	}
-};
-
-const itemVariants = {
-	hidden: { opacity: 0, y: 20 },
-	visible: { opacity: 1, y: 0 }
-};
-
+/**
+ * A component that displays a section of key features on the homepage.
+ * It uses a grid of cards to present the features in a visually appealing way.
+ */
 export function FeaturesSection() {
-	return (
-		<section className="container mx-auto px-4 py-20 relative z-10">
-			<motion.div
-				variants={containerVariants}
-				initial="hidden"
-				whileInView="visible"
-				viewport={{ once: true }}
-				className="mb-16 text-center"
-			>
-				<motion.h2
-					variants={itemVariants}
-					className="mb-6 text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent dark:from-gray-200 dark:to-gray-400 sm:text-5xl"
-				>
-					Why Choose GeoGusserX?
-				</motion.h2>
-				<motion.p
-					variants={itemVariants}
-					className="mx-auto max-w-2xl text-lg text-gray-600 dark:text-gray-400 font-light leading-relaxed"
-				>
-					Experience the ultimate geography guessing game with modern features designed for explorers like you
-				</motion.p>
-			</motion.div>
+  return (
+    <section className="container mx-auto px-4 py-16 relative z-10">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+      >
+        <div className="text-center mb-12">
+          <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 dark:from-gray-100 dark:via-gray-200 dark:to-gray-100 bg-clip-text text-transparent">
+            How It Works
+          </h2>
+          <p className="mt-4 text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            A simple yet challenging game of geographic discovery.
+          </p>
+        </div>
 
-			<motion.div
-				variants={containerVariants}
-				initial="hidden"
-				whileInView="visible"
-				viewport={{ once: true }}
-				className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3"
-			>
-				{features.map((feature, index) => {
-					const IconComponent = iconMap[feature.icon as keyof typeof iconMap];
-
-					return (
-						<motion.div
-							key={index}
-							variants={itemVariants}
-							whileHover="hover"
-						>
-							<motion.div
-								whileHover={{ y: -8, transition: { type: 'spring', stiffness: 300 } }}
-							>
-								<Card className="h-full border-2 border-gray-200/50 dark:border-gray-700/50 hover:border-blue-300/50 dark:hover:border-blue-600/50 transition-all duration-300 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm shadow-xl hover:shadow-2xl rounded-2xl overflow-hidden group">
-									<CardHeader className="pb-4">
-										<CardTitle className="flex items-center gap-4">
-											<motion.div
-												className={`flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-r ${feature.gradient} text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}
-												whileHover={{ rotate: 360 }}
-												transition={{ duration: 0.6 }}
-											>
-												<IconComponent className="h-6 w-6" />
-											</motion.div>
-											<span className="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent dark:from-gray-200 dark:to-gray-400">
-												{feature.title}
-											</span>
-										</CardTitle>
-									</CardHeader>
-									<CardContent>
-										<p className="text-gray-600 dark:text-gray-300 leading-relaxed font-light">
-											{feature.description}
-										</p>
-									</CardContent>
-								</Card>
-							</motion.div>
-						</motion.div>
-					);
-				})}
-			</motion.div>
-		</section>
-	);
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {features.map((feature, index) => (
+            <motion.div
+              key={feature.title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.3, delay: index * 0.1, ease: "easeOut" }}
+            >
+              <Card className="h-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-gray-200/50 dark:border-gray-700/50 hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl rounded-2xl overflow-hidden group">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-3">
+                    <div className={`w-12 h-12 bg-gradient-to-r ${feature.color} rounded-xl flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                      <feature.icon className="w-6 h-6" />
+                    </div>
+                    <span className="text-lg font-semibold text-gray-800 dark:text-gray-200">{feature.title}</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                    {feature.description}
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+    </section>
+  );
 }

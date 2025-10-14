@@ -7,13 +7,24 @@ import { CountrySelection } from '@/components/country-selection';
 import { CountrySettings, UserGameSettings } from '@/lib/types';
 import { Eye, EyeOff, Settings, Compass } from 'lucide-react';
 
+/**
+ * Props for the `SettingsCard` component.
+ */
 interface SettingsCardProps {
+  /** The current settings for country selection. */
   countrySettings: CountrySettings;
+  /** The current settings for the game. */
   gameSettings: UserGameSettings;
+  /** A callback function that is triggered when the country settings are changed. */
   onCountrySettingsChange: (settings: CountrySettings) => void;
+  /** A callback function that is triggered when the game settings are changed. */
   onGameSettingsChange: (settings: UserGameSettings) => void;
 }
 
+/**
+ * A component that displays cards for configuring game and country settings.
+ * It allows the player to customize their game experience before starting.
+ */
 export function SettingsCard({
   countrySettings,
   gameSettings,
@@ -22,7 +33,7 @@ export function SettingsCard({
 }: SettingsCardProps) {
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Country Settings */}
+      {/* Card for configuring country-specific settings. */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -60,7 +71,7 @@ export function SettingsCard({
         </Card>
       </motion.div>
 
-      {/* Game Settings */}
+      {/* Card for configuring general game settings. */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -90,7 +101,7 @@ export function SettingsCard({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Country Name Visibility Toggle */}
+            {/* A toggle switch for showing or hiding country names during gameplay. */}
             <motion.div
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -123,7 +134,7 @@ export function SettingsCard({
                   </div>
                 </div>
                 
-                {/* Custom Toggle Switch */}
+                {/* A custom-styled toggle switch for a more engaging user experience. */}
                 <div
                   className={`relative inline-flex h-6 w-11 sm:h-8 sm:w-14 items-center rounded-full transition-colors duration-300 flex-shrink-0 ${
                     gameSettings.showCountryName

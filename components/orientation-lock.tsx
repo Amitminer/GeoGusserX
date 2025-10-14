@@ -3,21 +3,29 @@
 import { useState, useEffect } from 'react';
 import { isMobile } from 'react-device-detect';
 
+/**
+ * A component that encourages users on mobile devices to use portrait mode
+ * for a better user experience. It displays an overlay when the device is in
+ * landscape mode.
+ *
+ * @param children The child components to be rendered.
+ */
 export function OrientationLock({ children }: { children: React.ReactNode }) {
 	const [isLandscape, setIsLandscape] = useState(false);
 
+	/**
+	 * This effect checks the device orientation when the component mounts and adds
+	 * event listeners to detect changes in orientation.
+	 */
 	useEffect(() => {
 		const checkOrientation = () => {
-			// Simple and reliable check
 			const landscape = window.innerWidth > window.innerHeight;
 			setIsLandscape(landscape);
 		};
 
 		checkOrientation();
 
-		// Listen for orientation changes
 		const handleOrientationChange = () => {
-			// Small delay to ensure dimensions are updated
 			requestAnimationFrame(checkOrientation);
 		};
 
@@ -30,7 +38,7 @@ export function OrientationLock({ children }: { children: React.ReactNode }) {
 		};
 	}, []);
 
-	// Only show warning on mobile devices in landscape
+	// If the device is mobile and in landscape mode, the orientation lock overlay is displayed.
 	if (isMobile && isLandscape) {
 		return (
 			<div

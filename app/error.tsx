@@ -5,6 +5,14 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw, Home } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
+/**
+ * A global error boundary component that catches and displays unhandled errors
+ * that occur within the application. It provides options for the user to recover
+ * from the error, such as retrying the action or returning to the homepage.
+ *
+ * @param error An `Error` object containing information about the error.
+ * @param reset A function to reset the error boundary and re-render the component tree.
+ */
 export default function Error({
   error,
   reset,
@@ -12,11 +20,17 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  /**
+   * This effect logs the error to the custom logging service, which can be useful
+   * for debugging and monitoring in a production environment.
+   */
   useEffect(() => {
-    // Log the error using our custom logger
     logger.error('Global error caught', error, 'GlobalErrorBoundary');
   }, [error]);
 
+  /**
+   * Navigates the user back to the homepage.
+   */
   const handleGoHome = () => {
     window.location.href = '/';
   };
@@ -36,6 +50,7 @@ export default function Error({
             This might be a temporary issue.
           </p>
 
+          {/* In development mode, the error details are displayed to help with debugging. */}
           {process.env.NODE_ENV === 'development' && (
             <details className="text-left mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
               <summary className="cursor-pointer font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">

@@ -22,6 +22,7 @@ export function isValidCoordinate(lat: number, lng: number): boolean {
   if (lat < -90 || lat > 90) return false;
   if (lng < -180 || lng > 180) return false;
   if (!isFinite(lat) || !isFinite(lng)) return false;
+  // A location of (0, 0) is often an indicator of an error or uninitialized data.
   if (lat === 0 && lng === 0) return false;
   return true;
 }
@@ -36,22 +37,26 @@ export function isValidLocation(location: Location): boolean {
 }
 
 /**
- * Distribution strategies for location generation
+ * Defines the different strategies for distributing the generated locations within a region.
+ * This allows for more varied and interesting gameplay, as some strategies might produce
+ * more challenging locations than others.
  */
 enum DistributionStrategy {
-  UNIFORM = 'uniform',
-  EDGE_BIASED = 'edge_biased',
-  CENTER_BIASED = 'center_biased',
-  CLUSTERED = 'clustered',
-  SCATTERED = 'scattered'
+  UNIFORM = 'uniform', // Evenly distributed across the region.
+  EDGE_BIASED = 'edge_biased', // More likely to be near the region's border.
+  CENTER_BIASED = 'center_biased', // More likely to be near the region's center.
+  CLUSTERED = 'clustered', // Locations are grouped together in a small area.
+  SCATTERED = 'scattered' // Locations are spread far apart.
 }
 
 /**
- * Generate a location using uniform distribution within a circle
- * Uses randomization and entropy
+ * Generates a location using a uniform distribution within a circular region.
+ * This method uses square root scaling on a random number to ensure that the
+ * points are evenly distributed over the area of the circle, not just along its radius.
+ * @param region The geographic region to generate a location in.
+ * @returns A random location with a uniform distribution.
  */
 function generateUniformLocation(region: GeographicRegion): Location {
-  // Use entropy for better randomization
   const entropySeed = generateEntropySeed();
   const distance = Math.sqrt(distributedRandom(5)) * region.radius * (0.7 + entropySeed * 0.3);
   const angle = randomAngle(0.05); // Slight bias for more natural distribution
@@ -66,8 +71,10 @@ function generateUniformLocation(region: GeographicRegion): Location {
 }
 
 /**
- * Generate a location biased towards the edges of the region
- * Uses entropy and quality considerations
+ * Generates a location that is biased towards the edges of the region.
+ * This can create more challenging scenarios where the player is near a border.
+ * @param region The geographic region.
+ * @returns A location biased towards the edge of the region.
  */
 function generateEdgeBiasedLocation(region: GeographicRegion): Location {
   const entropySeed = generateEntropySeed();
@@ -84,7 +91,11 @@ function generateEdgeBiasedLocation(region: GeographicRegion): Location {
 }
 
 /**
- * Generate a location biased towards the center of the region
+ * Generates a location that is biased towards the center of the region.
+ * This is achieved by using a `randomDistance` function with a higher shape parameter,
+ * which makes smaller distances more likely.
+ * @param region The geographic region.
+ * @returns A location biased towards the center of the region.
  */
 function generateCenterBiasedLocation(region: GeographicRegion): Location {
   const distance = randomDistance(region.radius, 3);
@@ -100,7 +111,10 @@ function generateCenterBiasedLocation(region: GeographicRegion): Location {
 }
 
 /**
- * Generate a clustered location (multiple attempts, pick best)
+ * Generates a location within a small, random cluster inside the region.
+ * This can simulate more densely populated areas or specific points of interest.
+ * @param region The geographic region.
+ * @returns A location within a random cluster.
  */
 function generateClusteredLocation(region: GeographicRegion): Location {
   const candidates: Location[] = [];
@@ -123,7 +137,10 @@ function generateClusteredLocation(region: GeographicRegion): Location {
 }
 
 /**
- * Generate a scattered location (avoid clustering)
+ * Generates a location that is intentionally scattered and avoids clustering.
+ * This is useful for creating a wide variety of locations across the entire region.
+ * @param region The geographic region.
+ * @returns A scattered location.
  */
 function generateScatteredLocation(region: GeographicRegion): Location {
   const r1 = distributedRandom(5);
@@ -143,8 +160,15 @@ function generateScatteredLocation(region: GeographicRegion): Location {
 }
 
 /**
- * Generate a random location within a specified region with randomness
- * Uses the same core algorithm but with better region selection
+ * Generates a random location within a specified geographic region.
+ * It can use various distribution strategies to place the location and includes a retry
+ * mechanism to ensure a valid coordinate is generated. If all attempts fail, it falls
+ * back to the center of the region with a small random offset.
+ *
+ * @param region The region to generate a location in.
+ * @param strategy The distribution strategy to use. Defaults to UNIFORM.
+ * @param maxAttempts The maximum number of times to try generating a valid location.
+ * @returns A random location within the region.
  */
 export function generateLocationInRegion(
   region: GeographicRegion,
@@ -163,7 +187,7 @@ export function generateLocationInRegion(
     throw new Error(`Invalid region radius: ${region.radius}km`);
   }
 
-  // Randomly vary the distribution strategy for more unpredictability
+  // Occasionally, a random strategy is chosen to increase unpredictability.
   const actualStrategy = secureRandom() < 0.1 ?
     Object.values(DistributionStrategy)[secureRandomInt(0, Object.values(DistributionStrategy).length - 1)] :
     strategy;
@@ -189,7 +213,7 @@ export function generateLocationInRegion(
           location = generateUniformLocation(region);
       }
 
-      // Add random jitter with entropy for better variation
+      // A small amount of jitter is added to the final coordinates to make the location less predictable.
       const jitterLat = (secureRandom() - 0.5) * 0.001;
       const jitterLng = (secureRandom() - 0.5) * 0.001;
 
@@ -222,7 +246,7 @@ export function generateLocationInRegion(
     }
   }
 
-  // Fallback to region center with small random offset
+  // If all attempts fail, fall back to the region's center with a small random offset.
   logger.warn('Failed to generate valid location, using region center with offset', {
     region: region.name
   }, 'LocationGenerator');
@@ -237,16 +261,20 @@ export function generateLocationInRegion(
 }
 
 /**
- * Generate a random location from all available regions
- * Uses O(log n) weighted selection instead of O(n) linear scan
+ * Generates a random location from the entire set of available regions.
+ * It uses a weighted random selection algorithm to efficiently pick a region based on its
+ * weight (e.g., population or area), and then generates a location within that region.
+ *
+ * @param maxAttempts The maximum number of attempts to find a valid location.
+ * @returns A random location.
  */
 export function generateRandomLocation(maxAttempts: number = 25): Location {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      // Use weighted random selection - O(log n) instead of O(n)
+      // The `getRandomRegion` function uses a weighted selection algorithm (O(log n)), which is very efficient.
       const selectedRegion = getRandomRegion();
 
-      // Randomly choose distribution strategy
+      // A random distribution strategy is chosen to ensure variety in location generation.
       const strategies = Object.values(DistributionStrategy);
       const randomStrategy = strategies[secureRandomInt(0, strategies.length - 1)];
 
@@ -260,7 +288,7 @@ export function generateRandomLocation(maxAttempts: number = 25): Location {
     }
   }
 
-  // Multiple fallback locations to avoid always using the same one
+  // If generation fails, a fallback location is chosen from a predefined list to ensure the game can continue.
   const fallbackLocations = [
     { lat: 40.7128, lng: -74.0060 }, // New York City
     { lat: 51.5074, lng: -0.1278 },  // London
@@ -286,22 +314,27 @@ export function generateRandomLocation(maxAttempts: number = 25): Location {
 }
 
 /**
- * Generate a random location from a specific country
- * Uses O(1) hash map lookup instead of O(n) filter operation
+ * Generates a random location within a specific country.
+ * This function is highly optimized, using a hash map for O(1) region lookups by country.
+ * It also employs different generation strategies based on the size of the regions within the country.
+ *
+ * @param countryName The name of the country to generate a location in.
+ * @param maxAttempts The maximum number of attempts.
+ * @returns A random location within the specified country.
  */
 export function generateLocationByCountry(countryName: string, maxAttempts: number = 25): Location {
   if (!countryName || typeof countryName !== 'string') {
     throw new Error('Invalid country name provided');
   }
 
-  // Use country lookup - O(1) hash map + fuzzy search fallback
+  // `getRegionsByCountryOptimized` uses a hash map for fast lookups.
   const countryRegions = getRegionsByCountryOptimized(countryName);
   if (countryRegions.length === 0) {
     logger.error('No regions found for country, falling back to random', { countryName }, 'LocationGenerator');
     return generateRandomLocation(maxAttempts);
   }
 
-  // Shuffle regions using Fisher-Yates algorithm for better randomness
+  // The Fisher-Yates shuffle algorithm is used to randomize the order of regions.
   const shuffledRegions = [...countryRegions];
   for (let i = shuffledRegions.length - 1; i > 0; i--) {
     const j = secureRandomInt(0, i);
@@ -313,7 +346,7 @@ export function generateLocationByCountry(countryName: string, maxAttempts: numb
   for (const region of shuffledRegions) {
     for (let attempt = 0; attempt < attemptsPerRegion; attempt++) {
       try {
-        // Vary strategy based on region size
+        // The generation strategy is adapted based on the size of the region.
         let strategy: DistributionStrategy;
         if (region.radius > 200) {
           strategy = secureRandom() < 0.5 ? DistributionStrategy.SCATTERED : DistributionStrategy.EDGE_BIASED;
@@ -340,7 +373,7 @@ export function generateLocationByCountry(countryName: string, maxAttempts: numb
     }
   }
 
-  // Fallback to first region center with random offset
+  // Fallback to the center of the first region if all else fails.
   logger.warn('Failed to generate valid location for country, using region center', { countryName }, 'LocationGenerator');
   const fallbackRegion = shuffledRegions[0];
 
@@ -354,7 +387,9 @@ export function generateLocationByCountry(countryName: string, maxAttempts: numb
 }
 
 /**
- * Benchmark the location generation performance
+ * Benchmarks the performance of the location generation functions.
+ * This is a developer utility for testing and optimization purposes.
+ * @param iterations The number of iterations to run for each benchmark.
  */
 export function benchmarkLocationGeneration(iterations: number = 1000) {
   logger.info(`Benchmarking location generation with ${iterations} iterations`, undefined, 'LocationBenchmark');

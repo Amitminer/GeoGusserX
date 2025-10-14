@@ -12,6 +12,10 @@ import { GameMode } from '@/lib/types';
 import { Settings, ArrowLeft, Play } from 'lucide-react';
 import Link from 'next/link';
 
+/**
+ * An array of objects that define the available game modes.
+ * Each object contains the mode's identifier, title, description, and other metadata for display.
+ */
 const gameModes = [
   {
     mode: '4-rounds' as GameMode,
@@ -51,6 +55,10 @@ const gameModes = [
   }
 ];
 
+/**
+ * The configuration page where players can select a game mode, adjust settings,
+ * and start a new game. It interacts with the global game state to persist the player's choices.
+ */
 export default function ConfigPage() {
   const router = useRouter();
   const { 
@@ -66,18 +74,29 @@ export default function ConfigPage() {
   );
   const [isStarting, setIsStarting] = useState(false);
 
-  // Update selected mode when game settings change
+  /**
+   * This effect ensures that the component's selected mode is synchronized with the
+   * `preferredGameMode` from the global game store.
+   */
   useEffect(() => {
     if (gameSettings.preferredGameMode && selectedMode !== gameSettings.preferredGameMode) {
       setSelectedMode(gameSettings.preferredGameMode);
     }
   }, [gameSettings.preferredGameMode, selectedMode]);
 
+  /**
+   * Handles the selection of a game mode, updating both the local state and the global game store.
+   * @param mode The `GameMode` identifier that was selected.
+   */
   const handleModeSelect = (mode: GameMode) => {
     setSelectedMode(mode);
     updateGameSettings({ ...gameSettings, preferredGameMode: mode });
   };
 
+  /**
+   * Starts a new game with the selected mode and navigates to the play page.
+   * It sets a loading state to provide feedback to the user.
+   */
   const handleStartGame = async () => {
     if (!selectedMode) return;
     
@@ -94,14 +113,14 @@ export default function ConfigPage() {
   return (
     <PageLayout>
       <div className="relative">
-        {/* Background decorative elements */}
+        {/* These divs create a subtle, decorative background effect. */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl"></div>
         </div>
 
         <div className="container mx-auto px-4 py-6 sm:py-8 relative z-10">
-          {/* Header */}
+          {/* Page Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -144,7 +163,7 @@ export default function ConfigPage() {
           </motion.div>
 
           <div className="max-w-6xl mx-auto space-y-8 sm:space-y-12">
-            {/* Game Mode Selection */}
+            {/* Game Mode Selection Section */}
             <motion.section
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -177,7 +196,7 @@ export default function ConfigPage() {
               </div>
             </motion.section>
 
-            {/* Settings Section */}
+            {/* Game Settings Section */}
             <motion.section
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -202,7 +221,7 @@ export default function ConfigPage() {
               </div>
             </motion.section>
 
-            {/* Start Game Section */}
+            {/* Start Game Button Section */}
             <motion.section
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -218,8 +237,7 @@ export default function ConfigPage() {
                     onClick={handleStartGame}
                     disabled={!selectedMode || isStarting}
                     size="lg"
-                    className={`w-full py-3 sm:py-4 text-base sm:text-lg font-semibold shadow-xl transition-all duration-300 rounded-xl ${
-                      selectedMode && !isStarting
+                    className={`w-full py-3 sm:py-4 text-base sm:text-lg font-semibold shadow-xl transition-all duration-300 rounded-xl ${selectedMode && !isStarting
                         ? 'bg-gradient-to-r from-blue-500 via-teal-500 to-cyan-500 hover:from-blue-600 hover:via-teal-600 hover:to-cyan-600 hover:shadow-2xl text-white hover:scale-105'
                         : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                     }`}

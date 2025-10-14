@@ -3,24 +3,44 @@ import { Globe, Expand, EyeOff, Send } from 'lucide-react';
 import { mapsManager } from '@/lib/maps';
 import { darkMapStyles } from '@/lib/utils';
 
+/**
+ * Props for the `MiniMap` component.
+ */
 interface MiniMapProps {
-	onExpand: () => void;
-	onHide?: () => void;
-	className?: string;
-	onMapStateChange?: (center: { lat: number; lng: number }, zoom: number) => void;
-	onQuessPlaced?: (location: { lat: number; lng: number }) => void;
-	onSubmitGuess?: () => void;
-	hasGuess?: boolean;
-	disabled?: boolean;
+  /** A callback function to be triggered when the user expands the map. */
+  onExpand: () => void;
+  /** An optional callback function to be triggered when the user hides the map. */
+  onHide?: () => void;
+  /** Additional CSS classes to apply to the component. */
+  className?: string;
+  /** An optional callback to be triggered when the map's state (center, zoom) changes. */
+  onMapStateChange?: (center: { lat: number; lng: number }, zoom: number) => void;
+  /** An optional callback to be triggered when the user places a guess on the map. */
+  onQuessPlaced?: (location: { lat: number; lng: number }) => void;
+  /** An optional callback to be triggered when the user submits their guess. */
+  onSubmitGuess?: () => void;
+  /** A boolean indicating whether a guess has been placed. */
+  hasGuess?: boolean;
+  /** A boolean indicating whether the map is disabled. */
+  disabled?: boolean;
 }
 
+/**
+ * A component that displays a minimap for the user to make their guess.
+ * It handles map initialization, user interactions (clicking to place a guess, expanding),
+ * and communicates with the parent component to update the game state.
+ */
 export function MiniMap({ onExpand, onHide, className, onMapStateChange, onQuessPlaced, onSubmitGuess, hasGuess = false, disabled = false }: MiniMapProps) {
 	const mapRef = useRef<HTMLDivElement>(null);
 	const mapInstanceRef = useRef<google.maps.Map | null>(null);
 	const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
 	const [isMapLoaded, setIsMapLoaded] = useState(false);
 
-	// Handle single click to place guess (not submit) - memoized to prevent re-renders
+	/**
+	 * Handles a single click on the map to place a guess. It creates a marker at the
+	 * clicked location and calls the `onQuessPlaced` callback.
+	 * @param event The map mouse event.
+	 */
 	const handleMapClick = useCallback((event: google.maps.MapMouseEvent) => {
 		if (disabled || !event.latLng || !onQuessPlaced || !mapInstanceRef.current) return;
 
@@ -29,13 +49,11 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange, onQuess
 			lng: event.latLng.lng()
 		};
 
-		// Remove existing marker
 		if (markerRef.current) {
 			markerRef.current.map = null;
 			markerRef.current = null;
 		}
 
-		// Create custom marker using AdvancedMarkerElement (works without Map ID)
 		const markerContent = document.createElement('div');
 		markerContent.innerHTML = `
 			<div style="
@@ -64,48 +82,50 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange, onQuess
 		onQuessPlaced(location);
 	}, [disabled, onQuessPlaced]);
 
-	// Handle double-click to expand
+	/**
+	 * Handles a double-click on the map to expand it.
+	 * @param e The mouse event.
+	 */
 	const handleDoubleClick = (e: React.MouseEvent) => {
 		e.preventDefault();
 		e.stopPropagation();
 		onExpand();
 	};
 
+	/**
+	 * This effect initializes the minimap when the component mounts.
+	 * It handles the entire lifecycle of the map, including creation, event listeners, and cleanup.
+	 */
 	useEffect(() => {
 		let map: google.maps.Map | null = null;
 
 		const initMiniMap = async () => {
 			if (!mapRef.current) return;
 
-			// Clean up existing map instance if any
 			if (mapInstanceRef.current) {
 				google.maps.event.clearInstanceListeners(mapInstanceRef.current);
 				mapInstanceRef.current = null;
 			}
 
-			// Clean up existing marker
 			if (markerRef.current) {
 				markerRef.current.map = null;
 				markerRef.current = null;
 			}
 
 			try {
-				// Ensure Google Maps is loaded
 				if (!mapsManager.isInitialized()) {
 					await mapsManager.initialize();
 				}
 
-				// Get Map ID to prevent warnings
 				const mapId = mapsManager.getMapId();
 
-				// Create minimap with Map ID to prevent warnings
 				const mapConfig: google.maps.MapOptions = {
 					zoom: 1,
 					center: { lat: 20, lng: 0 },
 					mapTypeId: google.maps.MapTypeId.ROADMAP,
 					disableDefaultUI: true,
-					gestureHandling: 'greedy', // Allow zoom on scroll without modifier keys
-					zoomControl: true, // Enable zoom controls
+					gestureHandling: 'greedy',
+					zoomControl: true,
 					zoomControlOptions: {
 						position: google.maps.ControlPosition.TOP_RIGHT
 					},
@@ -115,15 +135,12 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange, onQuess
 					fullscreenControl: false
 				};
 
-				// Add Map ID if available
 				if (mapId) {
 					mapConfig.mapId = mapId;
 				}
 
 				map = new google.maps.Map(mapRef.current, mapConfig);
 
-				// Override with custom dark styles after map creation
-				// I do not know why it doesnt let me override the styles
 				map.setOptions({ styles: darkMapStyles });
 
 				mapInstanceRef.current = map;
@@ -135,7 +152,6 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange, onQuess
 
 		initMiniMap();
 
-		// Cleanup function
 		return () => {
 			if (map) {
 				google.maps.event.clearInstanceListeners(map);
@@ -149,30 +165,32 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange, onQuess
 				markerRef.current = null;
 			}
 		};
-	}, []); // Empty dependency array - only initialize once
+	}, []);
 
-	// Separate effect to handle click listener updates without re-initializing the map
+	/**
+	 * This effect manages the click listener for placing a guess.
+	 * It is separated from the main initialization effect to avoid re-initializing the map
+	 * when the `disabled` or `onQuessPlaced` props change.
+	 */
 	useEffect(() => {
 		if (!mapInstanceRef.current) return;
 
-		// Remove existing click listeners
 		google.maps.event.clearListeners(mapInstanceRef.current, 'click');
 
-		// Add click listener if needed
 		if (onQuessPlaced && !disabled) {
 			mapInstanceRef.current.addListener('click', handleMapClick);
 		}
 	}, [onQuessPlaced, disabled, handleMapClick]);
 
-	// Separate effect to handle map state change listeners
+	/**
+	 * This effect manages the listeners for map state changes (center and zoom).
+	 */
 	useEffect(() => {
 		if (!mapInstanceRef.current || !onMapStateChange) return;
 
-		// Remove existing listeners
 		google.maps.event.clearListeners(mapInstanceRef.current, 'center_changed');
 		google.maps.event.clearListeners(mapInstanceRef.current, 'zoom_changed');
 
-		// Add new listeners
 		const map = mapInstanceRef.current;
 		map.addListener('center_changed', () => {
 			const center = map.getCenter();
@@ -196,7 +214,9 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange, onQuess
 		});
 	}, [onMapStateChange]);
 
-	// Effect to clear marker when guess is cleared or component is disabled
+	/**
+	 * This effect clears the marker from the map when the guess is cleared.
+	 */
 	useEffect(() => {
 		if (!hasGuess && markerRef.current) {
 			markerRef.current.map = null;
@@ -209,7 +229,6 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange, onQuess
 			className={`w-80 h-64 sm:w-96 sm:h-80 fixed bottom-4 right-4 z-50 origin-bottom-right transition-all duration-300 ease-in-out pointer-events-auto ${className || ''}`}
 		>
 			<div className="w-full h-full flex flex-col shadow-2xl border-2 border-blue-500/50 bg-gray-900/95 backdrop-blur-sm rounded-lg overflow-hidden">
-				{/* Header */}
 				<div className="flex items-center justify-between px-3 py-1.5 md:py-2 border-b bg-gray-800/90 backdrop-blur-sm flex-shrink-0">
 					<div className="flex items-center gap-1 md:gap-1.5">
 						<Globe className="h-4 w-4 md:h-4 md:w-4 text-blue-500" />
@@ -238,7 +257,6 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange, onQuess
 					</div>
 				</div>
 
-				{/* Mini Map */}
 				<div className="flex-1 relative">
 					{!isMapLoaded && (
 						<div className="absolute inset-0 bg-gradient-to-br from-blue-900/50 to-green-900/50 flex items-center justify-center">
@@ -259,7 +277,6 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange, onQuess
 						}}
 						onDoubleClick={handleDoubleClick}
 					/>
-					{/* Disabled overlay */}
 					{disabled && (
 						<div className="absolute inset-0 bg-black/30 flex items-center justify-center">
 							<div className="bg-gray-900/90 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-gray-700/50">
@@ -269,7 +286,6 @@ export function MiniMap({ onExpand, onHide, className, onMapStateChange, onQuess
 					)}
 				</div>
 
-				{/* Submit Button - appears when guess is placed */}
 				{hasGuess && !disabled && onSubmitGuess && (
 					<div className="px-3 py-2 border-t bg-gray-800/90 backdrop-blur-sm">
 						<button

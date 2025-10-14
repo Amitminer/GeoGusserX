@@ -7,14 +7,26 @@ import { Badge } from '@/components/ui/badge';
 
 type MapSize = 'mini' | 'expanded' | 'fullscreen' | 'hidden';
 
+/**
+ * Props for the `MapHeader` component.
+ */
 interface MapHeaderProps {
+  /** The current size of the map. */
   mapSize: MapSize;
+  /** A boolean indicating whether the map controls are disabled. */
   disabled: boolean;
+  /** A boolean indicating whether a guess has been placed. */
   hasGuessLocation: boolean;
+  /** A callback function to set the size of the map. */
   onSetMapSize: (size: MapSize) => void;
+  /** An optional callback function to reload the map. */
   onReloadMap?: () => void;
 }
 
+/**
+ * A presentational component that displays the header for the guess map.
+ * It includes the map title, a status badge, and controls for changing the map size.
+ */
 export function MapHeader({ mapSize, disabled, hasGuessLocation, onSetMapSize, onReloadMap }: MapHeaderProps) {
   return (
     <div className="flex items-center justify-between px-3 py-1.5 md:py-2 border-b bg-gray-800/90 backdrop-blur-sm flex-shrink-0">
@@ -26,7 +38,7 @@ export function MapHeader({ mapSize, disabled, hasGuessLocation, onSetMapSize, o
       </div>
 
       <div className="flex items-center gap-1 md:gap-1.5">
-        {/* Status Badge */}
+        {/* A badge that displays the current status of the guess. */}
         <Badge
           variant={disabled ? 'default' : hasGuessLocation ? 'secondary' : 'outline'}
           className={`text-[9px] md:text-[10px] px-1 md:px-1.5 py-0.5 ${
@@ -49,7 +61,7 @@ export function MapHeader({ mapSize, disabled, hasGuessLocation, onSetMapSize, o
           )}
         </Badge>
 
-        {/* Reload Map Button - Show in expanded/fullscreen modes */}
+        {/* A button to reload the map, available in expanded and fullscreen modes. */}
         {(mapSize === 'expanded' || mapSize === 'fullscreen') && onReloadMap && (
           <Button
             variant="ghost"
@@ -62,7 +74,7 @@ export function MapHeader({ mapSize, disabled, hasGuessLocation, onSetMapSize, o
           </Button>
         )}
 
-        {/* Size Controls */}
+        {/* Controls for changing the size of the map. */}
         {mapSize !== 'fullscreen' && (
           <>
             <Button

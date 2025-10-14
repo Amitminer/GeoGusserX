@@ -13,29 +13,33 @@ import { CTASection } from '@/components/homepage/cta-section';
 import { Footer } from '@/components/homepage/footer';
 import { HomepageSkeleton } from '@/components/homepage/homepage-skeleton';
 
+/**
+ * The main homepage for the application. This component is responsible for initializing
+ * the necessary services (storage, maps), checking for an active game session, and
+ * displaying the homepage content if no active game is found.
+ */
 export default function HomePage() {
   const router = useRouter();
   const { restoreActiveGame } = useGameStore();
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Initialize the application
+  /**
+   * This effect runs on component mount to initialize the application. It sets up
+   * the storage and map services, and then attempts to restore an active game session.
+   * If a game is restored, it redirects the user to the play page.
+   */
   useEffect(() => {
     const initialize = async () => {
       logger.startTimer('app-initialization');
       try {
         logger.info('Initializing GeoGusserX application', undefined, 'HomePage');
 
-        // Initialize storage
         await storageManager.initialize();
-        
-        // Initialize Google Maps
         await mapsManager.initialize();
         
-        // Try to restore active game session
         const gameRestored = await restoreActiveGame();
         if (gameRestored) {
-          // If there's an active game, redirect to play page
           router.push('/play');
           return;
         }
@@ -52,7 +56,11 @@ export default function HomePage() {
     initialize();
   }, [restoreActiveGame, router]);
 
-  // Simulate loading time 
+  /**
+   * This effect introduces a small, artificial delay to the loading process.
+   * This prevents a jarring flash of content if the initialization is very fast,
+   * leading to a smoother user experience.
+   */
   useEffect(() => {
     if (isInitialized) {
       const timer = setTimeout(() => {
@@ -62,7 +70,7 @@ export default function HomePage() {
     }
   }, [isInitialized]);
 
-  // Show skeleton loading
+  // While the application is initializing, a skeleton loader is displayed.
   if (isLoading || !isInitialized) {
     return <HomepageSkeleton />;
   }
@@ -70,22 +78,15 @@ export default function HomePage() {
   return (
     <PageLayout>
       <div className="relative">
-        {/* Background decorative elements */}
+        {/* These divs create a subtle, decorative background effect. */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl"></div>
         </div>
 
-        {/* Hero Section */}
         <HeroSection />
-
-        {/* Features Section */}
         <FeaturesSection />
-
-        {/* CTA Section */}
         <CTASection />
-
-        {/* Footer */}
         <Footer />
       </div>
     </PageLayout>

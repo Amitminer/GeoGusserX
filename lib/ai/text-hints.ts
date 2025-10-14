@@ -70,7 +70,11 @@ function getRevealedPositions(nameLength: number, hintLevel: number): number[] {
     middlePositions.push(i);
   }
   
-  // Sort middle positions by distance from center (reveal center first)
+	/**
+	 * Sorts the middle positions based on their distance from the center of the string.
+	 * This makes the hints reveal characters from the inside out, which is a common game mechanic.
+	 * If two characters have the same distance from the center, the one that appears earlier in the string is prioritized.
+	 */
   const center = (nameLength - 1) / 2;
   middlePositions.sort((a, b) => {
     const distA = Math.abs(a - center);

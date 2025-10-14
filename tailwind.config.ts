@@ -1,14 +1,28 @@
 import type { Config } from 'tailwindcss'
 
+/**
+ * The Tailwind CSS configuration for the project.
+ * This object defines the paths to the files that Tailwind should scan for classes,
+ * as well as custom extensions to the default theme.
+ */
 const config: Config = {
+  /**
+   * The `content` array tells Tailwind which files to scan for class names.
+   */
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     './lib/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  /**
+   * The `theme` object is where you can customize the default Tailwind theme.
+   */
   theme: {
     extend: {
+      /**
+       * Custom color definitions, using CSS variables for theming.
+       */
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -44,21 +58,33 @@ const config: Config = {
           foreground: 'hsl(var(--card-foreground))',
         },
       },
+      /**
+       * Custom border radius definitions.
+       */
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      /**
+       * Custom font family definitions.
+       */
       fontFamily: {
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-mono)', 'monospace'],
       },
+      /**
+       * Custom animation definitions.
+       */
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',
         'slide-in-bottom': 'slideInFromBottom 0.3s ease-out',
         'slide-in-top': 'slideInFromTop 0.3s ease-out',
         'scale-in': 'scaleIn 0.3s ease-out',
       },
+      /**
+       * Custom keyframe definitions for the animations.
+       */
       keyframes: {
         fadeIn: {
           from: { opacity: '0' },
@@ -79,6 +105,9 @@ const config: Config = {
       },
     },
   },
+  /**
+   * The `plugins` array is where you can add Tailwind plugins.
+   */
   plugins: [],
 }
 

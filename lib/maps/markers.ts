@@ -1,8 +1,14 @@
 import type { Location } from './types';
 
+/**
+ * A service class for creating and managing markers and polylines on the Google Map.
+ */
 export class MarkerService {
   /**
-   * Create an actual location marker (green)
+   * Creates a marker for the actual location, styled in green.
+   * @param map The Google Map instance.
+   * @param location The location to place the marker at.
+   * @returns A `google.maps.marker.AdvancedMarkerElement` instance.
    */
   createActualLocationMarker(map: google.maps.Map, location: Location): google.maps.marker.AdvancedMarkerElement {
     const markerElement = document.createElement('div');
@@ -22,7 +28,10 @@ export class MarkerService {
   }
 
   /**
-   * Create a guessed location marker (red)
+   * Creates a marker for the user's guessed location, styled in red.
+   * @param map The Google Map instance.
+   * @param location The location to place the marker at.
+   * @returns A `google.maps.marker.AdvancedMarkerElement` instance.
    */
   createGuessedLocationMarker(map: google.maps.Map, location: Location): google.maps.marker.AdvancedMarkerElement {
     const markerElement = document.createElement('div');
@@ -42,7 +51,11 @@ export class MarkerService {
   }
 
   /**
-   * Create a connection line between two locations
+   * Creates a polyline to connect two locations on the map.
+   * @param map The Google Map instance.
+   * @param location1 The first location.
+   * @param location2 The second location.
+   * @returns A `google.maps.Polyline` instance.
    */
   createConnectionLine(
     map: google.maps.Map, 

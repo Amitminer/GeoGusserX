@@ -2,6 +2,11 @@ import type { Location, MapOptions } from './types';
 import { logger } from '../logger';
 import { MarkerService } from './markers';
 
+/**
+ * A factory class for creating different types of Google Maps used in the application.
+ * This class encapsulates the logic for map creation and configuration, making it easy
+ * to create consistent and correctly configured maps.
+ */
 export class MapFactory {
   private mapId: string | null;
   private markerService: MarkerService;
@@ -12,7 +17,9 @@ export class MapFactory {
   }
 
   /**
-   * Create a map for guessing
+   * Creates a map for the main guessing screen.
+   * @param container The HTML element to render the map in.
+   * @returns A `google.maps.Map` instance.
    */
   createGuessMap(container: HTMLElement): google.maps.Map {
     logger.startTimer('guess-map-creation');
@@ -44,7 +51,13 @@ export class MapFactory {
   }
 
   /**
-   * Create a results map showing both locations
+   * Creates a map to display the results of a round, showing both the actual and guessed locations.
+   * It also creates markers for both locations and a line connecting them.
+   *
+   * @param container The HTML element to render the map in.
+   * @param actualLocation The actual location.
+   * @param guessedLocation The user's guessed location.
+   * @returns A `google.maps.Map` instance.
    */
   createResultsMap(
     container: HTMLElement,
@@ -68,11 +81,8 @@ export class MapFactory {
 
     const map = new google.maps.Map(container, mapOptions);
 
-    // Create markers
     this.markerService.createActualLocationMarker(map, actualLocation);
     this.markerService.createGuessedLocationMarker(map, guessedLocation);
-
-    // Create connection line
     this.markerService.createConnectionLine(map, actualLocation, guessedLocation);
 
     map.fitBounds(bounds);
@@ -87,7 +97,10 @@ export class MapFactory {
   }
 
   /**
-   * Create a basic map with custom options
+   * Creates a generic map with a given set of options.
+   * @param container The HTML element to render the map in.
+   * @param options An optional object of `MapOptions` to override the defaults.
+   * @returns A `google.maps.Map` instance.
    */
   createMap(container: HTMLElement, options: Partial<MapOptions> = {}): google.maps.Map {
     const defaultOptions: MapOptions = {

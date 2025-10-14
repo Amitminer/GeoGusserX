@@ -6,7 +6,7 @@ let path: typeof import('path') | null = null;
 
 if (typeof window === 'undefined') {
 	try {
-		// Use dynamic imports for Node.js modules
+		// Use dynamic imports for Node.js modules to avoid breaking client-side builds.
 		import('fs').then(fsModule => {
 			fs = fsModule.promises;
 		});
@@ -14,98 +14,85 @@ if (typeof window === 'undefined') {
 			path = pathModule;
 		});
 	} catch {
-		// File system modules not available
+		// File system modules are not available in all environments (e.g., Vercel Edge Functions).
 		console.warn('File system modules not available for logging');
 	}
 }
 
 /**
- * Available log levels in order of severity
+ * Defines the available log levels in order of increasing severity.
  */
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 /**
- * Represents a single log entry with metadata
+ * Represents a single log entry, containing the message and associated metadata.
  */
 interface LogEntry {
-	/** ISO timestamp when the log was created */
+	/** The ISO 8601 timestamp indicating when the log was created. */
 	timestamp: string;
-	/** Severity level of the log entry */
+	/** The severity level of the log entry. */
 	level: LogLevel;
-	/** The log message */
+	/** The main log message. */
 	message: string;
-	/** Optional additional data to log */
+	/** Optional structured data to provide additional context. */
 	data?: unknown;
-	/** Optional source identifier (e.g., component name, module) */
+	/** An optional identifier for the source of the log (e.g., a component or module name). */
 	source?: string;
-	/** React error boundary information (for error logs) */
+	/** React-specific error information, captured by an error boundary. */
 	errorInfo?: React.ErrorInfo;
-	/** Performance timing duration in milliseconds */
+	/** The duration of a performance measurement, in milliseconds. */
 	duration?: number;
-	/** Memory usage at log time in MB */
+	/** The memory usage at the time of logging, in megabytes. */
 	memoryUsage?: number;
 }
 
 /**
- * Performance and usage statistics for the logging session
+ * Contains performance and usage statistics for the current logging session.
  */
 interface PerformanceStats {
-	/** Total number of logs recorded */
+	/** The total number of logs recorded since the logger was initialized. */
 	totalLogs: number;
-	/** Count of logs by severity level */
+	/** A breakdown of log counts by their severity level. */
 	logsByLevel: Record<LogLevel, number>;
-	/** Average memory usage across all logs in MB */
+	/** The average memory usage recorded across all log entries, in megabytes. */
 	averageMemoryUsage: number;
-	/** Peak memory usage recorded in MB */
+	/** The peak memory usage recorded during the session, in megabytes. */
 	peakMemoryUsage: number;
-	/** Timestamp when the logging session started */
+	/** The timestamp when the logging session started. */
 	sessionStartTime: number;
-	/** Timestamp of the most recent log entry */
+	/** The timestamp of the most recent log entry. */
 	lastLogTime: number;
 }
 
 /**
- * Logging utility with performance monitoring and memory tracking
+ * A comprehensive logging utility that includes performance monitoring, memory tracking,
+ * log level management, and server-side file logging. It is designed to be environment-aware,
+ * only enabling file-based logging in a Node.js environment.
  */
 class Logger {
-	/** Whether we're running in development mode */
 	private isDevelopment = process.env.NODE_ENV === 'development';
-
-	/** Internal log storage (circular buffer) */
 	private logs: LogEntry[] = [];
-
-	/** Maximum number of logs to keep in memory */
-	private maxLogs = 1000;
-
-	/** Performance timestamp when the logger was initialized */
+	private maxLogs = 1000; // In-memory circular buffer for logs.
 	private sessionStartTime = performance.now();
-
-	/** Map of active performance timers */
 	private performanceTimers = new Map<string, number>();
-
-	/** Path to the log file */
 	private logFilePath = path ? path.join(process.cwd(), 'logger.logs') : 'logger.logs';
-
-	/** Whether we're running in a Node.js environment (server-side) */
 	private isServerSide = typeof window === 'undefined';
-
-	/** Queue for pending file writes to avoid race conditions */
-	private writeQueue: Promise<void> = Promise.resolve();
-
-	/** Debug message throttling */
+	private writeQueue: Promise<void> = Promise.resolve(); // Serializes file writes to prevent race conditions.
 	private debugThrottle = new Map<string, number>();
 	private debugThrottleInterval = 5000; // 5 seconds
 
 	/**
-	 * Gets current memory usage in MB
+	 * Retrieves the current memory usage in megabytes, if available.
+	 * @returns The used JavaScript heap size in MB.
 	 */
 	private getMemoryUsage(): number {
-		// @ts-expect-error - performance.memory might not be available in all browsers
+		// @ts-expect-error - `performance.memory` is a non-standard feature.
 		return (performance.memory?.usedJSHeapSize || 0) / 1024 / 1024; // MB
 	}
 
 	/**
-	 * Creates a new log entry with current timestamp and memory usage
+	 * Creates a new log entry object with a timestamp and current memory usage.
+	 * @returns A `LogEntry` object.
 	 */
 	private createLogEntry(
 		level: LogLevel,
@@ -128,47 +115,49 @@ class Logger {
 	}
 
 	/**
-	 * Writes a log entry to the file system (server-side only)
+	 * Asynchronously writes a log entry to the file system on the server side.
+	 * This method uses a write queue to ensure that log messages are written sequentially,
+	 * preventing race conditions and corrupted log files.
+	 * @param entry The `LogEntry` to write.
 	 */
 	private async writeLogToFile(entry: LogEntry): Promise<void> {
 		if (!this.isServerSide || !fs) {
-			return; // Skip file writing on client-side or if fs is not available
+			return;
 		}
 
 		try {
-			// Format log entry for file output
 			const logLine = `[${entry.timestamp}] [${entry.level.toUpperCase()}]${entry.source ? ` [${entry.source}]` : ''} ${entry.message}${entry.data ? ` | Data: ${JSON.stringify(entry.data)}` : ''}${entry.duration ? ` | Duration: ${entry.duration.toFixed(2)}ms` : ''}${entry.memoryUsage ? ` | Memory: ${entry.memoryUsage.toFixed(2)}MB` : ''}${entry.errorInfo ? ` | ErrorInfo: ${JSON.stringify(entry.errorInfo)}` : ''}\n`;
 
-			// Queue the write operation to avoid race conditions
 			this.writeQueue = this.writeQueue.then(async () => {
 				if (fs) {
 					await fs.appendFile(this.logFilePath, logLine, 'utf8');
 				}
 			}).catch((error) => {
-				// Fallback to console if file writing fails
 				console.error('Failed to write log to file:', error);
 			});
 		} catch (error) {
-			// Silent fail - don't let logging errors break the application
 			console.error('Error in writeLogToFile:', error);
 		}
 	}
 
 	/**
-	 * Adds a log entry to the internal storage and writes to file
+	 * Adds a log entry to the in-memory circular buffer and triggers a file write.
+	 * @param entry The `LogEntry` to add.
 	 */
 	private addLog(entry: LogEntry) {
 		this.logs.push(entry);
 		if (this.logs.length > this.maxLogs) {
-			this.logs.shift();
+			this.logs.shift(); // Maintain the circular buffer size.
 		}
 
-		// Write to file asynchronously (server-side only)
 		this.writeLogToFile(entry);
 	}
 
 	/**
-	 * Check if a debug message should be throttled
+	 * Checks if a debug message should be throttled to avoid spamming the console.
+	 * @param message The log message.
+	 * @param source The source of the log.
+	 * @returns `true` if the message should be throttled, `false` otherwise.
 	 */
 	private shouldThrottleDebug(message: string, source?: string): boolean {
 		const key = `${source || 'default'}:${message}`;
@@ -184,14 +173,19 @@ class Logger {
 	}
 
 	/**
-	 * Starts a performance timer with the given name
+	 * Starts a performance timer with a given name.
+	 * @param name A unique name for the timer.
 	 */
 	startTimer(name: string) {
 		this.performanceTimers.set(name, performance.now());
 	}
 
 	/**
-	 * Ends a performance timer and optionally logs the duration
+	 * Ends a performance timer and returns the duration in milliseconds.
+	 * Optionally logs the duration as an informational message.
+	 * @param name The name of the timer to end.
+	 * @param message An optional message to log with the duration.
+	 * @returns The duration of the timer in milliseconds.
 	 */
 	endTimer(name: string, message?: string): number {
 		const startTime = this.performanceTimers.get(name);
@@ -211,10 +205,9 @@ class Logger {
 	}
 
 	/**
-	 * Logs a debug message (only shown in development and throttled)
+	 * Logs a debug message. These messages are throttled and only appear in development mode.
 	 */
 	debug(message: string, data?: unknown, source?: string) {
-		// Throttle debug messages to prevent spam
 		if (this.shouldThrottleDebug(message, source)) {
 			return;
 		}
@@ -222,15 +215,13 @@ class Logger {
 		const entry = this.createLogEntry('debug', message, data, source);
 		this.addLog(entry);
 
-		// Only show debug logs in development
 		if (this.isDevelopment) {
-			// Reduce console noise for Street View failures
+			// Special handling to reduce console noise for frequent messages.
 			if (message.includes('Street View not available') || message.includes('Using random search radius')) {
-				// Only log every 5th occurrence
 				const key = `${source || 'default'}:${message}`;
 				const count = (this.debugThrottle.get(key + ':count') || 0) + 1;
 				this.debugThrottle.set(key + ':count', count);
-				
+
 				if (count % 5 === 0) {
 					console.debug(`[DEBUG] ${entry.timestamp} - ${message} (${count} occurrences)`, data || '');
 				}
@@ -241,7 +232,7 @@ class Logger {
 	}
 
 	/**
-	 * Logs an informational message
+	 * Logs an informational message.
 	 */
 	info(message: string, data?: unknown, source?: string) {
 		const entry = this.createLogEntry('info', message, data, source);
@@ -253,7 +244,7 @@ class Logger {
 	}
 
 	/**
-	 * Logs a warning message
+	 * Logs a warning message.
 	 */
 	warn(message: string, data?: unknown, source?: string) {
 		const entry = this.createLogEntry('warn', message, data, source);
@@ -265,7 +256,7 @@ class Logger {
 	}
 
 	/**
-	 * Logs an error message
+	 * Logs an error message, with optional React error information.
 	 */
 	error(message: string, data?: unknown, source?: string, errorInfo?: React.ErrorInfo) {
 		const entry = this.createLogEntry('error', message, data, source, errorInfo);
@@ -279,7 +270,10 @@ class Logger {
 	}
 
 	/**
-	 * Logs performance timing information
+	 * Logs performance timing information for a specific operation.
+	 * @param operation A description of the operation being timed.
+	 * @param duration The duration of the operation in milliseconds.
+	 * @param data Optional additional data to include with the log.
 	 */
 	perf(operation: string, duration: number, data?: object) {
 		this.info(`Performance: ${operation}`, {
@@ -289,7 +283,8 @@ class Logger {
 	}
 
 	/**
-	 * Retrieves performance and usage statistics
+	 * Retrieves a summary of performance and usage statistics for the current logging session.
+	 * @returns A `PerformanceStats` object.
 	 */
 	getPerformanceStats(): PerformanceStats {
 		const logsByLevel: Record<LogLevel, number> = {
@@ -324,7 +319,10 @@ class Logger {
 	}
 
 	/**
-	 * Retrieves logs with optional filtering
+	 * Retrieves the in-memory logs, with optional filtering by level and source.
+	 * @param level An optional log level to filter by.
+	 * @param source An optional source identifier to filter by.
+	 * @returns An array of `LogEntry` objects.
 	 */
 	getLogs(level?: LogLevel, source?: string): LogEntry[] {
 		let filtered = [...this.logs];
@@ -341,7 +339,7 @@ class Logger {
 	}
 
 	/**
-	 * Clears all stored log entries
+	 * Clears all logs from the in-memory buffer.
 	 */
 	clearLogs() {
 		this.logs = [];
@@ -349,7 +347,8 @@ class Logger {
 	}
 
 	/**
-	 * Exports all logs and statistics as a JSON string
+	 * Exports all in-memory logs and performance statistics as a JSON string.
+	 * @returns A JSON string representing the current state of the logger.
 	 */
 	exportLogs(): string {
 		const stats = this.getPerformanceStats();
@@ -360,7 +359,7 @@ class Logger {
 	}
 
 	/**
-	 * Clears the log file (server-side only)
+	 * Clears the log file on the server side.
 	 */
 	async clearLogFile(): Promise<void> {
 		if (!this.isServerSide || !fs) {
@@ -368,9 +367,7 @@ class Logger {
 		}
 
 		try {
-			// Wait for any pending writes to complete
 			await this.writeQueue;
-			// Clear the file
 			if (fs) {
 				await fs.writeFile(this.logFilePath, '', 'utf8');
 			}
@@ -380,7 +377,8 @@ class Logger {
 	}
 
 	/**
-	 * Reads the entire log file content (server-side only)
+	 * Reads the entire content of the log file on the server side.
+	 * @returns A promise that resolves to the content of the log file.
 	 */
 	async readLogFile(): Promise<string> {
 		if (!this.isServerSide || !fs) {
@@ -388,34 +386,34 @@ class Logger {
 		}
 
 		try {
-			// Wait for any pending writes to complete
 			await this.writeQueue;
 			if (fs) {
 				return await fs.readFile(this.logFilePath, 'utf8');
 			}
 			return '';
 		} catch {
-			// File might not exist yet, return empty string
 			return '';
 		}
 	}
 
 	/**
-	 * Gets the log file path
+	 * Returns the absolute path to the log file.
 	 */
 	getLogFilePath(): string {
 		return this.logFilePath;
 	}
 
 	/**
-	 * Checks if file logging is available (server-side only)
+	 * Checks if file logging is available in the current environment.
+	 * @returns `true` if file logging is available, `false` otherwise.
 	 */
 	isFileLoggingAvailable(): boolean {
 		return this.isServerSide && fs !== null;
 	}
 
 	/**
-	 * Flushes any pending log writes to ensure they are written to disk
+	 * Ensures that any pending log writes are flushed to the disk.
+	 * @returns A promise that resolves when the write queue is empty.
 	 */
 	async flushLogs(): Promise<void> {
 		if (!this.isServerSide || !fs) {
@@ -430,7 +428,8 @@ class Logger {
 	}
 
 	/**
-	 * Generates a concise summary of logging session for quick debugging
+	 * Generates a concise, human-readable summary of the current logging session.
+	 * @returns A string containing the summary.
 	 */
 	getSummary(): string {
 		const stats = this.getPerformanceStats();
@@ -447,7 +446,7 @@ Log File: ${this.logFilePath}`;
 }
 
 /**
- * Global logger instance
+ * The global singleton instance of the `Logger` class.
  */
 export const logger = new Logger();
 

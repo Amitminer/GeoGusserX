@@ -9,24 +9,45 @@ import { GuessResult } from '@/lib/types';
 import { formatDistance, formatScore } from '@/lib/utils';
 import { Trophy, MapPin, Target, ArrowRight } from 'lucide-react';
 
+/**
+ * Props for the `RoundResults` component.
+ */
 interface RoundResultsProps {
-	result: GuessResult;
-	roundNumber: number;
-	onNextRound: () => void;
-	onEndGame?: () => void;
-	isLastRound: boolean;
+  /** The result of the user's guess for the round. */
+  result: GuessResult;
+  /** The number of the current round. */
+  roundNumber: number;
+  /** A callback function to proceed to the next round. */
+  onNextRound: () => void;
+  /** An optional callback function to end the game. */
+  onEndGame?: () => void;
+  /** A boolean indicating whether this is the last round of the game. */
+  isLastRound: boolean;
 }
 
+/**
+ * A component that displays the results of a single round, including the score,
+ * the distance from the actual location, and a map showing both locations.
+ */
 export function RoundResults({ result, roundNumber, onNextRound, onEndGame, isLastRound }: RoundResultsProps) {
 
+	/**
+	 * Returns a CSS class for the score color based on the score value.
+	 * @param score The score for the round.
+	 * @returns A string containing the CSS class for the color.
+	 */
 	const getScoreColor = (score: number) => {
-		// TDOD: remove hardcode score values alongs its colors
 		if (score >= 4000) return 'text-green-500';
 		if (score >= 2500) return 'text-yellow-500';
 		if (score >= 1000) return 'text-orange-500';
 		return 'text-red-500';
 	};
 
+	/**
+	 * Returns a message based on the score, providing feedback to the player.
+	 * @param score The score for the round.
+	 * @returns A string containing the feedback message.
+	 */
 	const getScoreMessage = (score: number) => {
 		if (score >= 4500) return 'Incredible! 🎯';
 		if (score >= 3500) return 'Excellent! 🌟';
@@ -49,7 +70,6 @@ export function RoundResults({ result, roundNumber, onNextRound, onEndGame, isLa
 				transition={{ duration: 0.3, ease: "easeOut" }}
 				className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-white/20 dark:border-gray-700/30 rounded-3xl shadow-2xl w-full max-w-6xl min-h-[80vh] max-h-[90vh] my-4 overflow-hidden flex flex-col"
 			>
-				{/* Compact Header */}
 				<div className="bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 text-white p-3 sm:p-4 rounded-t-3xl">
 					<div className="flex items-center justify-between">
 						<div>
@@ -69,20 +89,17 @@ export function RoundResults({ result, roundNumber, onNextRound, onEndGame, isLa
 					</div>
 				</div>
 
-				{/* Main content */}
 				<div className="flex-1 overflow-y-auto">
 					<div className="p-4 sm:p-6 lg:p-8">
-						{/* Mobile: Stacked layout, Desktop: Side-by-side */}
 						<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
 
-							{/* Left column: Stats */}
+							{/* This column displays the performance breakdown for the round. */}
 							<div className="space-y-4 sm:space-y-6">
 								<div>
 									<h3 className="text-lg sm:text-xl lg:text-2xl font-bold mb-3 sm:mb-4 text-gray-800 dark:text-gray-200">
 										Performance Breakdown
 									</h3>
 
-									{/* Stats Cards */}
 									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 sm:gap-4">
 										<Card className="border-2 border-gray-200/50 dark:border-gray-700/50 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300 hover:shadow-lg rounded-2xl">
 											<CardHeader className="pb-2 sm:pb-3">
@@ -143,7 +160,7 @@ export function RoundResults({ result, roundNumber, onNextRound, onEndGame, isLa
 									</div>
 								</div>
 
-								{/* Action Button */}
+								{/* The main action button to proceed to the next round or view the final results. */}
 								<div className="mt-4 sm:mt-6">
 									<Button
 										onClick={() => {
@@ -171,7 +188,7 @@ export function RoundResults({ result, roundNumber, onNextRound, onEndGame, isLa
 								</div>
 							</div>
 
-							{/* Right column: Map */}
+							{/* This column displays the results map. */}
 							<div className="lg:h-full">
 								<Card className="border-2 border-gray-200/50 dark:border-gray-700/50 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl h-full">
 									<CardHeader className="pb-2 sm:pb-3">

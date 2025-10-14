@@ -6,13 +6,25 @@ import { Button } from '@/components/ui/button';
 import { Location } from '@/lib/types';
 import { MapPin, Mouse, MousePointer2, RotateCcw } from 'lucide-react';
 
+/**
+ * Props for the `MapFooter` component.
+ */
 interface MapFooterProps {
-	guessLocation: Location | null;
-	disabled: boolean;
-	onMakeGuess: () => void;
-	onClearGuess: () => void;
+  /** The location of the user's current guess. */
+  guessLocation: Location | null;
+  /** A boolean indicating whether the footer controls are disabled. */
+  disabled: boolean;
+  /** A callback function to be triggered when the user submits their guess. */
+  onMakeGuess: () => void;
+  /** A callback function to be triggered when the user clears their guess. */
+  onClearGuess: () => void;
 }
 
+/**
+ * A presentational component that displays the footer for the expanded guess map.
+ * It provides information about the current guess, instructions for using the map,
+ * and buttons for submitting or clearing a guess.
+ */
 export function MapFooter({ guessLocation, disabled, onMakeGuess, onClearGuess }: MapFooterProps) {
 	return (
 		<motion.div
@@ -23,7 +35,7 @@ export function MapFooter({ guessLocation, disabled, onMakeGuess, onClearGuess }
 		>
 			<div className="mx-2 mb-2 md:mx-4 md:mb-4 rounded-lg md:rounded-xl bg-gray-900/95 backdrop-blur-md border border-gray-700/50 shadow-2xl">
 				<div className="p-3 md:p-4">
-					{/* Guess Location Display */}
+					{/* This section displays the coordinates of the user's current guess. */}
 					<AnimatePresence>
 						{guessLocation && (
 							<motion.div
@@ -43,7 +55,7 @@ export function MapFooter({ guessLocation, disabled, onMakeGuess, onClearGuess }
 						)}
 					</AnimatePresence>
 
-					{/* Controls Instructions */}
+					{/* This section provides instructions for how to use the map. */}
 					<div className="mb-3 md:mb-4">
 						<div className="flex items-center justify-center gap-3 md:gap-4 text-xs text-gray-400">
 							<div className="flex items-center gap-1">
@@ -66,7 +78,7 @@ export function MapFooter({ guessLocation, disabled, onMakeGuess, onClearGuess }
 						</div>
 					</div>
 
-					{/* Action Buttons */}
+					{/* The main action buttons for submitting or clearing a guess. */}
 					<div className="flex justify-center">
 						<AnimatePresence mode="wait">
 							{guessLocation && !disabled ? (
@@ -123,7 +135,7 @@ export function MapFooter({ guessLocation, disabled, onMakeGuess, onClearGuess }
 					</div>
 				</div>
 
-				{/* Progress Indicator */}
+				{/* A progress indicator that is shown when a guess has been placed. */}
 				<AnimatePresence>
 					{guessLocation && (
 						<motion.div

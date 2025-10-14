@@ -4,65 +4,72 @@ import { calculateDistance, calculateScore } from '@/lib/utils';
 import { storageManager } from '.';
 import { logger } from '@/lib/logger';
 
+/**
+ * Defines the shape of the global game store, including its state and actions.
+ * This store is the single source of truth for the entire application.
+ */
 interface GameStore {
-	// Game State
-	currentGame: GameState | null;
-	isLoading: boolean;
-	error: string | null;
+  // Game State
+  currentGame: GameState | null;
+  isLoading: boolean;
+  error: string | null;
 
-	// UI State
-	isStreetViewLoaded: boolean;
-	isMapLoaded: boolean;
-	showResults: boolean;
-	showGameComplete: boolean;
+  // UI State
+  isStreetViewLoaded: boolean;
+  isMapLoaded: boolean;
+  showResults: boolean;
+  showGameComplete: boolean;
 
-	// Settings
-	countrySettings: CountrySettings;
-	gameSettings: UserGameSettings;
+  // Settings
+  countrySettings: CountrySettings;
+  gameSettings: UserGameSettings;
 
-	// Toast System
-	toasts: ToastMessage[];
+  // Toast System
+  toasts: ToastMessage[];
 
-	// Actions
-	startNewGame: (mode: GameMode) => Promise<void>;
-	makeGuess: (guessedLocation: Location) => Promise<GuessResult>;
-	nextRound: () => void;
-	skipRound: () => void;
-	endGame: () => void;
-	resetGame: () => void;
-	restoreActiveGame: (showToast?: boolean) => Promise<boolean>;
-	cleanupStorage: () => Promise<void>;
+  // Game Actions
+  startNewGame: (mode: GameMode) => Promise<void>;
+  makeGuess: (guessedLocation: Location) => Promise<GuessResult>;
+  nextRound: () => void;
+  skipRound: () => void;
+  endGame: () => void;
+  resetGame: () => void;
+  restoreActiveGame: (showToast?: boolean) => Promise<boolean>;
+  cleanupStorage: () => Promise<void>;
 
+  // UI Actions
+  setStreetViewLoaded: (loaded: boolean) => void;
+  setMapLoaded: (loaded: boolean) => void;
+  setShowResults: (show: boolean) => void;
+  setShowGameComplete: (show: boolean) => void;
+  setError: (error: string | null) => void;
 
-	// UI Actions
-	setStreetViewLoaded: (loaded: boolean) => void;
-	setMapLoaded: (loaded: boolean) => void;
-	setShowResults: (show: boolean) => void;
-	setShowGameComplete: (show: boolean) => void;
-	setError: (error: string | null) => void;
+  // Toast Actions
+  addToast: (toast: Omit<ToastMessage, 'id'>) => void;
+  removeToast: (id: string) => void;
 
-	// Toast Actions
-	addToast: (toast: Omit<ToastMessage, 'id'>) => void;
-	removeToast: (id: string) => void;
+  // Storage Actions
+  saveGame: () => Promise<void>;
+  loadGame: (gameId: string) => Promise<void>;
+  updateStats: () => Promise<void>;
 
-	// Storage Actions
-	saveGame: () => Promise<void>;
-	loadGame: (gameId: string) => Promise<void>;
-	updateStats: () => Promise<void>;
+  // Settings Actions
+  updateCountrySettings: (settings: CountrySettings) => Promise<void>;
+  loadCountrySettings: () => Promise<void>;
+  updateGameSettings: (settings: UserGameSettings) => Promise<void>;
+  loadGameSettings: () => Promise<void>;
 
-	// Settings Actions
-	updateCountrySettings: (settings: CountrySettings) => Promise<void>;
-	loadCountrySettings: () => Promise<void>;
-	updateGameSettings: (settings: UserGameSettings) => Promise<void>;
-	loadGameSettings: () => Promise<void>;
+  // Hint Actions
+  purchaseHint: (cost: number) => Promise<boolean>;
 
-	// Hint Actions
-	purchaseHint: (cost: number) => Promise<boolean>;
-
-	// Location Actions
-	setActualLocation: (location: Location) => Promise<void>;
+  // Location Actions
+  setActualLocation: (location: Location) => Promise<void>;
 }
 
+/**
+ * The main Zustand store for the application.
+ * It uses a singleton pattern and provides a set of actions for managing the game state.
+ */
 export const useGameStore = create<GameStore>((set, get) => ({
 	// Initial State
 	currentGame: null,
@@ -77,21 +84,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		targetCountry: null
 	},
 	gameSettings: {
-		showCountryName: false, // Default to false
-		preferredGameMode: '4-rounds' // Default to Quick Game for new users
+		showCountryName: false,
+		preferredGameMode: '4-rounds'
 	},
 	toasts: [],
 
-	// Game Actions
+	/**
+	 * Starts a new game with the given mode.
+	 * @param mode The game mode to start.
+	 */
 	startNewGame: async (mode: GameMode) => {
 		logger.startTimer('start-new-game');
 		set({ isLoading: true, error: null });
 
 		try {
-			// Clean up any incomplete games before starting new one
 			await storageManager.cleanupIncompleteGames();
-
-			// Also run general cleanup to remove old/completed games
 			await storageManager.cleanupOldGames();
 
 			const roundCount = mode === 'infinite' ? 1 : parseInt(mode.split('-')[0]);
@@ -108,11 +115,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 				isCompleted: false
 			};
 
-			// Initialize rounds
 			for (let i = 0; i < roundCount; i++) {
 				const round: GameRound = {
 					id: `round-${i + 1}`,
-					actualLocation: { lat: 0, lng: 0 }, // Will be set when round starts
+					actualLocation: { lat: 0, lng: 0 },
 					guessedLocation: null,
 					distance: null,
 					score: null,
@@ -156,6 +162,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		}
 	},
 
+	/**
+	 * Processes a user's guess, calculates the distance and score, and updates the game state.
+	 * @param guessedLocation The location that the user guessed.
+	 * @returns A promise that resolves with the `GuessResult`.
+	 */
 	makeGuess: async (guessedLocation: Location): Promise<GuessResult> => {
 		logger.startTimer('make-guess');
 		const { currentGame } = get();
@@ -169,44 +180,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
 			throw new Error('No active round');
 		}
 
-		// Debug logging to track guess processing in store
-		logger.info('🎲 GameStore processing guess', {
-			guessedLocation,
-			actualLocation: currentRound.actualLocation,
-			roundIndex: currentGame.currentRoundIndex,
-			roundId: currentRound.id,
-			timestamp: Date.now()
-		}, 'GameStore');
+		logger.info('🎲 GameStore processing guess', { guessedLocation, actualLocation: currentRound.actualLocation, roundIndex: currentGame.currentRoundIndex, roundId: currentRound.id, timestamp: Date.now() }, 'GameStore');
 
 		try {
 			logger.startTimer('calculate-distance');
-			const distance = calculateDistance(
-				currentRound.actualLocation.lat,
-				currentRound.actualLocation.lng,
-				guessedLocation.lat,
-				guessedLocation.lng
-			);
+			const distance = calculateDistance(currentRound.actualLocation.lat, currentRound.actualLocation.lng, guessedLocation.lat, guessedLocation.lng);
 			const distanceCalcDuration = logger.endTimer('calculate-distance');
 
 			logger.startTimer('calculate-score');
 			const score = calculateScore(distance);
 			const scoreCalcDuration = logger.endTimer('calculate-score');
 
-			// Debug logging before updating round
-			logger.info('📊 Calculated distance and score', {
-				distance,
-				score,
-				actualLocation: currentRound.actualLocation,
-				guessedLocation
-			}, 'GameStore');
+			logger.info('📊 Calculated distance and score', { distance, score, actualLocation: currentRound.actualLocation, guessedLocation }, 'GameStore');
 
-			// Update round
 			currentRound.guessedLocation = guessedLocation;
 			currentRound.distance = distance;
 			currentRound.score = score;
 			currentRound.completed = true;
 
-			// Update total score
 			currentGame.totalScore += score;
 
 			const result: GuessResult = {
@@ -216,19 +207,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 				guessedLocation
 			};
 
-			// Debug logging before returning result
-			logger.info('🏁 Final result created', {
-				result,
-				updatedRound: {
-					id: currentRound.id,
-					actualLocation: currentRound.actualLocation,
-					guessedLocation: currentRound.guessedLocation,
-					distance: currentRound.distance,
-					score: currentRound.score
-				}
-			}, 'GameStore');
+			logger.info('🏁 Final result created', { result, updatedRound: { id: currentRound.id, actualLocation: currentRound.actualLocation, guessedLocation: currentRound.guessedLocation, distance: currentRound.distance, score: currentRound.score } }, 'GameStore');
 
-			// Batch all state updates into a single set call to prevent multiple re-renders
 			set({
 				currentGame: { ...currentGame },
 				showResults: true
@@ -237,13 +217,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 			await get().saveGame();
 
 			const totalDuration = logger.endTimer('make-guess', 'Guess made');
-			logger.perf('Make guess', totalDuration, {
-				distance,
-				score,
-				roundId: currentRound.id,
-				distanceCalcTime: distanceCalcDuration,
-				scoreCalcTime: scoreCalcDuration
-			});
+			logger.perf('Make guess', totalDuration, { distance, score, roundId: currentRound.id, distanceCalcTime: distanceCalcDuration, scoreCalcTime: scoreCalcDuration });
 
 			return result;
 
@@ -254,6 +228,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		}
 	},
 
+	/**
+	 * Advances the game to the next round.
+	 */
 	nextRound: () => {
 		const { currentGame } = get();
 
@@ -262,7 +239,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		const nextIndex = currentGame.currentRoundIndex + 1;
 
 		if (currentGame.mode === 'infinite') {
-			// Add new round for infinite mode
 			const newRound: GameRound = {
 				id: `round-${nextIndex + 1}`,
 				actualLocation: { lat: 0, lng: 0 },
@@ -276,7 +252,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		}
 
 		if (nextIndex >= currentGame.rounds.length) {
-			// Game completed
 			get().endGame();
 			return;
 		}
@@ -288,16 +263,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
 			showResults: false
 		});
 
-		// Defer save operation to avoid blocking UI
 		requestIdleCallback(() => {
 			get().saveGame();
 		});
 
-		logger.info('Advanced to next round', {
-			roundIndex: nextIndex
-		}, 'GameStore');
+		logger.info('Advanced to next round', { roundIndex: nextIndex }, 'GameStore');
 	},
 
+	/**
+	 * Skips the current round.
+	 */
 	skipRound: () => {
 		const { currentGame } = get();
 
@@ -306,32 +281,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		const currentRound = currentGame.rounds[currentGame.currentRoundIndex];
 		if (!currentRound || currentRound.completed) return;
 
-		// Mark current round as completed with skip values
 		currentRound.completed = true;
 		currentRound.guessedLocation = null;
 		currentRound.distance = null;
-		currentRound.score = 0; // No points for skipping
-		currentRound.timeSpent = Date.now() - (currentGame.startTime + (currentGame.currentRoundIndex * 30000)); // Rough estimate
+		currentRound.score = 0;
+		currentRound.timeSpent = Date.now() - (currentGame.startTime + (currentGame.currentRoundIndex * 30000));
 
-		// Handle different game modes
 		if (currentGame.mode === 'infinite') {
-			// For infinite mode, just update state to trigger new location generation
 			set({
 				currentGame: { ...currentGame }
 			});
 		} else {
-			// For finite modes, advance to next round or end game
 			const nextIndex = currentGame.currentRoundIndex + 1;
 			
 			if (nextIndex >= currentGame.rounds.length) {
-				// Game completed
 				set({
 					currentGame: { ...currentGame }
 				});
-				// Use queueMicrotask to avoid calling endGame during render
 				queueMicrotask(() => get().endGame());
 			} else {
-				// Advance to next round
 				currentGame.currentRoundIndex = nextIndex;
 				set({
 					currentGame: { ...currentGame },
@@ -340,7 +308,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
 			}
 		}
 
-		// Show toast notification
 		get().addToast({
 			title: '⏭️ Location Skipped',
 			description: currentGame.mode === 'infinite' ? 'Loading new location...' : 'Moving to next round...',
@@ -348,18 +315,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
 			duration: 2000
 		});
 
-		// Save the game state
 		requestIdleCallback(() => {
 			get().saveGame();
 		});
 
-		logger.info('Skipped round', {
-			roundIndex: currentGame.currentRoundIndex,
-			roundId: currentRound.id,
-			gameMode: currentGame.mode
-		}, 'GameStore');
+		logger.info('Skipped round', { roundIndex: currentGame.currentRoundIndex, roundId: currentRound.id, gameMode: currentGame.mode }, 'GameStore');
 	},
 
+	/**
+	 * Ends the current game.
+	 */
 	endGame: () => {
 		const { currentGame } = get();
 
@@ -374,16 +339,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
 			showResults: false
 		});
 
-		// Defer heavy operations to avoid blocking UI
 		requestIdleCallback(() => {
 			get().saveGame();
 			get().updateStats();
 		});
 
-		logger.info('Game ended', {
-			gameId: currentGame.id,
-			totalScore: currentGame.totalScore
-		}, 'GameStore');
+		logger.info('Game ended', { gameId: currentGame.id, totalScore: currentGame.totalScore }, 'GameStore');
 
 		get().addToast({
 			title: 'Game Complete!',
@@ -392,6 +353,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		});
 	},
 
+	/**
+	 * Resets the current game state.
+	 */
 	resetGame: () => {
 		set({
 			currentGame: null,
@@ -403,24 +367,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		logger.info('Game reset', undefined, 'GameStore');
 	},
 
-	// Session restoration
+	/**
+	 * Restores an active game session from storage.
+	 * @param showToast Whether to show a toast notification on successful restoration.
+	 * @returns A promise that resolves with a boolean indicating whether a game was restored.
+	 */
 	restoreActiveGame: async (showToast: boolean = true): Promise<boolean> => {
 		logger.startTimer('restore-active-game');
 		set({ isLoading: true, error: null });
 
 		try {
-			// First, clean up old games
 			await storageManager.cleanupOldGames();
 
-			// Try to find an active game
 			const activeGame = await storageManager.getActiveGame();
 
 			if (activeGame) {
-				// Check if this game was just created (within the last 5 seconds)
 				const gameAge = Date.now() - activeGame.startTime;
-				const isRecentlyCreated = gameAge < 5000; // 5 seconds
+				const isRecentlyCreated = gameAge < 5000;
 
-				// Restore the game state
 				set({
 					currentGame: activeGame,
 					isLoading: false,
@@ -429,26 +393,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
 				});
 
 				const duration = logger.endTimer('restore-active-game', 'Active game restored');
-				logger.perf('Restore active game', duration, {
-					gameId: activeGame.id,
-					mode: activeGame.mode,
-					roundIndex: activeGame.currentRoundIndex,
-					isRecentlyCreated
-				});
+				logger.perf('Restore active game', duration, { gameId: activeGame.id, mode: activeGame.mode, roundIndex: activeGame.currentRoundIndex, isRecentlyCreated });
 
-				// Only show toast if requested and game is not recently created
 				if (showToast && !isRecentlyCreated) {
 					get().addToast({
 						title: '🎮 Game Restored!',
 						description: `Continuing your ${activeGame.mode} game (Round ${activeGame.currentRoundIndex + 1})`,
 						type: 'success',
-						duration: 3000 // Show for 3 seconds
+						duration: 3000
 					});
 				}
 
 				return true;
 			} else {
-				// No active game found
 				set({ isLoading: false });
 				logger.endTimer('restore-active-game', 'No active game found');
 				return false;
@@ -465,7 +422,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		}
 	},
 
-	// Storage cleanup
+	/**
+	 * Cleans up old game data from storage.
+	 */
 	cleanupStorage: async () => {
 		logger.startTimer('cleanup-storage');
 		try {
@@ -479,27 +438,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	},
 
 	// UI Actions
-	setStreetViewLoaded: (loaded: boolean) => {
-		set({ isStreetViewLoaded: loaded });
-	},
+	setStreetViewLoaded: (loaded: boolean) => set({ isStreetViewLoaded: loaded }),
+	setMapLoaded: (loaded: boolean) => set({ isMapLoaded: loaded }),
+	setShowResults: (show: boolean) => set({ showResults: show }),
+	setShowGameComplete: (show: boolean) => set({ showGameComplete: show }),
+	setError: (error: string | null) => set({ error }),
 
-	setMapLoaded: (loaded: boolean) => {
-		set({ isMapLoaded: loaded });
-	},
-
-	setShowResults: (show: boolean) => {
-		set({ showResults: show });
-	},
-
-	setShowGameComplete: (show: boolean) => {
-		set({ showGameComplete: show });
-	},
-
-	setError: (error: string | null) => {
-		set({ error });
-	},
-
-	// Toast Actions
+	/**
+	 * Adds a toast notification to the UI.
+	 * @param toast The toast message to be displayed.
+	 */
 	addToast: (toast: Omit<ToastMessage, 'id'>) => {
 		const id = `toast-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 		const newToast: ToastMessage = { ...toast, id };
@@ -508,30 +456,33 @@ export const useGameStore = create<GameStore>((set, get) => ({
 			toasts: [...state.toasts, newToast]
 		}));
 
-		// Auto remove after duration - use requestIdleCallback for better performance
 		const duration = toast.duration || 3000;
 		if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-			// Use requestIdleCallback when available for better performance
 			setTimeout(() => {
 				requestIdleCallback(() => {
 					get().removeToast(id);
 				});
 			}, duration);
 		} else {
-			// Fallback to setTimeout
 			setTimeout(() => {
 				get().removeToast(id);
 			}, duration);
 		}
 	},
 
+	/**
+	 * Removes a toast notification from the UI.
+	 * @param id The ID of the toast to be removed.
+	 */
 	removeToast: (id: string) => {
 		set(state => ({
 			toasts: state.toasts.filter(toast => toast.id !== id)
 		}));
 	},
 
-	// Storage Actions
+	/**
+	 * Saves the current game state to storage.
+	 */
 	saveGame: async () => {
 		const { currentGame } = get();
 
@@ -544,6 +495,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		}
 	},
 
+	/**
+	 * Loads a game from storage.
+	 * @param gameId The ID of the game to load.
+	 */
 	loadGame: async (gameId: string) => {
 		set({ isLoading: true });
 
@@ -571,7 +526,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		}
 	},
 
-	// Stats update helper
+	/**
+	 * Updates the global game statistics after a game is completed.
+	 */
 	updateStats: async () => {
 		logger.startTimer('update-game-stats');
 		const { currentGame } = get();
@@ -599,27 +556,23 @@ export const useGameStore = create<GameStore>((set, get) => ({
 				};
 			}
 
-			// Update stats
 			stats.totalGames++;
 			stats.totalScore += currentGame.totalScore;
 			stats.averageScore = stats.totalScore / stats.totalGames;
 			stats.bestScore = Math.max(stats.bestScore, currentGame.totalScore);
 			stats.gamesPerMode[currentGame.mode]++;
 
-			// Calculate distance stats
 			const completedRounds = currentGame.rounds.filter(r => r.completed && r.distance !== null);
 
 			if (completedRounds.length > 0) {
 				const totalRoundDistance = completedRounds.reduce((sum, r) => sum + (r.distance || 0), 0);
 				stats.totalDistance += totalRoundDistance;
 
-				// Calculate average distance per round across all games
 				const totalRoundsPlayed = stats.totalGames > 1
 					? (stats.totalGames - 1) * completedRounds.length + completedRounds.length
 					: completedRounds.length;
 				stats.averageDistance = stats.totalDistance / totalRoundsPlayed;
 
-				// Find best distance from this game
 				const distances = completedRounds.map(r => r.distance || Infinity).filter(d => d !== Infinity);
 				if (distances.length > 0) {
 					const bestRoundDistance = Math.min(...distances);
@@ -628,18 +581,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
 					}
 				}
 			} else {
-				// No completed rounds, don't update distance stats
 				logger.warn('No completed rounds found for stats update', { gameId: currentGame.id }, 'GameStore');
 			}
 
 			await storageManager.updateStats(stats);
 
 			const duration = logger.endTimer('update-game-stats', 'Stats updated');
-			logger.perf('Update game stats', duration, {
-				totalGames: stats.totalGames,
-				gameScore: currentGame.totalScore,
-				completedRoundsCount: completedRounds.length
-			});
+			logger.perf('Update game stats', duration, { totalGames: stats.totalGames, gameScore: currentGame.totalScore, completedRoundsCount: completedRounds.length });
 
 		} catch (error) {
 			logger.endTimer('update-game-stats');
@@ -647,7 +595,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		}
 	},
 
-	// Settings Actions
+	/**
+	 * Updates the country settings in the store and persists them to storage.
+	 * @param settings The new country settings.
+	 */
 	updateCountrySettings: async (settings: CountrySettings) => {
 		try {
 			await storageManager.setSetting('countrySettings', settings);
@@ -658,6 +609,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		}
 	},
 
+	/**
+	 * Loads the country settings from storage.
+	 */
 	loadCountrySettings: async () => {
 		try {
 			const settings = await storageManager.getSetting<CountrySettings>('countrySettings');
@@ -670,6 +624,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		}
 	},
 
+	/**
+	 * Updates the game settings in the store and persists them to storage.
+	 * @param settings The new game settings.
+	 */
 	updateGameSettings: async (settings: UserGameSettings) => {
 		try {
 			await storageManager.setSetting('gameSettings', settings);
@@ -680,6 +638,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		}
 	},
 
+	/**
+	 * Loads the game settings from storage.
+	 */
 	loadGameSettings: async () => {
 		try {
 			const settings = await storageManager.getSetting<UserGameSettings>('gameSettings');
@@ -692,7 +653,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		}
 	},
 
-	// Hint Actions
+	/**
+	 * Deducts the cost of a hint from the player's score.
+	 * @param cost The cost of the hint.
+	 * @returns A promise that resolves with a boolean indicating whether the purchase was successful.
+	 */
 	purchaseHint: async (cost: number): Promise<boolean> => {
 		const { currentGame } = get();
 
@@ -702,27 +667,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		}
 
 		if (currentGame.totalScore < cost) {
-			logger.warn('Insufficient score for hint purchase', {
-				currentScore: currentGame.totalScore,
-				requiredCost: cost
-			}, 'GameStore');
+			logger.warn('Insufficient score for hint purchase', { currentScore: currentGame.totalScore, requiredCost: cost }, 'GameStore');
 			return false;
 		}
 
 		try {
-			// Deduct the cost from total score
 			currentGame.totalScore = Math.max(0, currentGame.totalScore - cost);
 
-			// Update the state
 			set({ currentGame: { ...currentGame } });
 
-			// Save the game
 			await get().saveGame();
 
-			logger.info('Hint purchased successfully', {
-				cost,
-				remainingScore: currentGame.totalScore
-			}, 'GameStore');
+			logger.info('Hint purchased successfully', { cost, remainingScore: currentGame.totalScore }, 'GameStore');
 
 			return true;
 		} catch (error) {
@@ -731,7 +687,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		}
 	},
 
-	// Location Actions
+	/**
+	 * Sets the actual location for the current round.
+	 * @param location The actual location.
+	 */
 	setActualLocation: async (location: Location): Promise<void> => {
 		const { currentGame } = get();
 
@@ -747,20 +706,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		}
 
 		try {
-			// Update the actual location
 			currentRound.actualLocation = location;
 
-			// Update the state
 			set({ currentGame: { ...currentGame } });
 
-			// Save the game
 			await get().saveGame();
 
-			logger.info('📍 Actual location set successfully', {
-				location,
-				roundId: currentRound.id,
-				roundIndex: currentGame.currentRoundIndex
-			}, 'GameStore');
+			logger.info('📍 Actual location set successfully', { location, roundId: currentRound.id, roundIndex: currentGame.currentRoundIndex }, 'GameStore');
 
 		} catch (error) {
 			logger.error('Failed to set actual location', error, 'GameStore');
@@ -768,7 +720,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	}
 }));
 
-// Load settings on store creation
 if (typeof window !== 'undefined') {
 	storageManager.initialize().then(() => {
 		const store = useGameStore.getState();

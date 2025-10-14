@@ -12,12 +12,23 @@ import { CountrySettings } from '@/lib/types';
 import { getCountriesOnly, getStatesForCountry } from '@/lib/locations/regions';
 import { Settings, Globe, MapPin, Search, X } from 'lucide-react';
 
+/**
+ * Props for the `CountrySelection` component.
+ */
 interface CountrySelectionProps {
-	countrySettings: CountrySettings;
-	onSettingsChange: (settings: CountrySettings) => void;
+  /** The current country settings. */
+  countrySettings: CountrySettings;
+  /** A callback function that is triggered when the country settings are changed. */
+  onSettingsChange: (settings: CountrySettings) => void;
 }
 
-// Simple debounce hook
+/**
+ * A custom hook that debounces a value. This is useful for delaying the execution
+ * of a function until after a certain amount of time has passed since the last event.
+ * @param value The value to be debounced.
+ * @param delay The debounce delay in milliseconds.
+ * @returns The debounced value.
+ */
 function useDebounce<T>(value: T, delay: number): T {
 	const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
@@ -29,6 +40,11 @@ function useDebounce<T>(value: T, delay: number): T {
 	return debouncedValue;
 }
 
+/**
+ * A component that allows the user to select a country or region for the game.
+ * It features a dialog with a searchable list of countries and their regions,
+ * as well as an option to play with random countries.
+ */
 export function CountrySelection({ countrySettings, onSettingsChange }: CountrySelectionProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [searchTerm, setSearchTerm] = useState('');
@@ -36,23 +52,18 @@ export function CountrySelection({ countrySettings, onSettingsChange }: CountryS
 	const [showRegions, setShowRegions] = useState(false);
 	const searchInputRef = useRef<HTMLInputElement>(null);
 
-	// Simple debounced search
 	const debouncedSearch = useDebounce(searchTerm, 200);
 
-	// Get only actual countries (not states/regions) and remove duplicates
 	const allCountries = useMemo(() => {
 		const countries = getCountriesOnly();
-		// Remove duplicates and sort
 		return [...new Set(countries)].sort();
 	}, []);
 
-	// Get regions for selected country
 	const countryRegions = useMemo(() => {
 		if (!selectedCountry) return [];
 		return getStatesForCountry(selectedCountry);
 	}, [selectedCountry]);
 
-	// Filter regions when searching inside a country
 	const filteredRegions = useMemo(() => {
 		if (!showRegions || !debouncedSearch.trim()) return countryRegions;
 		const searchLower = debouncedSearch.toLowerCase();
@@ -61,7 +72,6 @@ export function CountrySelection({ countrySettings, onSettingsChange }: CountryS
 		);
 	}, [countryRegions, showRegions, debouncedSearch]);
 
-	// Simple filtering with working search
 	const filteredCountries = useMemo(() => {
 		if (!debouncedSearch.trim()) return allCountries;
 		const searchLower = debouncedSearch.toLowerCase();
@@ -70,15 +80,15 @@ export function CountrySelection({ countrySettings, onSettingsChange }: CountryS
 		);
 	}, [allCountries, debouncedSearch]);
 
-	// Auto-focus search when dialog opens (desktop only)
+	/**
+	 * This effect auto-focuses the search input when the dialog is opened on desktop devices.
+	 */
 	useEffect(() => {
 		if (isOpen) {
 			setSearchTerm('');
 			setSelectedCountry(null);
 			setShowRegions(false);
-			// Only auto-focus on desktop (screen width > 768px)
 			if (window.innerWidth > 768) {
-				// Use requestAnimationFrame for better performance
 				requestAnimationFrame(() => {
 					searchInputRef.current?.focus();
 				});
@@ -86,19 +96,24 @@ export function CountrySelection({ countrySettings, onSettingsChange }: CountryS
 		}
 	}, [isOpen]);
 
-	// Clear search when switching between country and region views
+	/**
+	 * Clears the search term when switching between the country and region views.
+	 */
 	useEffect(() => {
 		setSearchTerm('');
 	}, [showRegions]);
 
-	// Handle country click - show regions if available
+	/**
+	 * Handles the click event on a country. If the country has regions, it displays the region list.
+	 * Otherwise, it selects the country and closes the dialog.
+	 * @param country The name of the country that was clicked.
+	 */
 	const handleCountryClick = useCallback((country: string) => {
 		const regions = getStatesForCountry(country);
 		if (regions.length > 0) {
 			setSelectedCountry(country);
 			setShowRegions(true);
 		} else {
-			// No regions, select the country directly
 			onSettingsChange({
 				targetCountry: country,
 				isRandomCountry: false
@@ -107,7 +122,10 @@ export function CountrySelection({ countrySettings, onSettingsChange }: CountryS
 		}
 	}, [onSettingsChange]);
 
-	// Handle region selection - auto-save and close
+	/**
+	 * Handles the selection of a region, updating the settings and closing the dialog.
+	 * @param region The name of the region that was selected.
+	 */
 	const handleRegionSelect = useCallback((region: string) => {
 		onSettingsChange({
 			targetCountry: region,
@@ -116,13 +134,18 @@ export function CountrySelection({ countrySettings, onSettingsChange }: CountryS
 		setIsOpen(false);
 	}, [onSettingsChange]);
 
-	// Go back to country list
+	/**
+	 * Navigates back to the country list from the region list.
+	 */
 	const handleBackToCountries = useCallback(() => {
 		setShowRegions(false);
 		setSelectedCountry(null);
 	}, []);
 
-	// Handle random toggle - auto-save and close if enabled
+	/**
+	 * Handles the toggling of the random country mode.
+	 * @param checked A boolean indicating whether the random mode is enabled.
+	 */
 	const handleRandomToggle = useCallback((checked: boolean) => {
 		onSettingsChange({
 			isRandomCountry: checked,
@@ -131,13 +154,14 @@ export function CountrySelection({ countrySettings, onSettingsChange }: CountryS
 		if (checked) setIsOpen(false);
 	}, [countrySettings.targetCountry, onSettingsChange]);
 
-	// Clear search
+	/**
+	 * Clears the search input.
+	 */
 	const clearSearch = useCallback(() => {
 		setSearchTerm('');
 		searchInputRef.current?.focus();
 	}, []);
 
-	// Display helpers
 	const displayText = countrySettings.isRandomCountry
 		? 'Random Country'
 		: countrySettings.targetCountry || 'Select Country';
@@ -190,7 +214,7 @@ export function CountrySelection({ countrySettings, onSettingsChange }: CountryS
 				</DialogHeader>
 
 				<div className="space-y-4">
-					{/* Random Toggle - Responsive */}
+					{/* A toggle switch for enabling or disabling random country mode. */}
 					<div className={`flex items-center justify-between p-3 sm:p-4 rounded-lg border transition-all duration-200 ${countrySettings.isRandomCountry
 							? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700'
 							: 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600'
@@ -220,15 +244,13 @@ export function CountrySelection({ countrySettings, onSettingsChange }: CountryS
 						/>
 					</div>
 
-					{/* Country Selection */}
+					{/* The country and region selection UI, which is shown only when random mode is disabled. */}
 					{!countrySettings.isRandomCountry && (
 						<motion.div
 							initial={{ opacity: 0, y: 10 }}
 							animate={{ opacity: 1, y: 0 }}
 							className="space-y-3"
 						>
-							{/* Search */}
-							{/* Search Input */}
 							<div className="relative">
 								<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
 								<Input
@@ -248,10 +270,8 @@ export function CountrySelection({ countrySettings, onSettingsChange }: CountryS
 								)}
 							</div>
 
-							{/* Country/Region List */}
 							<div className="border rounded-lg h-48 sm:h-64 overflow-y-auto">
 								{!showRegions ? (
-									// Country List
 									filteredCountries.length > 0 ? (
 										filteredCountries.map((country) => {
 											const hasRegions = getStatesForCountry(country).length > 0;
@@ -278,9 +298,7 @@ export function CountrySelection({ countrySettings, onSettingsChange }: CountryS
 										</div>
 									)
 								) : (
-									// Region List
 									<div>
-										{/* Back button - Compact */}
 										<button
 											onClick={handleBackToCountries}
 											className="w-full text-left px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-700 font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors flex items-center gap-2 text-sm"
@@ -289,7 +307,6 @@ export function CountrySelection({ countrySettings, onSettingsChange }: CountryS
 											← Back
 										</button>
 
-										{/* Whole country option */}
 										<button
 											onClick={() => handleRegionSelect(selectedCountry!)}
 											className={`w-full text-left px-3 py-2 hover:bg-green-50 dark:hover:bg-green-900/20 border-b border-green-100 dark:border-green-800 font-medium text-green-700 dark:text-green-300 transition-colors flex items-center gap-2 text-sm ${countrySettings.targetCountry === selectedCountry
@@ -301,7 +318,6 @@ export function CountrySelection({ countrySettings, onSettingsChange }: CountryS
 											Entire Country
 										</button>
 
-										{/* Region options - Filter out the country itself */}
 										{filteredRegions
 											.filter(region => region.name !== selectedCountry)
 											.map((region) => (
@@ -322,7 +338,6 @@ export function CountrySelection({ countrySettings, onSettingsChange }: CountryS
 						</motion.div>
 					)}
 
-					{/* Close Button */}
 					<div className="flex justify-end pt-4 border-t">
 						<Button onClick={() => setIsOpen(false)} variant="outline">
 							Close

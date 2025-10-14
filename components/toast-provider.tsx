@@ -12,6 +12,9 @@ import {
 } from '@/components/ui/toast';
 import { CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 
+/**
+ * A mapping from toast types to their corresponding Lucide icon components.
+ */
 const toastIcons = {
 	success: CheckCircle,
 	error: AlertCircle,
@@ -19,6 +22,9 @@ const toastIcons = {
 	info: Info,
 };
 
+/**
+ * A mapping from toast types to their corresponding CSS classes for styling.
+ */
 const toastVariants = {
 	success: 'border-2 border-green-500/70 bg-green-100/80 dark:bg-green-800/80 text-green-900 dark:text-green-100 shadow-2xl shadow-green-500/30 backdrop-blur-sm',
 	error: 'border-2 border-red-500/70 bg-red-100/80 dark:bg-red-800/80 text-red-900 dark:text-red-100 shadow-2xl shadow-red-500/30 backdrop-blur-sm',
@@ -26,6 +32,11 @@ const toastVariants = {
 	info: 'border-2 border-blue-500/70 bg-blue-100/80 dark:bg-blue-800/80 text-blue-900 dark:text-blue-100 shadow-2xl shadow-blue-500/30 backdrop-blur-sm',
 };
 
+/**
+ * A component that renders toast notifications from the global game state.
+ * It subscribes to the `toasts` array in the `useGameStore` and displays a toast
+ * for each item in the array.
+ */
 export function ToastSystem() {
 	const { toasts, removeToast } = useGameStore();
 
@@ -37,6 +48,7 @@ export function ToastSystem() {
 					<Toast
 						key={toast.id}
 						className={`${toastVariants[toast.type]} rounded-lg transform transition-all duration-300 hover:scale-[1.02]`}
+						// When the toast is closed (either by the user or automatically), it is removed from the global state.
 						onOpenChange={(open) => {
 							if (!open) {
 								removeToast(toast.id);

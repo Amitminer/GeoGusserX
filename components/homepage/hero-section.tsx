@@ -6,6 +6,11 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Globe, Users, Play } from 'lucide-react';
 
+/**
+ * A component that displays the hero section of the homepage.
+ * It includes the main title, a brief description of the game, call-to-action buttons,
+ * and some key statistics about the game.
+ */
 export function HeroSection() {
 	return (
 		<section className="container mx-auto px-4 py-12 sm:py-20 relative z-10">
@@ -15,7 +20,7 @@ export function HeroSection() {
 				transition={{ duration: 0.3 }}
 				className="mb-12 text-center"
 			>
-				{/* Logo and Title */}
+				{/* The main logo and title of the application. */}
 				<motion.div
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
@@ -42,7 +47,6 @@ export function HeroSection() {
 					</div>
 				</motion.div>
 
-				{/* Description */}
 				<motion.p
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
@@ -53,7 +57,7 @@ export function HeroSection() {
 					from bustling cities to remote landscapes. Guess locations from Street View images and compete for the highest score!
 				</motion.p>
 
-				{/* Game Mode Selection */}
+				{/* The main call-to-action buttons for starting a single player or multiplayer game. */}
 				<motion.div
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
@@ -95,7 +99,7 @@ export function HeroSection() {
 					</motion.div>
 				</motion.div>
 
-				{/* Quick Stats */}
+				{/* A grid of quick statistics about the game. */}
 				<motion.div
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}

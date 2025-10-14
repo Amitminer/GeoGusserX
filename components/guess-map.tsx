@@ -17,33 +17,51 @@ import {
 	ErrorState,
 } from './guess-map/';
 
+/**
+ * Props for the `GuessMap` component.
+ */
 interface GuessMapProps {
-	onGuess: (location: Location) => void;
-	disabled?: boolean;
-	className?: string;
+  /** A callback function that is triggered when the user makes a guess. */
+  onGuess: (location: Location) => void;
+  /** A boolean indicating whether the map is disabled. */
+  disabled?: boolean;
+  /** Additional CSS classes to apply to the component. */
+  className?: string;
 }
 
+/**
+ * The possible sizes for the map.
+ */
 type MapSize = 'mini' | 'expanded' | 'fullscreen' | 'hidden';
 
+/**
+ * The state for the map component.
+ */
 interface MapState {
-	mapSize: MapSize;
-	mapType: string;
-	currentZoom: number;
+  mapSize: MapSize;
+  mapType: string;
+  currentZoom: number;
 }
 
+/**
+ * The actions that can be dispatched to the map reducer.
+ */
 type MapAction =
 	| { type: 'SET_MAP_SIZE'; payload: MapSize }
 	| { type: 'SET_MAP_TYPE'; payload: string }
 	| { type: 'SET_ZOOM'; payload: number };
 
-// Check if we're on mobile to set initial map state
+/**
+ * Determines the initial size of the map based on the user's device.
+ * On mobile devices, the map is hidden by default.
+ * @returns The initial map size.
+ */
 const getInitialMapSize = (): MapSize => {
 	if (typeof window !== 'undefined') {
-		// Check for mobile device
 		const isMobile = window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 		return isMobile ? 'hidden' : 'mini';
 	}
-	return 'mini'; // Default for SSR
+	return 'mini';
 };
 
 const initialState: MapState = {
@@ -52,6 +70,12 @@ const initialState: MapState = {
 	currentZoom: 2,
 };
 
+/**
+ * A reducer function for managing the state of the map.
+ * @param state The current state.
+ * @param action The action to be performed.
+ * @returns The new state.
+ */
 function mapReducer(state: MapState, action: MapAction): MapState {
 	switch (action.type) {
 		case 'SET_MAP_SIZE':
@@ -65,7 +89,11 @@ function mapReducer(state: MapState, action: MapAction): MapState {
 	}
 }
 
-// Utility function to convert string mapType to Google Maps enum
+/**
+ * Converts a string representation of a map type to the corresponding Google Maps enum.
+ * @param type The map type as a string.
+ * @returns The Google Maps `MapTypeId`.
+ */
 const getMapTypeId = (type: string): google.maps.MapTypeId => {
 	switch (type) {
 		case 'satellite':
@@ -77,6 +105,11 @@ const getMapTypeId = (type: string): google.maps.MapTypeId => {
 	}
 };
 
+/**
+ * A complex component that manages the guess map. It can be displayed in multiple sizes
+ * (mini, expanded, fullscreen) and handles all user interactions with the map, including
+ * placing a guess, zooming, and changing the map type.
+ */
 export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const mapRef = useRef<google.maps.Map | null>(null);
@@ -126,6 +159,10 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 		return '';
 	}, [mapSize, getMapSizeClasses]);
 
+	/**
+	 * Handles a click event on the map, placing a marker at the clicked location.
+	 * @param event The map mouse event.
+	 */
 	const handleMapClick = useCallback((event: google.maps.MapMouseEvent) => {
 		if (disabled || !event.latLng) return;
 
@@ -135,12 +172,10 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 		};
 		setGuessLocation(location);
 
-		// Remove existing marker
 		if (markerRef.current) {
 			markerRef.current.map = null;
 		}
 
-		// Create marker content
 		const markerContent = document.createElement('div');
 		markerContent.innerHTML = `
       <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -151,7 +186,6 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 		markerContent.style.cursor = 'pointer';
 		markerContent.title = 'Your Guess';
 
-		// Add new marker using AdvancedMarkerElement
 		const marker = new google.maps.marker.AdvancedMarkerElement({
 			position: event.latLng,
 			map: mapRef.current,
@@ -161,11 +195,7 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 
 		markerRef.current = marker;
 
-		// Verify marker position
-		logger.info('🎯 Marker created at position', {
-			markerPosition: marker.position,
-			originalLocation: location
-		}, 'GuessMap');
+		logger.info('🎯 Marker created at position', { markerPosition: marker.position, originalLocation: location }, 'GuessMap');
 	}, [disabled]);
 
 	const isZoomingRef = useRef(false);
@@ -177,14 +207,16 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 		}
 	}, []);
 
-	// Initialize map when needed
+	/**
+	 * This effect is responsible for initializing the Google Map when the component is expanded.
+	 * It handles the entire lifecycle of the map, including creation, event listeners, and cleanup.
+	 */
 	useEffect(() => {
 		let isMounted = true;
 
 		const initializeMap = async () => {
 			if (!containerRef.current || !isMounted) return;
 
-			// Clean up existing map instance first
 			if (mapRef.current) {
 				google.maps.event.clearInstanceListeners(mapRef.current);
 				mapRef.current = null;
@@ -200,14 +232,12 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 				}
 				setError(null);
 
-				// Ensure Google Maps is loaded
 				if (!mapsManager.isInitialized()) {
 					await mapsManager.initialize();
 				}
 
 				if (!isMounted) return;
 
-				// Create map with initial center and zoom
 				const initialCenter = minimapStateRef.current?.center || { lat: 20, lng: 0 };
 				const initialZoom = minimapStateRef.current?.zoom || 2;
 
@@ -216,7 +246,6 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 
 					const rect = containerRef.current.getBoundingClientRect();
 					if (rect.width === 0 || rect.height === 0) {
-						// Wait for container to be visible using requestAnimationFrame
 						const animationId = requestAnimationFrame(() => {
 							if (mapSize !== 'mini' && mapSize !== 'hidden' && isMounted) {
 								initializeMap();
@@ -228,7 +257,6 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 
 				if (!isMounted) return;
 
-				// Create map configuration - don't set styles when mapId is present
 				const mapId = mapsManager.getMapId();
 				const mapConfig: google.maps.MapOptions = {
 					zoom: initialZoom,
@@ -243,12 +271,9 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 					}
 				};
 
-				// Add mapId if available
 				if (mapId) {
 					mapConfig.mapId = mapId;
-					// When mapId is present, styles are controlled via Cloud Console
 				} else {
-					// Only add fallback styles when no mapId is present
 					mapConfig.styles = [
 						{ elementType: "geometry", stylers: [{ color: "#212121" }] },
 						{ elementType: "labels.icon", stylers: [{ visibility: "off" }] },
@@ -274,7 +299,6 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 				const map = new google.maps.Map(containerRef.current, mapConfig);
 
 				if (!isMounted) {
-					// Clean up if component unmounted during initialization
 					google.maps.event.clearInstanceListeners(map);
 					return;
 				}
@@ -313,11 +337,11 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 		};
 	}, [mapSize, handleMapClick, handleZoomChanged, mapType, setMapLoaded, isExpanding]);
 
-	// Cleanup effect when transitioning to mini or hidden state
+	/**
+	 * This effect cleans up the map instance when the component is unmounted or the map is hidden.
+	 */
 	useEffect(() => {
 		if (mapSize === 'mini' || mapSize === 'hidden') {
-
-			// Clean up the main map instance when going back to mini/hidden
 			if (mapRef.current) {
 				google.maps.event.clearInstanceListeners(mapRef.current);
 				mapRef.current = null;
@@ -330,7 +354,6 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 		}
 	}, [mapSize, setMapLoaded, guessLocation]);
 
-	// Separate cleanup effect for component unmount
 	useEffect(() => {
 		return () => {
 			if (mapRef.current) {
@@ -344,7 +367,9 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 		};
 	}, []);
 
-	// Update map type when changed
+	/**
+	 * This effect updates the map type when the user changes it.
+	 */
 	useEffect(() => {
 		if (mapRef.current) {
 			mapRef.current.setMapTypeId(getMapTypeId(mapType));
@@ -353,14 +378,16 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 
 	const prevMapSizeRef = useRef<MapSize>(mapSize);
 
+	/**
+	 * This effect forces a redraw of the map when its size changes, which can help to prevent
+	 * rendering issues.
+	 */
 	useEffect(() => {
 		if (mapRef.current && prevMapSizeRef.current !== mapSize && mapSize !== 'mini' && mapSize !== 'hidden') {
-			// Capture the map's current center before the animation frame
 			const savedCenter = mapRef.current.getCenter();
 
 			const animationId = requestAnimationFrame(() => {
 				if (mapRef.current && savedCenter) {
-					// Force a safe redraw by setting the center
 					mapRef.current.setCenter(savedCenter);
 				}
 			});
@@ -370,7 +397,9 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 		prevMapSizeRef.current = mapSize;
 	}, [mapSize]);
 
-	// Handle keyboard navigation
+	/**
+	 * This effect adds a keyboard listener to allow the user to exit fullscreen mode by pressing the Escape key.
+	 */
 	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {
 			if (mapSize === 'fullscreen' && event.key === 'Escape') {
@@ -382,15 +411,18 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 		return () => document.removeEventListener('keydown', handleKeyDown);
 	}, [mapSize]);
 
-
-
+	/**
+	 * Submits the user's guess.
+	 */
 	const handleMakeGuess = useCallback(() => {
 		if (guessLocation && !disabled) {
-			// Submitting guess
 			onGuess(guessLocation);
 		}
 	}, [guessLocation, disabled, onGuess]);
 
+	/**
+	 * Clears the user's current guess from the map.
+	 */
 	const handleClearGuess = useCallback(() => {
 		if (disabled) return;
 
@@ -417,7 +449,6 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 			isZoomingRef.current = true;
 			const newZoom = Math.max(currentZoom - 1, 1);
 			mapRef.current.setZoom(newZoom);
-			// Use a single requestAnimationFrame for better performance
 			requestAnimationFrame(() => {
 				isZoomingRef.current = false;
 			});
@@ -440,7 +471,6 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 			isZoomingRef.current = true;
 			mapRef.current.setCenter(guessLocation);
 			mapRef.current.setZoom(Math.max(currentZoom, 8));
-			// Use a single requestAnimationFrame for better performance
 			requestAnimationFrame(() => {
 				isZoomingRef.current = false;
 			});
@@ -452,7 +482,6 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 		setRetryCount(0);
 	}, []);
 
-	// Reload map functionality
 	const handleReloadMap = useCallback(() => {
 		if (mapRef.current) {
 			google.maps.event.clearInstanceListeners(mapRef.current);
@@ -468,11 +497,9 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 		setRetryCount(0);
 		setMapLoaded(false);
 
-		// Force re-initialization by temporarily changing mapSize
 		const currentMapSize = mapSize;
 		dispatch({ type: 'SET_MAP_SIZE', payload: 'mini' });
 
-		// Restore the original mapSize to trigger re-initialization
 		requestAnimationFrame(() => {
 			dispatch({ type: 'SET_MAP_SIZE', payload: currentMapSize });
 		});
@@ -509,7 +536,6 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 		);
 	}
 
-	// Show a floating button to unhide the map when hidden
 	if (mapSize === 'hidden') {
 		return (
 			<div className="fixed bottom-4 right-4 z-50 pointer-events-auto">
@@ -548,7 +574,6 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 	return (
 		<div className={`${getMapContainerClasses} ${className || ''}`}>
 			<Card className="w-full h-full flex flex-col shadow-2xl border-0 bg-gray-900/95 backdrop-blur-sm">
-				{/* Header */}
 				<MapHeader
 					mapSize={mapSize}
 					disabled={disabled}
@@ -557,7 +582,6 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 					onReloadMap={handleReloadMap}
 				/>
 
-				{/* Map Controls - Only show in expanded/fullscreen mode */}
 				{(mapSize === 'expanded' || mapSize === 'fullscreen') && (
 					<MapControls
 						mapType={mapType}
@@ -571,9 +595,6 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 					/>
 				)}
 
-
-
-				{/* Map Container */}
 				<div className="flex-1 min-h-0 relative">
 					<div
 						ref={containerRef}
@@ -584,7 +605,6 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 						tabIndex={0}
 					/>
 
-					{/* Overlay for submitted state */}
 					{disabled && (
 						<div className="absolute inset-0 bg-black/20 flex items-center justify-center rounded-b-lg">
 							<div className="bg-gray-900/90 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg border border-gray-700/50">
@@ -594,7 +614,6 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 					)}
 				</div>
 
-				{/* Footer - Only show in expanded mode */}
 				{mapSize === 'expanded' && (
 					<MapFooter
 						guessLocation={guessLocation}
@@ -604,7 +623,6 @@ export function GuessMap({ onGuess, disabled = false, className }: GuessMapProps
 					/>
 				)}
 
-				{/* Fullscreen Footer */}
 				{mapSize === 'fullscreen' && (
 					<FullscreenFooter
 						guessLocation={guessLocation}

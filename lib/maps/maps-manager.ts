@@ -5,6 +5,11 @@ import { StreetViewService } from './street-view';
 import { MapFactory } from './map-factory';
 import { GeocodingService } from './geocoding';
 
+/**
+ * A singleton class that manages all interactions with the Google Maps API.
+ * It handles the loading of the API, initialization of various map-related services,
+ * and provides a centralized point of access to these services.
+ */
 export class MapsManager {
   private loader: Loader | null = null;
   private isLoaded = false;
@@ -34,6 +39,10 @@ export class MapsManager {
     });
   }
 
+  /**
+   * Asynchronously loads the Google Maps API and initializes all the necessary services.
+   * This method should be called before any other methods of the `MapsManager` are used.
+   */
   async initialize(): Promise<void> {
     if (this.isLoaded || !this.loader) return;
 
@@ -59,6 +68,10 @@ export class MapsManager {
     }
   }
 
+  /**
+   * A private helper method that ensures the Google Maps API has been loaded before
+   * attempting to use any of the services.
+   */
   private ensureLoaded(): void {
     if (!this.isLoaded) {
       throw new Error('Google Maps API not loaded. Call initialize() first.');
@@ -66,8 +79,9 @@ export class MapsManager {
   }
 
   /**
-   * Generate a random location with available Street View
-   * @param countryName - Optional country name to restrict location generation
+   * Generates a random location with available Street View.
+   * @param countryName An optional country name to restrict the location generation.
+   * @returns A promise that resolves with a `StreetViewLocation` object.
    */
   async getRandomStreetViewLocation(countryName?: string): Promise<StreetViewLocation> {
     this.ensureLoaded();
@@ -78,7 +92,10 @@ export class MapsManager {
   }
 
   /**
-   * Create a Street View panorama
+   * Creates a Street View panorama.
+   * @param container The HTML element to render the panorama in.
+   * @param location The location to display.
+   * @returns A `google.maps.StreetViewPanorama` instance.
    */
   createStreetView(container: HTMLElement, location: StreetViewLocation): google.maps.StreetViewPanorama {
     this.ensureLoaded();
@@ -89,7 +106,9 @@ export class MapsManager {
   }
 
   /**
-   * Create a map for guessing
+   * Creates a map for the guessing screen.
+   * @param container The HTML element to render the map in.
+   * @returns A `google.maps.Map` instance.
    */
   createMap(container: HTMLElement): google.maps.Map {
     this.ensureLoaded();
@@ -100,7 +119,11 @@ export class MapsManager {
   }
 
   /**
-   * Create a results map showing both locations
+   * Creates a map to display the results of a round.
+   * @param container The HTML element to render the map in.
+   * @param actualLocation The actual location.
+   * @param guessedLocation The user's guessed location.
+   * @returns A `google.maps.Map` instance.
    */
   createResultsMap(
     container: HTMLElement,
@@ -114,33 +137,37 @@ export class MapsManager {
     return this.mapFactory.createResultsMap(container, actualLocation, guessedLocation);
   }
 
+  /**
+   * Checks if the Google Maps API has been loaded.
+   * @returns `true` if the API is loaded, `false` otherwise.
+   */
   isInitialized(): boolean {
     return this.isLoaded;
   }
 
   /**
-   * Get the Map ID being used
+   * Returns the Google Maps Map ID being used.
    */
   getMapId(): string | null {
     return this.mapId;
   }
 
   /**
-   * Get the street view service instance
+   * Returns the `StreetViewService` instance.
    */
   getStreetViewService(): StreetViewService | null {
     return this.streetViewService;
   }
 
   /**
-   * Get the map factory instance
+   * Returns the `MapFactory` instance.
    */
   getMapFactory(): MapFactory | null {
     return this.mapFactory;
   }
 
   /**
-   * Get the geocoding service instance
+   * Returns the `GeocodingService` instance.
    */
   getGeocodingService(): GeocodingService | null {
     return this.geocodingService;

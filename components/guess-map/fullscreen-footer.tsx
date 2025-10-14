@@ -4,14 +4,27 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Location } from '@/lib/types';
 
+/**
+ * Props for the `FullscreenFooter` component.
+ */
 interface FullscreenFooterProps {
+  /** The location of the user's current guess. */
   guessLocation: Location | null;
+  /** A boolean indicating whether the footer controls are disabled. */
   disabled: boolean;
+  /** A callback function to be triggered when the user submits their guess. */
   onMakeGuess: () => void;
+  /** A callback function to be triggered when the user clears their guess. */
   onClearGuess: () => void;
+  /** A callback function to be triggered when the user exits fullscreen mode. */
   onExitFullscreen: () => void;
 }
 
+/**
+ * A presentational component that displays the footer for the fullscreen guess map.
+ * It provides information about the current guess and buttons for submitting, clearing,
+ * or exiting fullscreen mode.
+ */
 export function FullscreenFooter({ 
   guessLocation, 
   disabled, 
@@ -23,9 +36,8 @@ export function FullscreenFooter({
     <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-6 bg-gradient-to-t from-black/70 to-transparent">
       <div className="max-w-4xl mx-auto">
         <div className="bg-gray-900/95 backdrop-blur-sm rounded-lg p-3 sm:p-4 shadow-lg border border-gray-700/50">
-          {/* Mobile-first responsive layout */}
           <div className="space-y-3">
-            {/* Information text */}
+            {/* This section displays information about the current guess or prompts the user to make one. */}
             <div className="text-center sm:text-left">
               {guessLocation ? (
                 <div>
@@ -48,9 +60,8 @@ export function FullscreenFooter({
               )}
             </div>
 
-            {/* Buttons - stacked on mobile, horizontal on desktop */}
+            {/* The main action buttons for the footer. */}
             <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-2">
-              {/* Submit buttons - full width on mobile */}
               {guessLocation && !disabled && (
                 <div className="flex gap-2 w-full sm:w-auto">
                   <Button
@@ -69,7 +80,6 @@ export function FullscreenFooter({
                 </div>
               )}
               
-              {/* Exit fullscreen button */}
               <Button
                 variant="outline"
                 onClick={onExitFullscreen}

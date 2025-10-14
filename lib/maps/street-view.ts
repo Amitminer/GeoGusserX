@@ -19,6 +19,12 @@ export class StreetViewService {
 		let attempts = 0;
 		let lastValidLocation: Location | null = null;
 
+		/**
+		 * This loop attempts to find a valid Street View location up to `maxAttempts` times.
+		 * It generates a random location, checks for Street View availability, and validates the data.
+		 * If a valid location is found, it's returned immediately.
+		 * If the loop finishes without finding a location, it uses a fallback mechanism.
+		 */
 		while (attempts < maxAttempts) {
 			attempts++;
 
@@ -126,6 +132,12 @@ export class StreetViewService {
 		return true;
 	}
 
+	/**
+	 * Checks for the availability of Street View at a given location.
+	 * It uses a randomized search radius and includes a timeout to prevent long waits.
+	 * @param location The geographical coordinates to check.
+	 * @returns A promise that resolves with the Street View panorama data if available, otherwise null.
+	 */
 	private async checkStreetViewAvailability(location: Location): Promise<google.maps.StreetViewPanoramaData | null> {
 		return new Promise((resolve) => {
 			if (!this.streetViewService) {
@@ -148,20 +160,22 @@ export class StreetViewService {
 			}, 10000); // 10 second timeout
 
 			try {
-				// Randomize search radius for more varied gameplay
-				// Smaller radius = more precise to original location
-				// Larger radius = more variety but potentially further from intended area
+				/**
+				 * Randomize search radius for more varied gameplay.
+				 * A smaller radius keeps the Street View location closer to the original random point,
+				 * while a larger radius provides more variety but may be further from the intended area.
+				 */
 				const minRadius = 1000;  // 1km minimum
 				const maxRadius = 25000; // 25km maximum (reduced from 50km)
 				const randomRadius = minRadius + Math.random() * (maxRadius - minRadius);
-				
-				logger.debug('Using random search radius', { 
-					radius: Math.round(randomRadius), 
+
+				logger.debug('Using random search radius', {
+					radius: Math.round(randomRadius),
 					location,
 					minRadius,
 					maxRadius
 				}, 'StreetViewService');
-				
+
 				this.streetViewService.getPanorama({
 					location: new google.maps.LatLng(location.lat, location.lng),
 					radius: Math.round(randomRadius),
@@ -229,7 +243,12 @@ export class StreetViewService {
 
 			const panorama = new google.maps.StreetViewPanorama(container, options);
 
-			// Mobile-specific optimizations
+			/**
+			 * Mobile-specific optimizations to improve performance and user experience.
+			 * `touchAction: 'none'` and `userSelect: 'none'` prevent unwanted browser gestures.
+			 * The `idle` listener with `transform: 'translateZ(0)'` is a common technique
+			 * to promote the container element to its own layer, which can improve rendering performance on mobile devices.
+			 */
 			if (isMobile) {
 				container.style.touchAction = 'none';
 				container.style.userSelect = 'none';

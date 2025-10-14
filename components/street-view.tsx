@@ -10,14 +10,27 @@ import { StreetViewControls } from '@/components/street-view-controls';
 import { useGameStore } from '@/lib/storage/store';
 import { Loader2, MapPin } from 'lucide-react';
 
+/**
+ * Props for the `StreetView` component.
+ */
 interface StreetViewProps {
-	location: StreetViewLocation;
-	onLocationChange?: (location: StreetViewLocation) => void;
-	onCountryInfoChange?: (countryInfo: GeocodeResult | null) => void;
-	onStreetViewError?: (error: string) => void;
-	onSkipRound?: () => void;
+  /** The initial location to display in Street View. */
+  location: StreetViewLocation;
+  /** Callback function that is triggered when the user navigates to a new location. */
+  onLocationChange?: (location: StreetViewLocation) => void;
+  /** Callback function that is triggered when the country information for the current location is determined. */
+  onCountryInfoChange?: (countryInfo: GeocodeResult | null) => void;
+  /** Callback function that is triggered when an error occurs while loading Street View. */
+  onStreetViewError?: (error: string) => void;
+  /** Callback function to skip the current round. */
+  onSkipRound?: () => void;
 }
 
+/**
+ * The `StreetView` component is responsible for rendering the Google Street View panorama.
+ * It handles the entire lifecycle of the panorama, including initialization, event handling,
+ * and cleanup. It also fetches and displays geographic information about the current location.
+ */
 export function StreetView({ location, onLocationChange, onCountryInfoChange, onStreetViewError, onSkipRound }: StreetViewProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const panoramaRef = useRef<google.maps.StreetViewPanorama | null>(null);
@@ -29,10 +42,15 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange, on
 	useEffect(() => {
 		let isMounted = true;
 
+		/**
+		 * This function initializes the Street View panorama. It ensures that the Google Maps API is loaded,
+		 * creates a new panorama instance, and sets up all the necessary event listeners for tracking
+		 * changes in position and point-of-view.
+		 */
 		const initializeStreetView = async () => {
 			if (!containerRef.current || !isMounted || showGameComplete) return;
 
-			// Clean up existing panorama first
+			// Before creating a new panorama, it's crucial to clean up any existing instance to prevent memory leaks.
 			if (panoramaRef.current) {
 				google.maps.event.clearInstanceListeners(panoramaRef.current);
 				panoramaRef.current = null;
@@ -44,25 +62,22 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange, on
 					setError(null);
 				}
 
-				// Ensure Google Maps is loaded
 				if (!mapsManager.isInitialized()) {
 					await mapsManager.initialize();
 				}
 
 				if (!isMounted) return;
 
-				// Create Street View panorama
 				const panorama = mapsManager.createStreetView(containerRef.current, location);
 
 				if (!isMounted) {
-					// Clean up if component unmounted during initialization
 					google.maps.event.clearInstanceListeners(panorama);
 					return;
 				}
 
 				panoramaRef.current = panorama;
 
-				// Set up event listeners
+				// These listeners notify the parent component of any changes to the panorama's state.
 				panorama.addListener('position_changed', () => {
 					const position = panorama.getPosition();
 					if (position && onLocationChange) {
@@ -99,7 +114,7 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange, on
 					}
 				});
 
-				// Wait for Street View to load
+				// The 'status_changed' event is the most reliable way to know if the panorama has loaded successfully.
 				panorama.addListener('status_changed', async () => {
 					if (!isMounted) return;
 
@@ -111,17 +126,19 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange, on
 							logger.info('Street View loaded successfully', { location }, 'StreetView');
 						}
 
-						// Get country information (for display and AI hints)
+						/**
+						 * Once the panorama is loaded, we can fetch the country information.
+						 * `requestIdleCallback` is used to defer this work until the browser is idle,
+						 * which helps to keep the UI responsive.
+						 */
 						if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
 							requestIdleCallback(async () => {
 								if (!isMounted || showGameComplete) return;
 								try {
 									const geocodingService = mapsManager.getGeocodingService();
 									if (geocodingService) {
-										// Use panorama's actual position
 										const panoramaPosition = panorama.getPosition();
 										if (panoramaPosition) {
-											// Convert panorama position to lat/lng format expected by geocoding service
 											const actualCoordinates = {
 												lat: panoramaPosition.lat(),
 												lng: panoramaPosition.lng()
@@ -148,14 +165,13 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange, on
 									}
 								} catch (error) {
 									logger.error('Failed to get country information', error, 'StreetView');
-									// Still call the callback with null to indicate failure
 									if (onCountryInfoChange && isMounted && !showGameComplete) {
 										onCountryInfoChange(null);
 									}
 								}
 							});
 						} else {
-							// Fallback for browsers without requestIdleCallback
+							// Fallback for older browsers that do not support `requestIdleCallback`.
 							setTimeout(async () => {
 								if (!isMounted || showGameComplete) return;
 								try {
@@ -191,7 +207,6 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange, on
 							setIsLoading(false);
 							logger.error('Street View failed to load', { status, location }, 'StreetView');
 
-							// Notify parent component about the error so it can retry with a new location
 							if (onStreetViewError) {
 								onStreetViewError(errorMessage);
 							}
@@ -206,7 +221,6 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange, on
 					setIsLoading(false);
 					logger.error('Street View initialization failed', err, 'StreetView');
 
-					// Notify parent component about the error so it can retry with a new location
 					if (onStreetViewError) {
 						onStreetViewError(errorMessage);
 					}
@@ -216,7 +230,7 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange, on
 
 		initializeStreetView();
 
-		// Cleanup
+		// The cleanup function is essential for preventing memory leaks and unexpected behavior.
 		return () => {
 			isMounted = false;
 			if (panoramaRef.current) {
@@ -254,6 +268,7 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange, on
 
 	return (
 		<div className="relative w-full h-full">
+			{/* The loading indicator is displayed while the Street View panorama is being initialized. */}
 			{isLoading && (
 				<motion.div
 					initial={{ opacity: 0 }}
@@ -277,10 +292,9 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange, on
 				transition={{ duration: 0.5 }}
 			/>
 
-			{/* 🧱 Click Blocker Overlay (disables Google watermark clicks) */}
+			{/* This div acts as a click blocker to prevent users from clicking on the Google Maps watermark, which could navigate them away from the game. */}
 			<div className="absolute bottom-0 left-0 w-[120px] h-[40px] z-20 bg-transparent pointer-events-auto" />
 
-			{/* Virtual Joystick Controls */}
 			{!isLoading && !error && (
 				<StreetViewControls
 					panorama={panoramaRef.current}
@@ -289,7 +303,7 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange, on
 				/>
 			)}
 
-			{/* Desktop Controls Overlay */}
+			{/* This overlay provides helpful instructions for desktop users. */}
 			{!isLoading && !error && (
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
@@ -301,7 +315,7 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange, on
 				</motion.div>
 			)}
 
-			{/* Country Name Overlay - Better Positioning */}
+			{/* This overlay displays the country name if the setting is enabled. */}
 			{!isLoading && !error && gameSettings.showCountryName && countryInfo && (
 				<motion.div
 					initial={{ opacity: 0, y: -20 }}

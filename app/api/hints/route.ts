@@ -3,12 +3,20 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { logger } from '@/lib/logger';
 import type { SingleHintRequest, SingleHintResponse } from '@/lib/ai/types';
 
-// Rate limiting storage (in production, use Redis or similar)
+/**
+ * In-memory storage for rate limiting. In a production environment, this should be
+ * replaced with a more robust solution like Redis or a similar distributed cache
+ * to handle multiple server instances.
+ */
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX_REQUESTS = 10; // Max 10 requests per minute per IP
 
-// Constants for validation bounds
+/**
+ * Constants defining the validation boundaries for incoming hint requests.
+ * These are used to prevent malformed or malicious data from being processed
+ * and to keep the requests within reasonable, expected limits.
+ */
 const MAX_ROUND_NUMBER = 1000; // Reasonable max for round numbers
 const MAX_HINT_NUMBER = 10; // Reasonable max for hints per round
 const MAX_GAME_MODE_LENGTH = 50; // Reasonable max length for game mode string
@@ -16,7 +24,15 @@ const MAX_PREVIOUS_HINTS = 20; // Reasonable max for previous hints array
 const MAX_HINT_LENGTH = 1000; // Reasonable max length for individual hints
 const MAX_COUNTRY_INFO_LENGTH = 500; // Reasonable max length for country info strings
 
-// Timeout helper that properly cleans up timers
+/**
+ * A utility function that wraps a promise with a timeout.
+ * If the promise does not resolve or reject within the specified time,
+ * it will be rejected with a timeout error.
+ * @param p The promise to wrap.
+ * @param ms The timeout duration in milliseconds.
+ * @param message The error message to use if the timeout is exceeded.
+ * @returns A new promise that incorporates the timeout.
+ */
 function withTimeout<T>(p: Promise<T>, ms: number, message: string): Promise<T> {
 	return new Promise<T>((resolve, reject) => {
 		const timer = setTimeout(() => {
@@ -36,7 +52,13 @@ function withTimeout<T>(p: Promise<T>, ms: number, message: string): Promise<T> 
 	});
 }
 
-// Request validation
+/**
+ * Validates the structure and content of the incoming request body.
+ * This function performs strict checks on all expected properties to ensure
+ * they are of the correct type and within acceptable bounds.
+ * @param body The raw request body.
+ * @returns A boolean indicating whether the request body is valid.
+ */
 function validateRequest(body: unknown): body is SingleHintRequest {
 	if (!body || typeof body !== 'object' || body === null) {
 		return false;
@@ -115,7 +137,11 @@ function validateRequest(body: unknown): body is SingleHintRequest {
 	return true;
 }
 
-// Rate limiting check
+/**
+ * Checks if a request from a given IP address is within the defined rate limits.
+ * @param ip The client's IP address.
+ * @returns `true` if the request is allowed, `false` otherwise.
+ */
 function checkRateLimit(ip: string): boolean {
 	const now = Date.now();
 	const userLimit = rateLimitMap.get(ip);
@@ -134,7 +160,12 @@ function checkRateLimit(ip: string): boolean {
 	return true;
 }
 
-// Get client IP address
+/**
+ * Retrieves the client's IP address from the request headers.
+ * It checks for common proxy headers like 'x-forwarded-for' and 'x-real-ip'.
+ * @param request The Next.js request object.
+ * @returns The client's IP address or 'unknown' if it cannot be determined.
+ */
 function getClientIP(request: NextRequest): string {
 	const forwarded = request.headers.get('x-forwarded-for');
 	const realIP = request.headers.get('x-real-ip');
@@ -150,12 +181,19 @@ function getClientIP(request: NextRequest): string {
 	return 'unknown';
 }
 
-// Build the AI prompt
+/**
+ * Constructs the prompt for the generative AI model.
+ * This function is a key part of the prompt engineering strategy. It assembles all the
+ * relevant context—location, game state, previous hints, and difficulty guidance—into a
+ * single, detailed prompt that instructs the AI on how to generate a useful hint.
+ * @param request The validated hint request object.
+ * @returns A string containing the full prompt for the AI.
+ */
 function buildSingleHintPrompt(request: SingleHintRequest): string {
 	const { roundNumber, gameMode, hintNumber, previousHints, countryInfo } = request;
 
 	const difficultyGuidance = getDifficultyGuidance(hintNumber);
-	const locationInfo = `LOCATION INFO: ${countryInfo.country} (${countryInfo.countryCode})\\nFORMATTED ADDRESS: ${countryInfo.formattedAddress}`;
+	const locationInfo = `LOCATION INFO: ${countryInfo.country} (${countryInfo.countryCode})\nFORMATTED ADDRESS: ${countryInfo.formattedAddress}`;
 
 	return `You are an AI assistant for a GeoGuessr-style game. A player is looking at a Street View location and needs ONE strategic hint worth 300 points.
 
@@ -203,6 +241,12 @@ Respond in this exact JSON format:
 }`;
 }
 
+/**
+ * Provides difficulty-specific guidance to the AI based on the hint number.
+ * This helps the AI to generate progressively more specific hints as the player requests more.
+ * @param hintNumber The sequential number of the hint being requested.
+ * @returns A string containing guidance for the AI.
+ */
 function getDifficultyGuidance(hintNumber: number): string {
 	switch (hintNumber) {
 		case 1:
@@ -231,10 +275,18 @@ function getDifficultyGuidance(hintNumber: number): string {
 	}
 }
 
-// Parse AI response with error handling
+/**
+ * Parses the raw text response from the AI model into a structured `SingleHintResponse` object.
+ * This function is designed to be robust, attempting to parse JSON from various formats
+ * (e.g., plain JSON, JSON within code blocks). If JSON parsing fails, it falls back to
+ * extracting a plausible hint from plain text.
+ * @param text The raw text response from the AI.
+ * @param hintNumber The current hint number, used for determining fallback difficulty.
+ * @returns A structured `SingleHintResponse` object.
+ */
 function parseSingleHintResponse(text: string, hintNumber: number): SingleHintResponse {
 	try {
-		// Try multiple JSON extraction patterns
+		// Try to find a JSON object within the text, even if it's embedded in other text or code blocks.
 		const jsonPatterns = [
 			/\{[\s\S]*?\}/,  // Basic JSON pattern
 			/```json\s*(\{[\s\S]*?\})\s*```/,  // JSON in code blocks
@@ -257,15 +309,16 @@ function parseSingleHintResponse(text: string, hintNumber: number): SingleHintRe
 						};
 					}
 				} catch {
+					// If parsing this match fails, continue to the next pattern.
 					continue;
 				}
 			}
 		}
 
-		// Fallback: try to extract hint from plain text
+		// Fallback: if no JSON is found, try to extract a hint from plain text.
 		const lines = text.split('\n').filter(line => line.trim().length > 0);
 
-		// Look for lines that could be hints
+		// Heuristics to identify a line that is likely a hint.
 		const potentialHints = lines.filter(line => {
 			const trimmed = line.trim();
 			return (
@@ -293,7 +346,7 @@ function parseSingleHintResponse(text: string, hintNumber: number): SingleHintRe
 			};
 		}
 
-		// If we can't parse anything, return a basic fallback
+		// If we can't parse anything, return a generic fallback hint.
 		return {
 			hint: "Look for distinctive language, architecture, or cultural markers visible in the Street View.",
 			confidence: 0.5,
@@ -302,7 +355,7 @@ function parseSingleHintResponse(text: string, hintNumber: number): SingleHintRe
 		};
 	} catch (error) {
 		logger.error('Failed to parse AI response', error, 'HintsAPI');
-		// Return fallback instead of throwing
+		// Return fallback instead of throwing to ensure the user always gets a response.
 		return {
 			hint: "Look for distinctive language, architecture, or cultural markers visible in the Street View.",
 			confidence: 0.5,
@@ -312,6 +365,12 @@ function parseSingleHintResponse(text: string, hintNumber: number): SingleHintRe
 	}
 }
 
+/**
+ * Validates and normalizes the category string from the AI response.
+ * It maps common synonyms to the official categories.
+ * @param category The category string from the AI.
+ * @returns A valid category or `null`.
+ */
 function validateCategory(category: string): SingleHintResponse['category'] | null {
 	const validCategories: SingleHintResponse['category'][] = [
 		'geographical', 'cultural', 'architectural', 'environmental', 'general'
@@ -341,23 +400,40 @@ function validateCategory(category: string): SingleHintResponse['category'] | nu
 	return categoryMap[category.toLowerCase()] || null;
 }
 
+/**
+ * Validates the difficulty string from the AI response.
+ * @param difficulty The difficulty string from the AI.
+ * @returns A valid difficulty or `null`.
+ */
 function validateDifficulty(difficulty: string): SingleHintResponse['difficulty'] | null {
 	const validDifficulties: SingleHintResponse['difficulty'][] = ['easy', 'medium', 'hard'];
 	return validDifficulties.includes(difficulty as SingleHintResponse['difficulty']) ? difficulty as SingleHintResponse['difficulty'] : null;
 }
 
+/**
+ * Determines the default difficulty for a hint based on its number.
+ * @param hintNumber The sequential number of the hint.
+ * @returns The difficulty level.
+ */
 function getDefaultDifficulty(hintNumber: number): SingleHintResponse['difficulty'] {
 	if (hintNumber === 1) return 'easy';
 	if (hintNumber === 2) return 'medium';
 	return 'hard';
 }
 
+/**
+ * Redacts terms from the hint that would directly reveal the answer (country name or code).
+ * This is a security measure to ensure the game remains challenging.
+ * @param resp The hint response object.
+ * @param info An object containing the country name and code to redact.
+ * @returns The hint response with redacted terms.
+ */
 function redactCountryTerms(
 	resp: SingleHintResponse,
 	info: { country: string; countryCode: string }
 ): SingleHintResponse {
 	// Escape user-provided terms to prevent RegExp injection and apply global replacement
-	const esc = (s: string) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+	const esc = (s: string) => s.replace(/[-/\^$*+?.()|[\\]{}]/g, '\\$&');
 	const patterns = [
 		new RegExp(`\\b${esc(info.country)}\\b`, 'ig'),
 		new RegExp(`\\b${esc(info.countryCode)}\\b`, 'ig')
@@ -369,6 +445,12 @@ function redactCountryTerms(
 	return { ...resp, hint };
 }
 
+/**
+ * Provides a generic, fallback hint when the primary AI service fails.
+ * The hints are based on the hint number and offer general advice.
+ * @param request The original hint request.
+ * @returns A `SingleHintResponse` with a fallback hint.
+ */
 function getFallbackSingleHint(request: SingleHintRequest): SingleHintResponse {
 	const { hintNumber } = request;
 
@@ -405,6 +487,14 @@ function getFallbackSingleHint(request: SingleHintRequest): SingleHintResponse {
 	};
 }
 
+/**
+ * The main handler for the POST request to the /api/hints endpoint.
+ * It orchestrates the entire process of receiving a hint request, validating it,
+ * checking rate limits, calling the AI service, parsing the response, and returning
+ * a structured hint to the client.
+ * @param request The incoming Next.js request.
+ * @returns A Next.js response object.
+ */
 export async function POST(request: NextRequest) {
 	// Parse request body once and store it in outer scope
 	let body: unknown;

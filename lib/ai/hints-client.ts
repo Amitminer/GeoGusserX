@@ -2,9 +2,22 @@ import { logger } from '@/lib/logger';
 import type { SingleHintRequest, SingleHintResponse } from './types';
 
 class HintsClient {
+  /**
+   * Rate limiting properties to prevent spamming the hints API.
+   * `lastRequestTime` tracks the timestamp of the last request.
+   * `minRequestInterval` sets the minimum time (in ms) that must pass between requests.
+   */
   private lastRequestTime = 0;
   private minRequestInterval = 1000; // Minimum 1 second between requests
 
+  /**
+   * Fetches a single hint from the AI service via a server-side API.
+   * This function includes rate limiting to prevent abuse, a timeout to handle network issues,
+   * and a fallback mechanism to provide a generic hint if the API call fails.
+   *
+   * @param request The request object containing all necessary context for the hint.
+   * @returns A promise that resolves to a `SingleHintResponse` object.
+   */
   async generateSingleHint(request: SingleHintRequest): Promise<SingleHintResponse> {
     // Rate limiting to prevent too many rapid requests
     const now = Date.now();
@@ -26,6 +39,7 @@ class HintsClient {
         country: request.countryInfo.country
       }, 'HintsClient');
 
+      // Set up an AbortController to cancel the fetch request if it takes too long.
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 35000); // 35s safety
       const response = await fetch('/api/hints', {
@@ -72,7 +86,7 @@ class HintsClient {
       
       const errorMessage = error instanceof Error ? error.message : String(error);
       
-      // Re-throw specific errors for better user feedback
+      // Re-throw specific, user-actionable errors for better feedback in the UI.
       if (errorMessage.includes('Rate limit') || 
           errorMessage.includes('timeout') ||
           errorMessage.includes('Service temporarily unavailable') ||
@@ -80,11 +94,18 @@ class HintsClient {
         throw error;
       }
       
-      // Return fallback hint for other errors
+      // For all other errors, return a generic, fallback hint to avoid disrupting the game.
       return this.getFallbackSingleHint(request);
     }
   }
 
+  /**
+   * Provides a generic, fallback hint when the primary AI service fails.
+   * The hints are based on the hint number and offer general advice for the game.
+   *
+   * @param request The original hint request, used to determine the hint number.
+   * @returns A `SingleHintResponse` object with a fallback hint.
+   */
   private getFallbackSingleHint(request: SingleHintRequest): SingleHintResponse {
     const { hintNumber } = request;
     
@@ -123,6 +144,11 @@ class HintsClient {
     };
   }
 
+  /**
+   * Determines the default difficulty for a fallback hint based on the hint number.
+   * @param hintNumber The sequential number of the hint.
+   * @returns The difficulty level for the hint.
+   */
   private getDefaultDifficulty(hintNumber: number): SingleHintResponse['difficulty'] {
     if (hintNumber === 1) return 'easy';
     if (hintNumber === 2) return 'medium';

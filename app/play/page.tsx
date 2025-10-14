@@ -21,8 +21,17 @@ import { PageLayout } from '@/components/ui/page-layout';
 import { AlertCircle, Home } from 'lucide-react';
 import Loading from '../loading';
 
+/**
+ * Defines the different screens that can be displayed on the play page,
+ * representing the various states of the game.
+ */
 type GameScreen = 'loading' | 'playing' | 'results' | 'complete' | 'no-game';
 
+/**
+ * The main component for the game play page. It orchestrates the entire game flow,
+ * from initialization and location generation to handling user guesses and displaying results.
+ * It acts as a state machine, transitioning between different screens based on the game state.
+ */
 export default function PlayPage() {
 	const router = useRouter();
 	const {
@@ -48,12 +57,14 @@ export default function PlayPage() {
 	const [lastResult, setLastResult] = useState<GuessResult | null>(null);
 	const [isInitialized, setIsInitialized] = useState(false);
 	const [countryInfo, setCountryInfo] = useState<GeocodeResult | null>(null);
-
 	const [isGeneratingLocation, setIsGeneratingLocation] = useState(false);
 
 	const initializationRef = useRef(false);
 
-	// Initialize the application - only once
+	/**
+	 * This effect runs only once on component mount to initialize the application.
+	 * It ensures that all necessary services are ready and attempts to restore an active game.
+	 */
 	useEffect(() => {
 		if (initializationRef.current) return;
 		initializationRef.current = true;
@@ -63,21 +74,17 @@ export default function PlayPage() {
 			try {
 				logger.info('Initializing play page', undefined, 'PlayPage');
 
-				// Initialize storage and maps if not already done
 				await storageManager.initialize();
 				await mapsManager.initialize();
 
-				// Try to restore active game session
 				const gameRestored = await restoreActiveGame();
 
 				if (!gameRestored) {
-					// No active game, redirect to home to select game mode
 					setScreen('no-game');
 					setIsInitialized(true);
 					return;
 				}
 
-				// Run periodic cleanup
 				await cleanupStorage();
 
 				setIsInitialized(true);
@@ -93,7 +100,10 @@ export default function PlayPage() {
 		initialize();
 	}, [cleanupStorage, restoreActiveGame, setError]);
 
-	// Handle game state changes 
+	/**
+	 * This effect acts as a state machine, reacting to changes in the global game state
+	 * from the `useGameStore` and setting the appropriate screen to be displayed.
+	 */
 	useEffect(() => {
 		if (!currentGame) {
 			setScreen('no-game');
@@ -118,12 +128,8 @@ export default function PlayPage() {
 		setScreen('playing');
 	}, [currentGame, showGameComplete, showResults, isLoading, router]);
 
-
-
-	// Memoize target country to prevent unnecessary re-renders
 	const targetCountry = countrySettings.isRandomCountry ? undefined : countrySettings.targetCountry;
 
-	// Memoize game actions to prevent unnecessary re-renders
 	const memoizedEndGame = useCallback(() => {
 		endGame();
 	}, [endGame]);
@@ -132,9 +138,12 @@ export default function PlayPage() {
 		nextRound();
 	}, [nextRound]);
 
-	// Generate new location for current round - simplified and more reliable
+	/**
+	 * This effect is responsible for generating a new Street View location for the current round.
+	 * It contains logic to ensure that a location is only generated when needed, and it handles
+	 * both new location generation and loading existing locations for a round.
+	 */
 	useEffect(() => {
-		// Only generate if we have a game, we're on playing screen, and no location yet
 		if (!currentGame || screen !== 'playing' || showGameComplete || currentLocation || isGeneratingLocation) {
 			return;
 		}
@@ -142,25 +151,17 @@ export default function PlayPage() {
 		const currentRoundIndex = currentGame.currentRoundIndex;
 		const currentRound = currentGame.rounds[currentRoundIndex];
 
-		if (!currentRound) {
-			return;
-		}
+		if (!currentRound) return;
 
-		// If current round is completed, we need to advance to next round or end game
 		if (currentRound.completed) {
-			// Check if this is the last round
 			if (currentRoundIndex >= currentGame.rounds.length - 1 && currentGame.mode !== 'infinite') {
 				queueMicrotask(() => memoizedEndGame());
 				return;
 			}
-
-			// For infinite mode or if there are more rounds, advance to next round
-			// Use queueMicrotask to avoid calling store action during render (more efficient than setTimeout)
 			queueMicrotask(() => memoizedNextRound());
 			return;
 		}
 
-		// If round already has a location, use it
 		if (currentRound.actualLocation.lat !== 0 || currentRound.actualLocation.lng !== 0) {
 			setCurrentLocation({
 				location: currentRound.actualLocation,
@@ -171,41 +172,23 @@ export default function PlayPage() {
 			return;
 		}
 
-		// Generate new location
 		const generateLocation = async () => {
 			setIsGeneratingLocation(true);
-
 			try {
 				const streetViewLocation = await mapsManager.getRandomStreetViewLocation(targetCountry ?? undefined);
-
-				// Debug logging for generated location
-				logger.info('🌍 Generated Street View location', {
-					streetViewLocation,
-					roundId: currentRound.id,
-					timestamp: Date.now()
-				}, 'PlayPage');
-
-				// IMPORTANT: Use the store method to properly update the actual location
+				logger.info('🌍 Generated Street View location', { streetViewLocation, roundId: currentRound.id, timestamp: Date.now() }, 'PlayPage');
 				await setActualLocation(streetViewLocation.location);
-				
 				setCurrentLocation(streetViewLocation);
-				
 			} catch (error) {
 				logger.error('Failed to generate Street View location', error, 'PlayPage');
-
-				// Use fallback location
 				const fallbackLocation = {
 					location: { lat: 40.7580, lng: -73.9855 }, // Times Square
 					heading: Math.random() * 360,
 					pitch: 0,
 					zoom: 1
 				};
-				
-				// Use the store method to update with fallback location
 				await setActualLocation(fallbackLocation.location);
-				
 				setCurrentLocation(fallbackLocation);
-				
 			} finally {
 				setIsGeneratingLocation(false);
 			}
@@ -214,26 +197,18 @@ export default function PlayPage() {
 		generateLocation();
 	}, [currentGame, screen, showGameComplete, currentLocation, isGeneratingLocation, targetCountry, memoizedEndGame, memoizedNextRound, setActualLocation]);
 
+	/**
+	 * Handles the user's guess by calling the `makeGuess` action from the game store.
+	 * @param guessedLocation The location that the user guessed.
+	 */
 	const handleMakeGuess = async (guessedLocation: Location) => {
 		if (!currentGame) return;
 
-		// Debug logging to track guess processing
-		logger.info('🎮 PlayPage received guess', {
-			guessedLocation,
-			currentRoundIndex: currentGame.currentRoundIndex,
-			currentRound: currentGame.rounds[currentGame.currentRoundIndex],
-			timestamp: Date.now()
-		}, 'PlayPage');
+		logger.info('🎮 PlayPage received guess', { guessedLocation, currentRoundIndex: currentGame.currentRoundIndex, currentRound: currentGame.rounds[currentGame.currentRoundIndex], timestamp: Date.now() }, 'PlayPage');
 
 		try {
 			const result = await makeGuess(guessedLocation);
-			
-			// Debug logging for result
-			logger.info('🏆 Guess result received', {
-				result,
-				timestamp: Date.now()
-			}, 'PlayPage');
-			
+			logger.info('🏆 Guess result received', { result, timestamp: Date.now() }, 'PlayPage');
 			setLastResult(result);
 		} catch (error) {
 			logger.error('Failed to process guess', error, 'PlayPage');
@@ -241,42 +216,53 @@ export default function PlayPage() {
 		}
 	};
 
+	/**
+	 * Advances the game to the next round.
+	 */
 	const handleNextRound = () => {
 		setLastResult(null);
-		setCurrentLocation(null); // This will trigger location generation
+		setCurrentLocation(null);
 		nextRound();
 	};
 
+	/**
+	 * Skips the current round.
+	 */
 	const handleSkipRound = () => {
-		setCurrentLocation(null); // Clear current location to trigger new location generation
+		setCurrentLocation(null);
 		skipRound();
 	};
 
+	/**
+	 * Ends the current game.
+	 */
 	const handleEndGame = () => {
 		endGame();
 	};
 
+	/**
+	 * Resets the game state and returns the user to the homepage.
+	 */
 	const handleBackToHome = useCallback(() => {
-		// Clean up current state
 		setLastResult(null);
 		setCurrentLocation(null);
-
 		resetGame();
 		router.push('/');
 	}, [resetGame, router]);
 
-	// Handle Street View errors
+	/**
+	 * Handles errors that occur within the `StreetView` component.
+	 * @param errorMessage The error message from the `StreetView` component.
+	 */
 	const handleStreetViewError = useCallback(async (errorMessage: string) => {
 		logger.error('Street View error', { errorMessage }, 'PlayPage');
 		setError('Street View failed to load. Please try refreshing the page.');
 	}, [setError]);
 
-	// Show loading screen while initializing
 	if (!isInitialized) {
 		return <Loading />;
 	}
 
-	// Show error screen
 	if (error) {
 		return (
 			<div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
@@ -308,7 +294,7 @@ export default function PlayPage() {
 
 	return (
 		<PageLayout background="game">
-			{/* Results Screen */}
+			{/* The results screen is displayed after a guess has been made. */}
 			{screen === 'results' && lastResult && currentGame && (
 				<RoundResults
 					key="results"
@@ -320,7 +306,7 @@ export default function PlayPage() {
 				/>
 			)}
 
-			{/* Game Complete Screen */}
+			{/* The game complete screen is shown when all rounds have been played. */}
 			{screen === 'complete' && currentGame && (
 				<GameComplete
 					key="complete"
@@ -330,6 +316,7 @@ export default function PlayPage() {
 			)}
 
 			<AnimatePresence mode="wait">
+				{/* This screen is shown if there is no active game session. */}
 				{screen === 'no-game' && (
 					<PageTransition
 						key="no-game"
@@ -351,6 +338,7 @@ export default function PlayPage() {
 					</PageTransition>
 				)}
 
+				{/* The main game play screen, which includes the Street View and the guess map. */}
 				{screen === 'loading' && (
 					<div key="loading">
 						<Loading />
@@ -372,7 +360,6 @@ export default function PlayPage() {
 								countryInfo={countryInfo}
 							/>
 
-							{/* Fullscreen Street View */}
 							<div className="flex-1 relative">
 								<StreetView
 									location={currentLocation}
@@ -381,7 +368,6 @@ export default function PlayPage() {
 									onSkipRound={handleSkipRound}
 								/>
 
-								{/* Floating Guess Map - positioned in bottom right */}
 								<GuessMap
 									onGuess={handleMakeGuess}
 									disabled={showResults}
@@ -389,7 +375,6 @@ export default function PlayPage() {
 							</div>
 						</motion.div>
 					) : (
-						/* Show loading when game exists but location is loading */
 						<div key="game-loading">
 							<Loading />
 						</div>

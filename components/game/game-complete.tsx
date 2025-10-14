@@ -9,14 +9,24 @@ import { GameState } from '@/lib/types';
 import { formatDistance, formatScore } from '@/lib/utils';
 import { Trophy, MapPin, Target, Clock, Home, RotateCcw, Share2 } from 'lucide-react';
 
+/**
+ * A component that is displayed when the game is complete. It shows the final score,
+ * detailed game statistics, and provides options to share the results, start a new game,
+ * or return to the main menu.
+ *
+ * @param gameState The final state of the game.
+ * @param onBackToMenu A callback function to return to the main menu.
+ */
 function GameCompleteComponent({ gameState, onBackToMenu }: { gameState: GameState; onBackToMenu: () => void }) {
 	const router = useRouter();
 
-	// Memoize expensive calculations
+	/**
+	 * `useMemo` is used here to calculate the game statistics only when the `gameState` changes.
+	 * This is a performance optimization that prevents expensive calculations on every render.
+	 */
 	const gameStats = useMemo(() => {
 		const completedRounds = gameState.rounds.filter(r => r.completed);
 
-		// Safely calculate stats with fallbacks for empty arrays
 		const totalDistance = completedRounds.length > 0
 			? completedRounds.reduce((sum, r) => sum + (r.distance || 0), 0)
 			: 0;
@@ -63,10 +73,13 @@ function GameCompleteComponent({ gameState, onBackToMenu }: { gameState: GameSta
 		};
 	}, [gameState]);
 
+	/**
+	 * Handles the sharing of game results. It uses the Web Share API if available,
+	 * and falls back to copying the results to the clipboard.
+	 */
 	const handleShare = useCallback(async () => {
 		const shareText = `I just scored ${formatScore(gameState.totalScore)} points in GeoGusserX! 🌍\n\nMode: ${gameState.mode}\nRounds: ${gameStats.completedRounds.length}\nAverage Distance: ${formatDistance(gameStats.averageDistance)}\n\nCan you beat my score?`;
 
-		// TODO: Implement share functionality right now does nothing
 		if (navigator.share) {
 			try {
 				await navigator.share({
@@ -75,11 +88,9 @@ function GameCompleteComponent({ gameState, onBackToMenu }: { gameState: GameSta
 					url: window.location.origin
 				});
 			} catch {
-				// Fallback to clipboard
 				navigator.clipboard.writeText(shareText);
 			}
 		} else {
-			// Fallback to clipboard
 			navigator.clipboard.writeText(shareText);
 		}
 	}, [gameState.totalScore, gameState.mode, gameStats.completedRounds.length, gameStats.averageDistance]);
@@ -96,7 +107,7 @@ function GameCompleteComponent({ gameState, onBackToMenu }: { gameState: GameSta
 				transition={{ duration: 0.3, ease: "easeOut" }}
 				className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-white/20 dark:border-gray-700/30 rounded-3xl shadow-2xl max-w-5xl w-full min-h-[80vh] max-h-[90vh] my-4 overflow-y-auto"
 			>
-				{/* Header */}
+				{/* The header section of the game complete screen. */}
 				<div className="bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 text-white p-4 sm:p-6 lg:p-8 text-center rounded-t-3xl">
 					<div className="text-3xl sm:text-4xl lg:text-5xl mb-3 sm:mb-4">
 						{gameStats.rating.emoji}
@@ -108,7 +119,7 @@ function GameCompleteComponent({ gameState, onBackToMenu }: { gameState: GameSta
 				</div>
 
 				<div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
-					{/* Overall Stats */}
+					{/* The player's final score. */}
 					<div className="text-center">
 						<div className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">
 							{formatScore(gameState.totalScore)}
@@ -116,7 +127,7 @@ function GameCompleteComponent({ gameState, onBackToMenu }: { gameState: GameSta
 						<div className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">Total Score</div>
 					</div>
 
-					{/* Stats Grid */}
+					{/* A grid of cards displaying detailed game statistics. */}
 					<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
 						<Card className="border-2 border-gray-200/50 dark:border-gray-700/50 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300">
 							<CardHeader className="pb-2">
@@ -190,7 +201,7 @@ function GameCompleteComponent({ gameState, onBackToMenu }: { gameState: GameSta
 						</Card>
 					</div>
 
-					{/* Best and Worst Rounds */}
+					{/* Cards for the best and worst rounds of the game. */}
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
 						<Card className="border-2 border-green-200/50 dark:border-green-700/50 bg-green-50/60 dark:bg-green-900/20 backdrop-blur-sm rounded-2xl hover:border-green-400 dark:hover:border-green-500 transition-all duration-300">
 							<CardHeader className="pb-3">
@@ -247,7 +258,7 @@ function GameCompleteComponent({ gameState, onBackToMenu }: { gameState: GameSta
 						</Card>
 					</div>
 
-					{/* Action Buttons */}
+					{/* Action buttons for sharing, starting a new game, or returning to the menu. */}
 					<div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
 						<Button
 							onClick={handleShare}
@@ -281,4 +292,9 @@ function GameCompleteComponent({ gameState, onBackToMenu }: { gameState: GameSta
 	);
 }
 
+/**
+ * The `GameComplete` component is wrapped in `React.memo` to prevent unnecessary re-renders.
+ * Since the game state is immutable, this component will only re-render if the `gameState` prop
+ * itself changes, which is a significant performance optimization.
+ */
 export const GameComplete = React.memo(GameCompleteComponent);

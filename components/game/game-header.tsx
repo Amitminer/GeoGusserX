@@ -8,13 +8,25 @@ import { Trophy, MapPin, Clock, Home, SkipForward } from 'lucide-react';
 import { HintsDialog } from '@/components/hints-dialog';
 import type { GeocodeResult } from '@/lib/maps/geocoding';
 
+/**
+ * Props for the `GameHeader` component.
+ */
 interface GameHeaderProps {
-	onEndGame?: () => void;
-	onSkipRound?: () => void;
-	currentLocation?: { lat: number; lng: number } | null;
-	countryInfo?: GeocodeResult | null;
+  /** A callback function to end the current game. */
+  onEndGame?: () => void;
+  /** A callback function to skip the current round. */
+  onSkipRound?: () => void;
+  /** The current geographical location. */
+  currentLocation?: { lat: number; lng: number } | null;
+  /** Geocoded information about the current location. */
+  countryInfo?: GeocodeResult | null;
 }
 
+/**
+ * The header component for the main game screen. It displays the game logo,
+ * the current round and score, and provides controls for hints, skipping rounds,
+ * and ending the game.
+ */
 export function GameHeader({ onEndGame, onSkipRound, currentLocation, countryInfo }: GameHeaderProps) {
 	const { currentGame } = useGameStore();
 
@@ -32,7 +44,7 @@ export function GameHeader({ onEndGame, onSkipRound, currentLocation, countryInf
 				className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md px-4 sm:px-4 py-3 sm:py-3 sticky top-0 z-50"
 			>
 				<div className="max-w-7xl mx-auto flex items-center justify-between">
-					{/* Logo and Game Info */}
+					{/* The left side of the header, containing the logo and game stats. */}
 					<div className="flex items-center gap-2 sm:gap-3 md:gap-4">
 						<motion.div
 							whileHover={{ scale: 1.05 }}
@@ -47,7 +59,7 @@ export function GameHeader({ onEndGame, onSkipRound, currentLocation, countryInf
 							</span>
 						</motion.div>
 
-						{/* Desktop Stats */}
+						{/* Game statistics, displayed on larger screens. */}
 						<div className="hidden sm:flex items-center gap-2 text-sm">
 							<motion.div
 								className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-lg"
@@ -70,9 +82,9 @@ export function GameHeader({ onEndGame, onSkipRound, currentLocation, countryInf
 						</div>
 					</div>
 
-					{/* Controls */}
+					{/* The right side of the header, containing the game controls. */}
 					<div className="flex items-center gap-1.5 sm:gap-2">
-						{/* Mobile Round Info */}
+						{/* A more compact display of game stats for mobile screens. */}
 						<motion.div
 							className="sm:hidden flex items-center gap-0.5 px-1.5 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-md min-w-0"
 							whileHover={{ scale: 1.02 }}
@@ -86,7 +98,6 @@ export function GameHeader({ onEndGame, onSkipRound, currentLocation, countryInf
 							</span>
 						</motion.div>
 
-						{/* Mobile Score */}
 						<motion.div
 							className="sm:hidden flex items-center gap-0.5 px-1.5 py-1 bg-amber-50 dark:bg-amber-900/30 rounded-md min-w-0"
 							whileHover={{ scale: 1.02 }}
@@ -100,7 +111,6 @@ export function GameHeader({ onEndGame, onSkipRound, currentLocation, countryInf
 							</span>
 						</motion.div>
 
-						{/* AI Hints Button */}
 						{currentLocation && (
 							<HintsDialog
 								location={currentLocation}
@@ -109,7 +119,6 @@ export function GameHeader({ onEndGame, onSkipRound, currentLocation, countryInf
 							/>
 						)}
 
-						{/* Skip Button - Available for all game modes */}
 						{onSkipRound && (
 							<motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
 								<Button
@@ -125,7 +134,6 @@ export function GameHeader({ onEndGame, onSkipRound, currentLocation, countryInf
 							</motion.div>
 						)}
 
-						{/* End Game Button */}
 						{onEndGame && (
 							<motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
 								<Button
@@ -143,7 +151,7 @@ export function GameHeader({ onEndGame, onSkipRound, currentLocation, countryInf
 				</div>
 			</motion.header>
 
-			{/* Progress Bar - Directly attached to header */}
+			{/* A progress bar that shows the player's progress through the game. */}
 			{currentGame.mode !== 'infinite' && (
 				<motion.div
 					initial={{ opacity: 0, scaleX: 0 }}

@@ -5,31 +5,60 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw, Home } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
+/**
+ * The state for the `ErrorBoundary` component.
+ */
 interface ErrorBoundaryState {
-	hasError: boolean;
-	error?: Error;
+  /** A boolean that is true if an error has been caught. */
+  hasError: boolean;
+  /** The error that was caught. */
+  error?: Error;
 }
 
+/**
+ * Props for the `ErrorBoundary` component.
+ */
 interface ErrorBoundaryProps {
-	children: React.ReactNode;
-	fallback?: React.ComponentType<{ error?: Error; reset: () => void }>;
+  /** The child components that will be protected by the error boundary. */
+  children: React.ReactNode;
+  /** An optional fallback component to be rendered when an error is caught. */
+  fallback?: React.ComponentType<{ error?: Error; reset: () => void }>;
 }
 
+/**
+ * A React Error Boundary component that catches JavaScript errors anywhere in its
+ * child component tree, logs those errors, and displays a fallback UI instead of
+ * the component tree that crashed.
+ */
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
 	constructor(props: ErrorBoundaryProps) {
 		super(props);
 		this.state = { hasError: false };
 	}
 
+	/**
+	 * This lifecycle method is used to update the state when an error is thrown
+	 * by a descendant component.
+	 * @param error The error that was thrown.
+	 * @returns An object to update the state.
+	 */
 	static getDerivedStateFromError(error: Error): ErrorBoundaryState {
 		return { hasError: true, error };
 	}
 
+	/**
+	 * This lifecycle method is called after an error has been thrown by a descendant component.
+	 * It is used for side effects, such as logging the error.
+	 * @param error The error that was thrown.
+	 * @param errorInfo An object with a `componentStack` key containing information about which component threw the error.
+	 */
 	componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-		// Use our custom logger instead of console.error
 		logger.error('ErrorBoundary caught an error', error, 'ErrorBoundary', errorInfo);
 	}
 
+	/**
+	 * Renders the child components or a fallback UI if an error has been caught.
+	 */
 	render() {
 		if (this.state.hasError) {
 			const reset = () => {
@@ -48,6 +77,12 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 	}
 }
 
+/**
+ * The default fallback UI that is displayed when an error is caught and no custom
+ * fallback is provided. It provides options to retry, reload, or go home.
+ * @param error The error that was caught.
+ * @param reset A function to reset the error boundary.
+ */
 function DefaultErrorFallback({ error, reset }: { error?: Error; reset: () => void }) {
 	const handleReload = () => {
 		window.location.reload();
@@ -71,6 +106,7 @@ function DefaultErrorFallback({ error, reset }: { error?: Error; reset: () => vo
 						We encountered an unexpected error. Don&apos;t worry, it&apos;s not your fault!
 					</p>
 
+					{/* In development mode, the error details are displayed to help with debugging. */}
 					{process.env.NODE_ENV === 'development' && error && (
 						<details className="text-left mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
 							<summary className="cursor-pointer font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">

@@ -41,19 +41,33 @@ import {
 	Target
 } from 'lucide-react';
 
+/**
+ * Props for the `HintsDialog` component.
+ */
 interface HintsDialogProps {
-	location: Location;
-	countryInfo?: GeocodeResult | null;
-	disabled?: boolean;
+  /** The geographical location for which to generate hints. */
+  location: Location;
+  /** Geocoded information about the location, including country details. */
+  countryInfo?: GeocodeResult | null;
+  /** Whether the hint buttons should be disabled. */
+  disabled?: boolean;
 }
 
+/**
+ * Represents a hint that has been generated, including its cost and type.
+ */
 interface HintWithCost {
-	hint: SingleHintResponse | TextHintResponse;
-	cost: number;
-	timestamp: number;
-	type: 'ai' | 'text';
+  /** The hint object, which can be either an AI-generated hint or a text-based hint. */
+  hint: SingleHintResponse | TextHintResponse;
+  /** The cost of the hint in points. */
+  cost: number;
+  /** The timestamp when the hint was generated. */
+  timestamp: number;
+  /** The type of the hint. */
+  type: 'ai' | 'text';
 }
 
+// Mappings for styling hints based on their category and difficulty.
 const categoryIcons = {
 	geographical: Globe,
 	cultural: MapPin,
@@ -78,6 +92,11 @@ const difficultyColors = {
 
 const AI_HINT_COST = 300;
 
+/**
+ * A dialog component that allows players to purchase and view hints for the current location.
+ * It supports two types of hints: AI-powered strategic hints and progressive text-based hints.
+ * The component manages its own state, including loading, errors, and the list of generated hints.
+ */
 export function HintsDialog({ location, countryInfo, disabled = false }: HintsDialogProps) {
 	const { currentGame, purchaseHint } = useGameStore();
 	const [isOpen, setIsOpen] = useState(false);
@@ -88,12 +107,14 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 	const [totalCost, setTotalCost] = useState(0);
 	const [currentTextHintLevel, setCurrentTextHintLevel] = useState(0);
 
-	// Refs for stale state protection
+	// These refs are used to prevent issues with stale state in asynchronous operations.
 	const requestIdRef = useRef(0);
 	const abortControllerRef = useRef<AbortController | null>(null);
 	const currentLocationRef = useRef(location);
 
-	// Initialize Gemini service
+	/**
+	 * Initializes the AI hints service when the component mounts.
+	 */
 	useEffect(() => {
 		const initializeService = async () => {
 			try {
@@ -101,7 +122,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 					await hintsClient.initialize();
 				}
 				setIsInitialized(true);
-				setError(null); // Clear any previous errors
+				setError(null);
 			} catch (error) {
 				logger.error('Failed to initialize Gemini service', error, 'HintsDialog');
 				setError('AI hints service is not available. Please check your API configuration.');
@@ -112,21 +133,19 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 		initializeService();
 	}, []);
 
-	// Reset hints when location changes and cancel any in-flight requests
+	/**
+	 * Resets the component's state and cancels any in-flight hint requests when the location changes.
+	 * This is crucial for ensuring that hints from a previous location are not displayed for a new one.
+	 */
 	useEffect(() => {
-		// Cancel any in-flight request
 		if (abortControllerRef.current) {
 			abortControllerRef.current.abort();
 			abortControllerRef.current = null;
 		}
 
-		// Increment request ID to invalidate any pending responses
 		requestIdRef.current += 1;
-
-		// Update current location reference
 		currentLocationRef.current = location;
 
-		// Reset state
 		setHints([]);
 		setTotalCost(0);
 		setCurrentTextHintLevel(0);
@@ -134,7 +153,9 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 		setIsLoading(false);
 	}, [location]);
 
-	// Cleanup on unmount
+	/**
+	 * A cleanup effect to abort any pending requests when the component unmounts.
+	 */
 	useEffect(() => {
 		return () => {
 			if (abortControllerRef.current) {
@@ -143,10 +164,16 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 		};
 	}, []);
 
+	/**
+	 * Checks if the player can afford an AI-powered hint.
+	 */
 	const canAffordAIHint = (): boolean => {
 		return !!(currentGame && currentGame.totalScore >= AI_HINT_COST);
 	};
 
+	/**
+	 * Checks if the player can afford the next level of text-based hint.
+	 */
 	const canAffordTextHint = (): boolean => {
 		if (!currentGame || !countryInfo) return false;
 		const nextLevel = currentTextHintLevel + 1;
@@ -154,20 +181,24 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 		return currentGame.totalScore >= cost;
 	};
 
+	/**
+	 * Gets the sequential number for the next hint.
+	 */
 	const getNextHintNumber = () => {
 		return hints.length + 1;
 	};
 
+	/**
+	 * Generates and purchases a text-based hint, which reveals letters of the country name.
+	 */
 	const generateTextHint = async () => {
 		if (!currentGame || !canAffordTextHint()) return;
 
-		// Ensure we have country info before generating hint
 		if (!countryInfo || !canGenerateTextHint(countryInfo)) {
 			setError('Location information not available. Please wait for the map to load completely.');
 			return;
 		}
 
-		// Check if more text hints are available
 		if (!hasMoreTextHints(countryInfo, currentTextHintLevel)) {
 			setError('No more text hints available for this location.');
 			return;
@@ -180,17 +211,9 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 			const nextLevel = currentTextHintLevel + 1;
 			const cost = getTextHintCost(nextLevel);
 
-			logger.info('Generating text hint', {
-				location,
-				cost,
-				hintLevel: nextLevel,
-				country: countryInfo.country
-			}, 'HintsDialog');
+			logger.info('Generating text hint', { location, cost, hintLevel: nextLevel, country: countryInfo.country }, 'HintsDialog');
 
-			// Generate the text hint
 			const textHintResponse = generateCountryLettersHint(countryInfo, nextLevel);
-
-			// Purchase the hint (this will deduct points and save the game)
 			const purchaseSuccessful = await purchaseHint(cost);
 
 			if (!purchaseSuccessful) {
@@ -208,41 +231,36 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 			setTotalCost(prev => prev + cost);
 			setCurrentTextHintLevel(nextLevel);
 
-			logger.info('Text hint purchased', {
-				cost,
-				hintLevel: nextLevel,
-				hint: textHintResponse.hint,
-				remainingScore: currentGame?.totalScore || 0
-			}, 'HintsDialog');
+			logger.info('Text hint purchased', { cost, hintLevel: nextLevel, hint: textHintResponse.hint, remainingScore: currentGame?.totalScore || 0 }, 'HintsDialog');
 
 		} catch (error: unknown) {
 			logger.error('Failed to generate text hint', error, 'HintsDialog');
-			const errorMessage = getErrorMessage(error);
-			setError(errorMessage);
+			setError(getErrorMessage(error));
 		} finally {
 			setIsLoading(false);
 		}
 	};
 
+	/**
+	 * Generates and purchases an AI-powered hint. This function includes robust logic
+	 * to handle race conditions, stale state, and network errors by using an AbortController
+	 * and request IDs.
+	 */
 	const generateAIHint = async () => {
 		if (!currentGame || !isInitialized || !canAffordAIHint()) return;
 
-		// Ensure we have country info before generating hint
 		if (!countryInfo) {
 			setError('Location information not available. Please wait for the map to load completely.');
 			return;
 		}
 
-		// Cancel any existing request
 		if (abortControllerRef.current) {
 			abortControllerRef.current.abort();
 		}
 
-		// Create new abort controller for this request
 		const abortController = new AbortController();
 		abortControllerRef.current = abortController;
 
-		// Capture current request ID and location for stale state protection
 		const currentRequestId = ++requestIdRef.current;
 		const capturedLocation = { ...location };
 
@@ -251,14 +269,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 
 		try {
 			const hintNumber = getNextHintNumber();
-			logger.info('Requesting AI hint', {
-				location: capturedLocation,
-				roundNumber: currentGame.currentRoundIndex + 1,
-				hintNumber,
-				cost: AI_HINT_COST,
-				country: countryInfo.country,
-				requestId: currentRequestId
-			}, 'HintsDialog');
+			logger.info('Requesting AI hint', { location: capturedLocation, roundNumber: currentGame.currentRoundIndex + 1, hintNumber, cost: AI_HINT_COST, country: countryInfo.country, requestId: currentRequestId }, 'HintsDialog');
 
 			const response = await hintsClient.generateSingleHint({
 				location: capturedLocation,
@@ -269,53 +280,30 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 				countryInfo: countryInfo
 			});
 
-			// Check if request is still valid (not aborted and location hasn't changed)
+			// These checks are crucial to prevent processing responses from aborted or outdated requests.
 			if (abortController.signal.aborted) {
 				logger.info('Hint request aborted', { requestId: currentRequestId }, 'HintsDialog');
 				return;
 			}
 
 			if (currentRequestId !== requestIdRef.current) {
-				logger.info('Hint request stale, ignoring response', {
-					requestId: currentRequestId,
-					currentRequestId: requestIdRef.current
-				}, 'HintsDialog');
+				logger.info('Hint request stale, ignoring response', { requestId: currentRequestId, currentRequestId: requestIdRef.current }, 'HintsDialog');
 				return;
 			}
 
-			// Verify location hasn't changed
-			if (
-				capturedLocation.lat !== currentLocationRef.current.lat ||
-				capturedLocation.lng !== currentLocationRef.current.lng
-			) {
-				logger.info(
-					'Location changed during hint request, ignoring response',
-					{
-						capturedLocation,
-						currentLocation: currentLocationRef.current,
-						requestId: currentRequestId
-					},
-					'HintsDialog'
-				);
+			if (capturedLocation.lat !== currentLocationRef.current.lat || capturedLocation.lng !== currentLocationRef.current.lng) {
+				logger.info('Location changed during hint request, ignoring response', { capturedLocation, currentLocation: currentLocationRef.current, requestId: currentRequestId }, 'HintsDialog');
 				return;
 			}
 
-			// Purchase the hint (this will deduct points and save the game)
 			const purchaseSuccessful = await purchaseHint(AI_HINT_COST);
 
 			if (!purchaseSuccessful) {
 				throw new Error('Failed to purchase hint - insufficient points or game error');
 			}
 
-			// Final check before committing state changes
 			if (abortController.signal.aborted || currentRequestId !== requestIdRef.current) {
-				logger.info(
-					'Hint request invalidated after purchase, skipping state update',
-					{
-						requestId: currentRequestId
-					},
-					'HintsDialog'
-				);
+				logger.info('Hint request invalidated after purchase, skipping state update', { requestId: currentRequestId }, 'HintsDialog');
 				return;
 			}
 
@@ -329,58 +317,36 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 			setHints(prev => [...prev, newHint]);
 			setTotalCost(prev => prev + AI_HINT_COST);
 
-			logger.info(
-				'AI hint purchased',
-				{
-					hintNumber,
-					cost: AI_HINT_COST,
-					category: response.category,
-					difficulty: response.difficulty,
-					confidence: response.confidence,
-					remainingScore: currentGame?.totalScore || 0,
-					requestId: currentRequestId
-				},
-				'HintsDialog'
-			);
+			logger.info('AI hint purchased', { hintNumber, cost: AI_HINT_COST, category: response.category, difficulty: response.difficulty, confidence: response.confidence, remainingScore: currentGame?.totalScore || 0, requestId: currentRequestId }, 'HintsDialog');
 		} catch (error: unknown) {
-			// Check if the error is due to abortion
 			if (abortController.signal.aborted) {
 				logger.info('Hint request was aborted', { requestId: currentRequestId }, 'HintsDialog');
 				return;
 			}
 
-			// Check if request is still valid before setting error
 			if (currentRequestId !== requestIdRef.current) {
-				logger.info(
-					'Ignoring error from stale hint request',
-					{
-						requestId: currentRequestId,
-						currentRequestId: requestIdRef.current
-					},
-					'HintsDialog'
-				);
+				logger.info('Ignoring error from stale hint request', { requestId: currentRequestId, currentRequestId: requestIdRef.current }, 'HintsDialog');
 				return;
 			}
 
 			logger.error('Failed to generate hint', error, 'HintsDialog');
-
-			// Provide more specific error messages
-			const errorMessage = getErrorMessage(error);
-
-			setError(errorMessage);
+			setError(getErrorMessage(error));
 		} finally {
-			// Only clear loading state if this is still the current request
 			if (currentRequestId === requestIdRef.current) {
 				setIsLoading(false);
 			}
 
-			// Clear the abort controller if it's still the current one
 			if (abortControllerRef.current === abortController) {
 				abortControllerRef.current = null;
 			}
 		}
 	};
 
+	/**
+	 * Converts a raw error object into a user-friendly error message.
+	 * @param error The error object.
+	 * @returns A string containing a user-friendly error message.
+	 */
 	const getErrorMessage = (error: unknown): string => {
 		const errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -399,22 +365,25 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 		return 'Failed to generate hint. Please try again.';
 	};
 
+	/**
+	 * Clears the current error and retries generating a hint.
+	 */
 	const clearErrorAndRetry = () => {
-		// Cancel any existing request before retrying
 		if (abortControllerRef.current) {
 			abortControllerRef.current.abort();
 			abortControllerRef.current = null;
 		}
 
 		setError(null);
-		// Default to AI hint for retry
 		generateAIHint();
 	};
 
+	/**
+	 * Event handler for the AI hint button.
+	 */
 	const handleGenerateAIHint = () => {
 		if (!currentGame || !isInitialized || !canAffordAIHint() || !countryInfo) return;
 
-		// Cancel any existing request before starting a new one
 		if (abortControllerRef.current) {
 			abortControllerRef.current.abort();
 			abortControllerRef.current = null;
@@ -423,12 +392,20 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 		generateAIHint();
 	};
 
+	/**
+	 * Event handler for the text hint button.
+	 */
 	const handleGenerateTextHint = () => {
 		if (!currentGame || !canAffordTextHint() || !countryInfo) return;
 
 		generateTextHint();
 	};
 
+	/**
+	 * Returns an icon component based on the hint's difficulty level.
+	 * @param difficulty The difficulty string.
+	 * @returns A React element representing the icon.
+	 */
 	const getDifficultyIcon = (difficulty: string) => {
 		switch (difficulty) {
 			case 'easy':
@@ -508,7 +485,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 				</DialogHeader>
 
 				<div className="flex-1 flex flex-col space-y-4 overflow-hidden">
-					{/* Score Warning */}
+					{/* Display a warning if the player cannot afford any hints. */}
 					{currentGame && !canAffordAIHint() && !canAffordTextHint() && (
 						<motion.div
 							initial={{ opacity: 0, y: 10 }}
@@ -529,7 +506,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 						</motion.div>
 					)}
 
-					{/* Current Score Display */}
+					{/* Display the player's current score. */}
 					{currentGame && (
 						<div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
 							<div className="flex items-center gap-2">
@@ -542,7 +519,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 						</div>
 					)}
 
-					{/* Hints Display */}
+					{/* This section displays the list of hints that have been purchased. */}
 					{hints.length > 0 && (
 						<motion.div
 							initial={{ opacity: 0 }}
@@ -561,7 +538,6 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 							<div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
 								<AnimatePresence>
 									{hints.map((hintWithCost, index) => {
-										// Handle different hint types
 										const isAIHint = hintWithCost.type === 'ai';
 										const CategoryIcon = isAIHint
 											? categoryIcons[(hintWithCost.hint as SingleHintResponse).category]
@@ -574,7 +550,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 												transition={{ delay: index * 0.1 }}
 												className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex-shrink-0"
 											>
-												<div className="flex items-start justify-between mb-2 flex-wrap gap-2"> {/* Added flex-wrap and gap */}
+												<div className="flex items-start justify-between mb-2 flex-wrap gap-2">
 													<div className="flex items-center gap-2">
 														<div className="w-6 h-6 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
 															<span className="text-xs font-bold text-blue-600 dark:text-blue-400">
@@ -585,27 +561,16 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 															<>
 																<Badge
 																	variant="secondary"
-																	className={`${categoryColors[
-																		(hintWithCost.hint as SingleHintResponse)
-																			.category
-																		]
-																		} text-xs`}
+																	className={`${categoryColors[(hintWithCost.hint as SingleHintResponse).category]} text-xs`}
 																>
 																	<CategoryIcon className="w-3 h-3 mr-1" />
 																	{(hintWithCost.hint as SingleHintResponse).category}
 																</Badge>
 																<Badge
 																	variant="secondary"
-																	className={`${difficultyColors[
-																		(hintWithCost.hint as SingleHintResponse)
-																			.difficulty
-																		]
-																		} text-xs`}
+																	className={`${difficultyColors[(hintWithCost.hint as SingleHintResponse).difficulty]} text-xs`}
 																>
-																	{getDifficultyIcon(
-																		(hintWithCost.hint as SingleHintResponse)
-																			.difficulty
-																	)}
+																	{getDifficultyIcon((hintWithCost.hint as SingleHintResponse).difficulty)}
 																	{(hintWithCost.hint as SingleHintResponse).difficulty}
 																</Badge>
 															</>
@@ -631,20 +596,14 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 												<div className="flex items-center justify-between text-xs text-gray-500">
 													{isAIHint ? (
 														<span>
-															Confidence:{' '}
-															{Math.round(
-																(hintWithCost.hint as SingleHintResponse).confidence *
-																100
-															)}
-															%
+															Confidence: {' '}
+															{Math.round((hintWithCost.hint as SingleHintResponse).confidence * 100)}%
 														</span>
 													) : (
 														<span>
-															Level:{' '}
+															Level: {' '}
 															{(hintWithCost.hint as TextHintResponse).hintLevel}
-															{(hintWithCost.hint as TextHintResponse).isComplete
-																? ' (Complete)'
-																: ''}
+															{(hintWithCost.hint as TextHintResponse).isComplete ? ' (Complete)' : ''}
 														</span>
 													)}
 													<span>
@@ -659,7 +618,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 						</motion.div>
 					)}
 
-					{/* Loading State */}
+					{/* The loading state is shown while waiting for a hint from the AI service. */}
 					{isLoading && (
 						<motion.div
 							initial={{ opacity: 0, scale: 0.95 }}
@@ -683,7 +642,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 						</motion.div>
 					)}
 
-					{/* Error State */}
+					{/* The error state is shown if hint generation fails. */}
 					{error && !isLoading && (
 						<motion.div
 							initial={{ opacity: 0, y: 10 }}
@@ -704,11 +663,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 								variant="outline"
 								size="sm"
 								className="flex items-center gap-2"
-								disabled={
-									(!canAffordAIHint() && !canAffordTextHint()) ||
-									!countryInfo ||
-									isLoading
-								}
+								disabled={(!canAffordAIHint() && !canAffordTextHint()) || !countryInfo || isLoading}
 							>
 								<Sparkles className="w-4 h-4" />
 								Try Again
@@ -716,7 +671,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 						</motion.div>
 					)}
 
-					{/* Get Hint Button */}
+					{/* The main hint generation buttons are displayed when not loading or in an error state. */}
 					{!isLoading && !error && isInitialized && (
 						<motion.div
 							initial={{ opacity: 0 }}
@@ -727,25 +682,12 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 							<div className="space-y-2">
 								<Button
 									onClick={handleGenerateTextHint}
-									disabled={
-										!canAffordTextHint() ||
-										!countryInfo ||
-										!hasMoreTextHints(countryInfo, currentTextHintLevel)
-									}
+									disabled={!canAffordTextHint() || !countryInfo || !hasMoreTextHints(countryInfo, currentTextHintLevel)}
 									variant="outline"
-									className={`w-full ${canAffordTextHint() &&
-											countryInfo &&
-											hasMoreTextHints(countryInfo, currentTextHintLevel)
-											? 'border-purple-300 hover:bg-purple-50 dark:border-purple-600 dark:hover:bg-purple-900/20 text-purple-700 dark:text-purple-300'
-											: 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
-										}`}
+									className={`w-full ${canAffordTextHint() && countryInfo && hasMoreTextHints(countryInfo, currentTextHintLevel) ? 'border-purple-300 hover:bg-purple-50 dark:border-purple-600 dark:hover:bg-purple-900/20 text-purple-700 dark:text-purple-300' : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'}`}
 								>
 									<Lightbulb className="w-4 h-4 mr-2" />
-									{currentTextHintLevel === 0
-										? 'Text Hint: Country Letters (FREE)'
-										: `Text Hint: Reveal Letter (-${getTextHintCost(
-											currentTextHintLevel + 1
-										)} pts)`}
+									{currentTextHintLevel === 0 ? 'Text Hint: Country Letters (FREE)' : `Text Hint: Reveal Letter (-${getTextHintCost(currentTextHintLevel + 1)} pts)`}
 								</Button>
 
 								{countryInfo && !hasMoreTextHints(countryInfo, currentTextHintLevel) && (
@@ -755,14 +697,10 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 								)}
 							</div>
 
-							{/* AI Hint Button */}
 							<Button
 								onClick={handleGenerateAIHint}
 								disabled={!canAffordAIHint() || !countryInfo}
-								className={`w-full ${canAffordAIHint() && countryInfo
-										? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white'
-										: 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
-									}`}
+								className={`w-full ${canAffordAIHint() && countryInfo ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'}`}
 							>
 								<Sparkles className="w-4 h-4 mr-2" />
 								AI Hint #{getNextHintNumber()} (-{AI_HINT_COST} pts)
@@ -795,7 +733,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 						</motion.div>
 					)}
 
-					{/* Service Not Available */}
+					{/* A message shown if the AI service is not available. */}
 					{!isInitialized && !isLoading && !error && (
 						<motion.div
 							initial={{ opacity: 0 }}
