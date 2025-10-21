@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from '@vercel/analytics/next';
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastSystem } from "@/components/toast-provider";
@@ -116,6 +117,7 @@ export default function RootLayout({
         </OrientationLock>
         {/* The `ToastSystem` is a global provider for displaying toast notifications. */}
         <ToastSystem />
+        <Analytics />
       </body>
     </html>
   );
