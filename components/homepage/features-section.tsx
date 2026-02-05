@@ -51,10 +51,10 @@ export function FeaturesSection() {
       >
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 dark:from-gray-100 dark:via-gray-200 dark:to-gray-100 bg-clip-text text-transparent">
-            How It Works
+            How to Play the Geography Guessing Game
           </h2>
           <p className="mt-4 text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            A simple yet challenging game of geographic discovery.
+            Test your world geography knowledge with this location guessing challenge.
           </p>
         </div>
 

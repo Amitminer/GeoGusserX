@@ -27,21 +27,22 @@ const geistMono = Geist_Mono({
  * the appropriate meta tags for SEO and social media sharing.
  */
 export const metadata: Metadata = {
-  title: "GeoGusserX - Explore the World, One Guess at a Time",
-  description: "A modern, production-ready GeoGuessr clone built with Next.js, TypeScript, and Google Maps. Test your geography knowledge by guessing locations from Street View images.",
-  keywords: ["geography", "game", "geoguessr", "maps", "world", "travel", "education"],
-  authors: [{ name: "GeoGusserX Team" }],
-  creator: "GeoGusserX",
-  publisher: "GeoGusserX",
+  title: "GeoGusserX - Geography Game | Guess Locations from Street View",
+  description: "Test your geography skills with GeoGusserX! Guess locations from Street View images across 32 countries and 858+ regions. Play now!",
+  keywords: ["geography game", "geoguessr", "street view game", "location guessing", "world map game", "geography quiz", "travel game", "educational game", "32 countries", "geography challenge"],
+  authors: [{ name: "Amit" }],
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
-    title: "GeoGusserX - Explore the World, One Guess at a Time",
-    description: "Test your geography knowledge with this modern GeoGuessr clone. Guess locations from Street View images and compete for the highest score!",
+    title: "GeoGusserX - Geography Game | Guess Locations from Street View",
+    description: "Test your geography skills with GeoGusserX! Guess locations from Street View images across 32 countries and 858+ regions. Play now!",
     url: "/",
     siteName: "GeoGusserX",
     images: [
@@ -54,13 +55,6 @@ export const metadata: Metadata = {
     ],
     locale: "en_US",
     type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "GeoGusserX - Explore the World, One Guess at a Time",
-    description: "Test your geography knowledge with this modern GeoGuessr clone. Guess locations from Street View images and compete for the highest score!",
-    images: ["/og-image.png"],
-    creator: "@geogusserx",
   },
   robots: {
     index: true,
@@ -106,6 +100,25 @@ export default function RootLayout({
         <link rel="preconnect" href="https://maps.googleapis.com" />
         <link rel="preconnect" href="https://streetviewpixels-pa.googleapis.com" />
         <link rel="dns-prefetch" href="https://maps.gstatic.com" />
+        
+        {/* Schema.org structured data for SEO */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebApplication',
+              name: 'GeoGusserX',
+              description: 'Test your geography skills with GeoGusserX! Guess locations from Street View images across 32 countries and 858+ regions.',
+              url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+              applicationCategory: 'GameApplication',
+              author: {
+                '@type': 'Person',
+                name: 'AmitxD',
+              },
+            }),
+          }}
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

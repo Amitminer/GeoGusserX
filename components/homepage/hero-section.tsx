@@ -39,11 +39,8 @@ export function HeroSection() {
 					</div>
 					<div className="text-left">
 						<h1 className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-transparent tracking-tight">
-							GeoGusserX
+							GeoGusserX - Geography Game
 						</h1>
-						<p className="text-base sm:text-lg lg:text-xl text-gray-600 dark:text-gray-300 font-medium">
-							Explore the world, one guess at a time
-						</p>
 					</div>
 				</motion.div>
 

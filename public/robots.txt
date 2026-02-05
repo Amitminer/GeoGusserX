@@ -1,0 +1,11 @@
+# robots.txt for GeoGusserX
+# Allow all search engines to crawl the site
+
+User-agent: *
+Allow: /
+
+# Disallow crawling of API routes
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://geogusserx.vercel.app/sitemap.xml
