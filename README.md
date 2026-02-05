@@ -4,7 +4,7 @@ A modern **single-player GeoGuessr-inspired game** where you explore real-world 
 
 > ⚠ **Disclaimer**: This is a **side project for fun**, built when I felt like experimenting with maps and APIs. No promises for frequent updates or multiplayer mode—if something breaks or you want a feature, PRs are welcome. I keep things **clean and modular**, so contributing should feel natural.
 
-![Version](https://img.shields.io/badge/version-0.0.7-blue)
+![Version](https://img.shields.io/badge/version-0.2.4-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-15-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-Styled-green)
