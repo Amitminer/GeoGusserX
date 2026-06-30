@@ -1,11 +1,5 @@
 # Simple Dockerfile for GeoGusserX
-FROM node:20-alpine
-
-# Install system dependencies
-RUN apk add --no-cache libc6-compat
-
-# Install pnpm
-RUN npm install -g pnpm
+FROM oven/bun:alpine
 
 # Set working directory
 WORKDIR /app
@@ -15,10 +9,10 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Copy package files
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json bun.lock* ./
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN bun install --frozen-lockfile
 
 # Copy source code
 COPY . .
@@ -28,7 +22,7 @@ RUN chown -R nextjs:nodejs /app
 USER nextjs
 
 # Build the application
-RUN pnpm build
+RUN bun run build
 
 # Expose port
 EXPOSE 3000
@@ -39,4 +33,4 @@ ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
 # Start the application
-CMD ["pnpm", "start"]
+CMD ["bun", "start"]

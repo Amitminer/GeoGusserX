@@ -22,11 +22,13 @@ function ResultsMapComponent({ actualLocation, guessedLocation }: ResultsMapProp
   const [error, setError] = useState<string | null>(null);
 
   // Debug logging to track what locations the results map receives
-  logger.info('🗺️ ResultsMap received locations', {
-    actualLocation,
-    guessedLocation,
-    timestamp: Date.now()
-  }, 'ResultsMap');
+  useEffect(() => {
+    logger.info('🗺️ ResultsMap received locations', {
+      actualLocation,
+      guessedLocation,
+      timestamp: Date.now()
+    }, 'ResultsMap');
+  }, [actualLocation, guessedLocation]);
 
   // Memoize location key to prevent unnecessary re-renders
   const locationKey = useMemo(() => 

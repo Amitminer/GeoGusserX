@@ -85,9 +85,11 @@ export function CountrySelection({ countrySettings, onSettingsChange }: CountryS
 	 */
 	useEffect(() => {
 		if (isOpen) {
-			setSearchTerm('');
-			setSelectedCountry(null);
-			setShowRegions(false);
+			queueMicrotask(() => {
+				setSearchTerm('');
+				setSelectedCountry(null);
+				setShowRegions(false);
+			});
 			if (window.innerWidth > 768) {
 				requestAnimationFrame(() => {
 					searchInputRef.current?.focus();
@@ -100,7 +102,9 @@ export function CountrySelection({ countrySettings, onSettingsChange }: CountryS
 	 * Clears the search term when switching between the country and region views.
 	 */
 	useEffect(() => {
-		setSearchTerm('');
+		queueMicrotask(() => {
+			setSearchTerm('');
+		});
 	}, [showRegions]);
 
 	/**

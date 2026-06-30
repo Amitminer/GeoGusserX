@@ -37,6 +37,7 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange, on
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [countryInfo, setCountryInfo] = useState<GeocodeResult | null>(null);
+	const [panoramaInstance, setPanoramaInstance] = useState<google.maps.StreetViewPanorama | null>(null);
 	const { setStreetViewLoaded, gameSettings, showGameComplete } = useGameStore();
 
 	useEffect(() => {
@@ -54,6 +55,7 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange, on
 			if (panoramaRef.current) {
 				google.maps.event.clearInstanceListeners(panoramaRef.current);
 				panoramaRef.current = null;
+				setPanoramaInstance(null);
 			}
 
 			try {
@@ -76,6 +78,7 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange, on
 				}
 
 				panoramaRef.current = panorama;
+				setPanoramaInstance(panorama);
 
 				// These listeners notify the parent component of any changes to the panorama's state.
 				panorama.addListener('position_changed', () => {
@@ -297,7 +300,7 @@ export function StreetView({ location, onLocationChange, onCountryInfoChange, on
 
 			{!isLoading && !error && (
 				<StreetViewControls
-					panorama={panoramaRef.current}
+					panorama={panoramaInstance}
 					showControls={true}
 					onSkipRound={onSkipRound}
 				/>

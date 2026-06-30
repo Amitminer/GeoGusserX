@@ -96,7 +96,7 @@ show_help() {
     echo "  ./scripts/benchmark/benchmark.sh --help     # Show this help"
     echo ""
     echo -e "${BOLD}SYSTEM REQUIREMENTS:${NC}"
-    echo -e "  ${CYAN}•${NC} Node.js 20+ with pnpm or bun"
+    echo -e "  ${CYAN}•${NC} Bun (or Node.js 20+)"
     echo -e "  ${CYAN}•${NC} At least 4GB RAM (8GB+ recommended for extreme modes)"
     echo -e "  ${CYAN}•${NC} Good CPU cooling (especially for nuclear/extreme/godmode)"
     echo -e "  ${CYAN}•${NC} Sufficient disk space for log files"
@@ -149,9 +149,9 @@ validate_requirements() {
         missing_deps+=("Node.js")
     fi
     
-    # Check for npm or pnpm or bun
-    if ! command -v npm >/dev/null 2>&1 && ! command -v pnpm >/dev/null 2>&1 && ! command -v bun >/dev/null 2>&1; then
-        missing_deps+=("npm/pnpm/bun")
+    # Check for bun or npm
+    if ! command -v bun >/dev/null 2>&1 && ! command -v npm >/dev/null 2>&1; then
+        missing_deps+=("bun/npm")
     fi
     
     # Check if package.json exists

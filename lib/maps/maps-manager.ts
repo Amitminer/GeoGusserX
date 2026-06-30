@@ -1,4 +1,4 @@
-import { Loader } from '@googlemaps/js-api-loader';
+import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 import type { Location, StreetViewLocation } from './types';
 import { logger } from '../logger';
 import { StreetViewService } from './street-view';
@@ -11,7 +11,6 @@ import { GeocodingService } from './geocoding';
  * and provides a centralized point of access to these services.
  */
 export class MapsManager {
-  private loader: Loader | null = null;
   private isLoaded = false;
   private mapId: string | null = null;
   private streetViewService: StreetViewService | null = null;
@@ -27,16 +26,19 @@ export class MapsManager {
       return;
     }
 
-    if (!this.mapId) {
-      logger.error('Google Maps Map ID not found. Map ID is required for Advanced Markers. Please set NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID in your environment variables.', undefined, 'MapsManager');
-      throw new Error('Google Maps Map ID is required. Please set NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID in your environment variables.');
-    }
+    if (typeof window !== 'undefined') {
+      if (!this.mapId) {
+        logger.error('Google Maps Map ID not found. Map ID is required for Advanced Markers. Please set NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID in your environment variables.', undefined, 'MapsManager');
+        throw new Error('Google Maps Map ID is required. Please set NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID in your environment variables.');
+      }
 
-    this.loader = new Loader({
-      apiKey,
-      version: 'weekly',
-      libraries: ['geometry', 'places', 'marker']
-    });
+      setOptions({
+        key: apiKey,
+        v: 'weekly',
+        libraries: ['geometry', 'places', 'marker'],
+        mapIds: [this.mapId]
+      });
+    }
   }
 
   /**
@@ -44,14 +46,15 @@ export class MapsManager {
    * This method should be called before any other methods of the `MapsManager` are used.
    */
   async initialize(): Promise<void> {
-    if (this.isLoaded || !this.loader) return;
+    if (typeof window === 'undefined') return;
+    if (this.isLoaded) return;
 
     logger.startTimer('maps-api-init');
     try {
-      await this.loader.importLibrary('maps');
-      await this.loader.importLibrary('geometry');
-      await this.loader.importLibrary('places');
-      await this.loader.importLibrary('marker');
+      await importLibrary('maps');
+      await importLibrary('geometry');
+      await importLibrary('places');
+      await importLibrary('marker');
       
       this.streetViewService = new StreetViewService();
       this.mapFactory = new MapFactory(this.mapId);

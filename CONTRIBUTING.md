@@ -6,7 +6,7 @@ Thanks for wanting to contribute! This is a fun side project, so let's keep it s
 
 ### What you need
 - Node.js 18+
-- pnpm (or npm if you prefer)
+- Bun (recommended) or Node.js
 - Google Maps API key for testing
 
 ### Setup
@@ -19,7 +19,7 @@ Thanks for wanting to contribute! This is a fun side project, so let's keep it s
 
 2. **Install stuff**
    ```bash
-   pnpm install
+   bun install
    ```
 
 3. **Environment setup**
@@ -30,7 +30,7 @@ Thanks for wanting to contribute! This is a fun side project, so let's keep it s
 
 4. **Start developing**
    ```bash
-   pnpm dev
+   bun dev
    ```
 
 ## 📝 Code Guidelines
@@ -44,11 +44,11 @@ Keep it simple:
 ## 🔧 Available Commands
 
 ```bash
-pnpm dev          # Start development server
-pnpm build        # Build for production
-pnpm start        # Start production server
-pnpm lint         # Check code style
-pnpm lint:fix     # Fix code style issues
+bun dev          # Start development server
+bun run build    # Build for production
+bun start        # Start production server
+bun run lint     # Check code style
+bun run lint:fix # Fix code style issues
 ```
 
 ## 🐛 Found a Bug?
@@ -64,7 +64,7 @@ Just create an issue with:
 1. Fork the repo
 2. Create a branch: `git checkout -b cool-feature`
 3. Make your changes
-4. Test it works: `pnpm build`
+4. Test it works: `bun run build`
 5. Push and create a PR
 
 ## 📁 Project Structure

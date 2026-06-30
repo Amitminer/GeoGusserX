@@ -105,27 +105,29 @@ export default function PlayPage() {
 	 * from the `useGameStore` and setting the appropriate screen to be displayed.
 	 */
 	useEffect(() => {
-		if (!currentGame) {
-			setScreen('no-game');
-			return;
-		}
+		queueMicrotask(() => {
+			if (!currentGame) {
+				setScreen('no-game');
+				return;
+			}
 
-		if (showGameComplete) {
-			setScreen('complete');
-			return;
-		}
+			if (showGameComplete) {
+				setScreen('complete');
+				return;
+			}
 
-		if (showResults) {
-			setScreen('results');
-			return;
-		}
+			if (showResults) {
+				setScreen('results');
+				return;
+			}
 
-		if (isLoading) {
-			setScreen('loading');
-			return;
-		}
+			if (isLoading) {
+				setScreen('loading');
+				return;
+			}
 
-		setScreen('playing');
+			setScreen('playing');
+		});
 	}, [currentGame, showGameComplete, showResults, isLoading, router]);
 
 	const targetCountry = countrySettings.isRandomCountry ? undefined : countrySettings.targetCountry;
@@ -163,11 +165,13 @@ export default function PlayPage() {
 		}
 
 		if (currentRound.actualLocation.lat !== 0 || currentRound.actualLocation.lng !== 0) {
-			setCurrentLocation({
-				location: currentRound.actualLocation,
-				heading: Math.random() * 360,
-				pitch: -10 + Math.random() * 20,
-				zoom: 1
+			queueMicrotask(() => {
+				setCurrentLocation({
+					location: currentRound.actualLocation,
+					heading: Math.random() * 360,
+					pitch: -10 + Math.random() * 20,
+					zoom: 1
+				});
 			});
 			return;
 		}

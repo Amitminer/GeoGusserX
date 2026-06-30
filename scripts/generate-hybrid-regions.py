@@ -1039,7 +1039,7 @@ def main():
         print("\n\033[1;34m💡 To use:\033[0m")
         print("\033[0;34m1. Update import in regions.ts:\033[0m")
         print("\033[0;34m   import regionsData from './regions_comprehensive.json';\033[0m")
-        print("\033[0;34m2. Restart: pnpm dev\033[0m")
+        print("\033[0;34m2. Restart: bun dev\033[0m")
 
         print("\n\033[1;32m🎮 Your jungle bias is SOLVED!\033[0m")
         print("\033[0;32m   ✅ Landmark targeting (museums, monuments, stations)\033[0m")

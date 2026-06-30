@@ -80,7 +80,9 @@ export default function ConfigPage() {
    */
   useEffect(() => {
     if (gameSettings.preferredGameMode && selectedMode !== gameSettings.preferredGameMode) {
-      setSelectedMode(gameSettings.preferredGameMode);
+      queueMicrotask(() => {
+        setSelectedMode(gameSettings.preferredGameMode);
+      });
     }
   }, [gameSettings.preferredGameMode, selectedMode]);
 

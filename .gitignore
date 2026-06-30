@@ -39,7 +39,7 @@ scripts/benchmark/extreme_benchmark_logs.txt
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
+bun-debug.log*
 
 # env files (can opt-in for committing if needed)
 .env

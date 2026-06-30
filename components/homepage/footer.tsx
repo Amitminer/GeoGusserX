@@ -10,13 +10,15 @@ import { SiGithub } from "react-icons/si";
  * It includes a link to the project's GitHub repository and a copyright notice.
  */
 export function Footer() {
-  const [currentYear, setCurrentYear] = useState<number>(new Date().getFullYear());
+  const [currentYear, setCurrentYear] = useState<number | null>(null);
 
   /**
    * This effect ensures that the current year is up-to-date.
    */
   useEffect(() => {
-    setCurrentYear(new Date().getFullYear());
+    queueMicrotask(() => {
+      setCurrentYear(new Date().getFullYear());
+    });
   }, []);
 
   return (
@@ -91,7 +93,7 @@ export function Footer() {
 
           {/* The copyright notice, which automatically updates to the current year. */}
           <div className="pt-2 text-gray-500 font-semibold text-sm sm:text-base">
-            © {currentYear} GeoGusserX · A fun geography game 🌍
+            © {currentYear || 2026} GeoGusserX · A fun geography game 🌍
           </div>
         </div>
       </div>
