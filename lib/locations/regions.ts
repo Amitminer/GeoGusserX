@@ -341,7 +341,3 @@ export function getRegionsByCountryOptimized(countryName: string): GeographicReg
 export function getRandomRegion(): GeographicRegion {
 	return regionManager.getRandomRegionWithLibrary();
 }
-
-
-/** The singleton instance of the `RegionManager`, exported for advanced usage. */
-export const regionManagerInstance = regionManager;
