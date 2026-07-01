@@ -51,15 +51,7 @@ export function secureRandomInt(min: number, max: number): number {
 	return Math.floor(secureRandom() * range) + min;
 }
 
-/**
- * Generates a cryptographically secure random floating-point number between a given minimum and maximum.
- * @param min The minimum value of the range.
- * @param max The maximum value of the range.
- * @returns A random float within the specified range.
- */
-export function secureRandomFloat(min: number, max: number): number {
-	return secureRandom() * (max - min) + min;
-}
+
 
 /**
  * Generates multiple random number candidates and returns the one with the best distribution.

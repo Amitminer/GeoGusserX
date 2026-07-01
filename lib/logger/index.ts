@@ -450,4 +450,3 @@ Log File: ${this.logFilePath}`;
  */
 export const logger = new Logger();
 
-export type { LogLevel, LogEntry, PerformanceStats };

@@ -10,7 +10,6 @@ import {
   generateEntropySeed
 } from './crypto';
 import {
-  regionManagerInstance,
   getRegionsByCountryOptimized,
   getRandomRegion
 } from './regions';
@@ -18,7 +17,7 @@ import {
 /**
  * Validate if coordinates are within valid ranges
  */
-export function isValidCoordinate(lat: number, lng: number): boolean {
+function isValidCoordinate(lat: number, lng: number): boolean {
   if (lat < -90 || lat > 90) return false;
   if (lng < -180 || lng > 180) return false;
   if (!isFinite(lat) || !isFinite(lng)) return false;
@@ -170,7 +169,7 @@ function generateScatteredLocation(region: GeographicRegion): Location {
  * @param maxAttempts The maximum number of times to try generating a valid location.
  * @returns A random location within the region.
  */
-export function generateLocationInRegion(
+function generateLocationInRegion(
   region: GeographicRegion,
   strategy: DistributionStrategy = DistributionStrategy.UNIFORM,
   maxAttempts: number = 15
@@ -386,34 +385,4 @@ export function generateLocationByCountry(countryName: string, maxAttempts: numb
   };
 }
 
-/**
- * Benchmarks the performance of the location generation functions.
- * This is a developer utility for testing and optimization purposes.
- * @param iterations The number of iterations to run for each benchmark.
- */
-export function benchmarkLocationGeneration(iterations: number = 1000) {
-  logger.info(`Benchmarking location generation with ${iterations} iterations`, undefined, 'LocationBenchmark');
-  
-  // Benchmark random location generation
-  const start1 = performance.now();
-  for (let i = 0; i < iterations; i++) {
-    generateRandomLocation();
-  }
-  const time1 = performance.now() - start1;
 
-  // Benchmark country-specific generation
-  const start2 = performance.now();
-  for (let i = 0; i < iterations; i++) {
-    generateLocationByCountry('India');
-  }
-  const time2 = performance.now() - start2;
-
-  logger.info(`Random Generation: ${time1.toFixed(2)}ms (${(iterations/time1*1000).toFixed(0)} ops/sec)`, undefined, 'LocationBenchmark');
-  logger.info(`Country Generation: ${time2.toFixed(2)}ms (${(iterations/time2*1000).toFixed(0)} ops/sec)`, undefined, 'LocationBenchmark');
-  
-  // Show region manager stats
-  logger.info('Region Manager Stats', regionManagerInstance.getStats(), 'LocationBenchmark');
-}
-
-// Export distribution strategies for external use
-export { DistributionStrategy };

@@ -105,27 +105,29 @@ export default function PlayPage() {
 	 * from the `useGameStore` and setting the appropriate screen to be displayed.
 	 */
 	useEffect(() => {
-		if (!currentGame) {
-			setScreen('no-game');
-			return;
-		}
+		queueMicrotask(() => {
+			if (!currentGame) {
+				setScreen('no-game');
+				return;
+			}
 
-		if (showGameComplete) {
-			setScreen('complete');
-			return;
-		}
+			if (showGameComplete) {
+				setScreen('complete');
+				return;
+			}
 
-		if (showResults) {
-			setScreen('results');
-			return;
-		}
+			if (showResults) {
+				setScreen('results');
+				return;
+			}
 
-		if (isLoading) {
-			setScreen('loading');
-			return;
-		}
+			if (isLoading) {
+				setScreen('loading');
+				return;
+			}
 
-		setScreen('playing');
+			setScreen('playing');
+		});
 	}, [currentGame, showGameComplete, showResults, isLoading, router]);
 
 	const targetCountry = countrySettings.isRandomCountry ? undefined : countrySettings.targetCountry;
@@ -163,11 +165,13 @@ export default function PlayPage() {
 		}
 
 		if (currentRound.actualLocation.lat !== 0 || currentRound.actualLocation.lng !== 0) {
-			setCurrentLocation({
-				location: currentRound.actualLocation,
-				heading: Math.random() * 360,
-				pitch: -10 + Math.random() * 20,
-				zoom: 1
+			queueMicrotask(() => {
+				setCurrentLocation({
+					location: currentRound.actualLocation,
+					heading: Math.random() * 360,
+					pitch: -10 + Math.random() * 20,
+					zoom: 1
+				});
 			});
 			return;
 		}
@@ -265,7 +269,7 @@ export default function PlayPage() {
 
 	if (error) {
 		return (
-			<div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+			<div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
 				<div className="text-center max-w-md mx-auto p-6">
 					<AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
 					<h2 className="text-2xl font-bold mb-4 text-red-600">Something went wrong</h2>
@@ -320,7 +324,7 @@ export default function PlayPage() {
 				{screen === 'no-game' && (
 					<PageTransition
 						key="no-game"
-						className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center"
+						className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center"
 					>
 						<div className="text-center max-w-md mx-auto p-6">
 							<Home className="w-16 h-16 text-blue-500 mx-auto mb-4" />
@@ -330,7 +334,7 @@ export default function PlayPage() {
 							</p>
 							<Button
 								onClick={() => router.push('/')}
-								className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+								className="bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-md hover:shadow-lg rounded-xl"
 							>
 								Go to Homepage
 							</Button>

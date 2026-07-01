@@ -10,13 +10,15 @@ import { SiGithub } from "react-icons/si";
  * It includes a link to the project's GitHub repository and a copyright notice.
  */
 export function Footer() {
-  const [currentYear, setCurrentYear] = useState<number>(new Date().getFullYear());
+  const [currentYear, setCurrentYear] = useState<number | null>(null);
 
   /**
    * This effect ensures that the current year is up-to-date.
    */
   useEffect(() => {
-    setCurrentYear(new Date().getFullYear());
+    queueMicrotask(() => {
+      setCurrentYear(new Date().getFullYear());
+    });
   }, []);
 
   return (
@@ -26,8 +28,6 @@ export function Footer() {
         <div className="absolute bottom-0 left-1/4 w-64 h-32 bg-purple-600/5 rounded-full blur-2xl"></div>
         <div className="absolute bottom-0 right-1/4 w-48 h-24 bg-cyan-600/5 rounded-full blur-2xl"></div>
       </div>
-
-      <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-purple-500 via-cyan-500 to-pink-500 opacity-60"></div>
 
       <div className="container mx-auto relative z-10">
         {/* Internal navigation links for SEO */}
@@ -51,14 +51,6 @@ export function Footer() {
             className="text-gray-400 hover:text-cyan-400 transition-colors duration-300 font-medium"
           >
             About
-          </Link>
-          <Link 
-            href="https://github.com/Amitminer/GeoGusserX/blob/main/CONTRIBUTING.md" 
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-400 hover:text-cyan-400 transition-colors duration-300 font-medium"
-          >
-            Contribute
           </Link>
         </div>
 
@@ -91,7 +83,7 @@ export function Footer() {
 
           {/* The copyright notice, which automatically updates to the current year. */}
           <div className="pt-2 text-gray-500 font-semibold text-sm sm:text-base">
-            © {currentYear} GeoGusserX · A fun geography game 🌍
+            © {currentYear || 2026} GeoGusserX · A fun geography game 🌍
           </div>
         </div>
       </div>

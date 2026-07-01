@@ -106,7 +106,7 @@ export function MapFooter({ guessLocation, disabled, onMakeGuess, onClearGuess }
 										<Button
 											onClick={onMakeGuess}
 											size="sm"
-											className="h-8 md:h-9 px-4 md:px-6 text-xs md:text-sm bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-1.5"
+											className="h-8 md:h-9 px-4 md:px-6 text-xs md:text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-1.5"
 										>
 											<MapPin className="w-3 h-3 md:w-3.5 md:h-3.5" />
 											Submit

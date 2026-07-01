@@ -1,19 +1,13 @@
 # 🌍 **GeoGusserX**
 
-A modern **single-player GeoGuessr-inspired game** where you explore real-world locations via Street View and guess where you are.
-
-> ⚠ **Disclaimer**: This is a **side project for fun**, built when I felt like experimenting with maps and APIs. No promises for frequent updates or multiplayer mode—if something breaks or you want a feature, PRs are welcome. I keep things **clean and modular**, so contributing should feel natural.
-
-![Version](https://img.shields.io/badge/version-0.2.4-blue)
-![Next.js](https://img.shields.io/badge/Next.js-15-black)
-![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue)
-![TailwindCSS](https://img.shields.io/badge/TailwindCSS-Styled-green)
+GeoGusserX is a modern, single-player geography guessing game built with Next.js and Google Maps Street View. Explore random global locations, analyze your surroundings, and make guesses on an interactive map.
 
 ---
 
 ## 🔗 **Live Demo**
 
-You can play the live version here: **[GeoGusserX Live](https://geogusserx.vercel.app)**
+> [!WARNING]
+> **Demo Offline**: The live version is currently disabled because Google Maps API keys have been deactivated (billing limits). If you want to play, please set up and run the project locally using your own keys.
 
 ---
 
@@ -48,13 +42,7 @@ You can play the live version here: **[GeoGusserX Live](https://geogusserx.verce
 
 </div>
 
----
 
-## ❓ **What is GeoGusserX?**
-
-Drop into a **random Street View** location anywhere on Earth and guess your position by clicking on the map. **Closer = more points.** Simple, addictive, and challenging.
-
----
 
 ## ✅ **Features**
 
@@ -70,44 +58,38 @@ Drop into a **random Street View** location anywhere on Earth and guess your pos
 | 💾 **PWA Support** | Install & play as a standalone app |
 | ⚡ **Fast Gameplay** | Minimal load times, smooth transitions |
 
----
+## ⚙️ **Setup and Installation**
 
-## ⚡ **Quick Start**
+### Prerequisites
+* **Bun** runtime installed (refer to the [Bun installation guide](https://bun.sh)).
+* A Google Cloud Project with the **Maps JavaScript API** and **Street View Static API** enabled.
+* A Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
 
-### 1. **Get API Keys**
+### Installation
 
-**Google Maps API:**
-* Enable: Maps **JavaScript API**, **Street View Static API**
-* Create: API Key & Map ID
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Amitminer/GeoGusserX.git
+   cd GeoGusserX
+   ```
 
-**Google Gemini API (for AI hints):**
-* Get your free API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
-* Add to `.env.local` as `GEMINI_API_KEY`
+2. **Install dependencies:**
+   ```bash
+   bun install
+   ```
 
-### 2. **Setup the project**
+3. **Configure environment variables:**
+   Copy the example environment file and fill in your API credentials:
+   ```bash
+   cp .env.local.example .env.local
+   ```
 
-```bash
-git clone https://github.com/Amitminer/GeoGusserX.git
-cd GeoGusserX
-npm install
-```
+4. **Start the development server:**
+   ```bash
+   bun run dev
+   ```
 
-### 3. **Add credentials**
-
-```bash
-cp .env.local.example .env.local
-# Add your API keys in .env.local:
-# - Google Maps API key & Map ID
-# - Google Gemini API key (for AI hints)
-```
-
-### 4. **Run locally**
-
-```bash
-npm run dev
-```
-
-Open **[http://localhost:3000](http://localhost:3000)**
+Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 
 ---
 
@@ -125,7 +107,7 @@ Open **[http://localhost:3000](http://localhost:3000)**
 - **Powered by:** Google Gemini AI
 - **Strategic hints** about geography, culture, architecture, and more
 - **Smart analysis** of your current Street View location
-- **Use wisely** - hints cost points but can save you from terrible guesses!
+- **Strategic utilization:** Hints subtract from the overall round score but assist in identifying hard-to-locate areas.
 
 ---
 
@@ -153,23 +135,6 @@ docker run -p 3000:3000 -e NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_key geogusserx
 
 ---
 
-## 🤝 **Contributing**
-
-I like **clean, modular, and maintainable** code. If you share the same values, you’re welcome here.
-
-**Steps:**
-
-```bash
-git checkout -b feature-name
-# Make changes
-git push origin feature-name
-# Open a PR
-```
-
-📜 Check [CONTRIBUTING.md](CONTRIBUTING.md) for code standards & guidelines.
-
----
-
 ## 🛠 **Tech Stack**
 
 * **Frontend:** Next.js (App Router), TypeScript, TailwindCSS
@@ -187,18 +152,5 @@ git push origin feature-name
 ## 📜 **License**
 
 MIT – Free to use, modify, and share.
-
----
-
-<div align="center">
-
-⭐ **Star this repo** if you like the concept!
-🐞 **Issues & PRs welcome**
-
-**Made with** ❤️ **by AmitxD**
-
-[Star on GitHub](https://github.com/Amitminer/GeoGusserX) • [Report Issues](https://github.com/Amitminer/GeoGusserX/issues)
-
-</div>
 
 ---

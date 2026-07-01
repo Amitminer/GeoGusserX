@@ -48,6 +48,13 @@ import {
 } from 'lucide-react';
 
 /**
+ * Helper to retrieve a timestamp. Defined outside the component to comply with React Compiler purity checks.
+ */
+function getImpureTimestamp(): number {
+	return Date.now();
+}
+
+/**
  * Props for the `HintsDialog` component.
  */
 interface HintsDialogProps {
@@ -152,11 +159,13 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 		requestIdRef.current += 1;
 		currentLocationRef.current = location;
 
-		setHints([]);
-		setTotalCost(0);
-		setCurrentTextHintLevel(0);
-		setError(null);
-		setIsLoading(false);
+		queueMicrotask(() => {
+			setHints([]);
+			setTotalCost(0);
+			setCurrentTextHintLevel(0);
+			setError(null);
+			setIsLoading(false);
+		});
 	}, [location]);
 
 	/**
@@ -197,7 +206,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 	/**
 	 * Generates and purchases a text-based hint, which reveals letters of the country name.
 	 */
-	const generateTextHint = async () => {
+	const handleGenerateTextHintAction = async () => {
 		if (!currentGame || !canAffordTextHint()) return;
 
 		if (!countryInfo || !canGenerateTextHint(countryInfo)) {
@@ -229,7 +238,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 			const newHint: HintWithCost = {
 				hint: textHintResponse,
 				cost,
-				timestamp: Date.now(),
+				timestamp: getImpureTimestamp(),
 				type: 'text'
 			};
 
@@ -252,7 +261,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 	 * to handle race conditions, stale state, and network errors by using an AbortController
 	 * and request IDs.
 	 */
-	const generateAIHint = async () => {
+	const handleGenerateAIHintAction = async () => {
 		if (!currentGame || !isInitialized || !canAffordAIHint()) return;
 
 		if (!countryInfo) {
@@ -316,7 +325,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 			const newHint: HintWithCost = {
 				hint: response,
 				cost: AI_HINT_COST,
-				timestamp: Date.now(),
+				timestamp: getImpureTimestamp(),
 				type: 'ai'
 			};
 
@@ -381,7 +390,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 		}
 
 		setError(null);
-		generateAIHint();
+		handleGenerateAIHintAction();
 	};
 
 	/**
@@ -395,7 +404,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 			abortControllerRef.current = null;
 		}
 
-		generateAIHint();
+		handleGenerateAIHintAction();
 	};
 
 	/**
@@ -404,7 +413,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 	const handleGenerateTextHint = () => {
 		if (!currentGame || !canAffordTextHint() || !countryInfo) return;
 
-		generateTextHint();
+		handleGenerateTextHintAction();
 	};
 
 	/**
@@ -693,7 +702,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 							<Button
 								onClick={handleGenerateAIHint}
 								disabled={!canAffordAIHint() || !countryInfo}
-								className={`w-full ${canAffordAIHint() && countryInfo ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'}`}
+								className={`w-full ${canAffordAIHint() && countryInfo ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'}`}
 							>
 								<Sparkles className="w-4 h-4 mr-2" />
 								AI Hint #{getNextHintNumber()} (-{AI_HINT_COST} pts)

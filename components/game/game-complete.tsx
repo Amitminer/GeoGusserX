@@ -99,7 +99,7 @@ function GameCompleteComponent({ gameState, onBackToMenu }: { gameState: GameSta
 		<motion.div
 			initial={{ opacity: 0 }}
 			animate={{ opacity: 1 }}
-			className="fixed inset-0 bg-gradient-to-br from-blue-50/95 via-white/90 to-purple-50/95 dark:from-gray-900/95 dark:via-gray-800/90 dark:to-gray-900/95 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 z-50 overflow-y-auto"
+			className="fixed inset-0 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 z-50 overflow-y-auto"
 		>
 			<motion.div
 				initial={{ scale: 0.95, y: 20, opacity: 0 }}
@@ -108,7 +108,7 @@ function GameCompleteComponent({ gameState, onBackToMenu }: { gameState: GameSta
 				className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-white/20 dark:border-gray-700/30 rounded-3xl shadow-2xl max-w-5xl w-full min-h-[80vh] max-h-[90vh] my-4 overflow-y-auto"
 			>
 				{/* The header section of the game complete screen. */}
-				<div className="bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 text-white p-4 sm:p-6 lg:p-8 text-center rounded-t-3xl">
+				<div className="bg-blue-600 text-white p-4 sm:p-6 lg:p-8 text-center rounded-t-3xl">
 					<div className="text-3xl sm:text-4xl lg:text-5xl mb-3 sm:mb-4">
 						{gameStats.rating.emoji}
 					</div>
@@ -121,7 +121,7 @@ function GameCompleteComponent({ gameState, onBackToMenu }: { gameState: GameSta
 				<div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
 					{/* The player's final score. */}
 					<div className="text-center">
-						<div className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+						<div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">
 							{formatScore(gameState.totalScore)}
 						</div>
 						<div className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">Total Score</div>
@@ -271,7 +271,7 @@ function GameCompleteComponent({ gameState, onBackToMenu }: { gameState: GameSta
 
 						<Button
 							onClick={() => router.push('/config')}
-							className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white flex items-center gap-2 w-full sm:w-auto px-6 py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl"
+							className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 w-full sm:w-auto px-6 py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl"
 						>
 							<RotateCcw className="w-4 h-4" />
 							New Game

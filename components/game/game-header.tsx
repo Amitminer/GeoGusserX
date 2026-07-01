@@ -54,10 +54,10 @@ export function GameHeader({ onEndGame, onSkipRound, currentLocation, countryInf
 							whileTap={{ scale: 0.95 }}
 							className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0"
 						>
-							<div className="w-6 h-6 sm:w-7 sm:h-7 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-lg flex items-center justify-center shadow-lg">
+							<div className="w-6 h-6 sm:w-7 sm:h-7 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg">
 								<MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
 							</div>
-							<span className="text-sm sm:text-lg font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent whitespace-nowrap">
+							<span className="text-sm sm:text-lg font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
 								GeoGusserX
 							</span>
 						</motion.div>
@@ -195,13 +195,13 @@ export function GameHeader({ onEndGame, onSkipRound, currentLocation, countryInf
 					<div className="relative h-2">
 						<div className="absolute inset-0 bg-gray-200/60 dark:bg-gray-700/60"></div>
 						<motion.div
-							className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"
+							className="absolute inset-y-0 left-0 bg-blue-600"
 							initial={{ width: 0 }}
 							animate={{ width: `${progress}%` }}
 							transition={{ duration: 0.8, ease: "easeOut" }}
 						/>
 						<motion.div
-							className="absolute inset-0 bg-gradient-to-r from-blue-400/20 via-purple-400/20 to-pink-400/20"
+							className="absolute inset-0 bg-blue-500/10"
 							animate={{ opacity: [0.3, 0.6, 0.3] }}
 							transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
 						/>

@@ -49,14 +49,3 @@ export interface TextHintResponse {
   isComplete: boolean;
 }
 
-/**
- * Defines the essential context about a location, used for generating relevant hints.
- */
-export interface LocationContext {
-  /** The name of the country. */
-  country: string;
-  /** The ISO 3166-1 alpha-2 country code. */
-  countryCode: string;
-  /** A human-readable, formatted address string for the location. */
-  formattedAddress: string;
-}

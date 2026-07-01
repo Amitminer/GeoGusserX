@@ -27,11 +27,3 @@ export function PageLayout({ children, className = '', background = 'default' }:
     </motion.div>
   );
 }
-
-export function Container({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`container mx-auto px-4 py-6 sm:py-8 ${className}`}>
-      {children}
-    </div>
-  );
-}

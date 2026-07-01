@@ -65,16 +65,12 @@ export function EndGameDialog({ onEndGame, disabled = false }: EndGameDialogProp
         </motion.div>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-md bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border border-gray-200/50 dark:border-gray-700/50">
+      <DialogContent className="sm:max-w-md bg-white dark:bg-gray-950 border border-gray-200/50 dark:border-gray-700/50 shadow-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <motion.div
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="w-6 h-6 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center"
-            >
+            <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
               <AlertTriangle className="w-3 h-3 text-white" />
-            </motion.div>
+            </div>
             End Current Game?
           </DialogTitle>
           <DialogDescription className="text-gray-600 dark:text-gray-300">
@@ -106,7 +102,7 @@ export function EndGameDialog({ onEndGame, disabled = false }: EndGameDialogProp
           >
             <Button
               onClick={handleConfirmEndGame}
-              className="w-full flex items-center gap-2 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white"
+              className="w-full flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white"
             >
               <Home className="w-4 h-4" />
               End Game
