@@ -25,15 +25,15 @@ export function CTASection() {
           <div className="absolute inset-0 bg-gradient-to-br from-white/90 via-white/80 to-white/70 dark:from-gray-800/90 dark:via-gray-800/80 dark:to-gray-800/70 rounded-3xl border border-white/30 dark:border-gray-700/40 shadow-xl"></div>
           
           {/* Decorative background elements that add a touch of color and depth. */}
-          <div className="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-blue-400/15 to-purple-400/15 rounded-full blur-xl opacity-60"></div>
-          <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-gradient-to-br from-purple-400/15 to-pink-400/15 rounded-full blur-xl opacity-60"></div>
+          <div className="absolute -top-4 -right-4 w-24 h-24 bg-blue-500/5 rounded-full blur-xl opacity-60"></div>
+          <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-purple-500/5 rounded-full blur-xl opacity-60"></div>
           
           <div className="relative p-8 sm:p-12 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 mb-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg">
+            <div className="inline-flex items-center justify-center w-16 h-16 mb-6 bg-indigo-600 rounded-2xl shadow-lg">
               <Globe className="w-8 h-8 text-white" />
             </div>
             
-            <h2 className="mb-4 text-3xl sm:text-4xl font-bold bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 dark:from-gray-100 dark:via-gray-200 dark:to-gray-100 bg-clip-text text-transparent">
+            <h2 className="mb-4 text-3xl sm:text-4xl font-bold text-gray-800 dark:text-gray-100">
               Ready to Explore the World?
             </h2>
             
@@ -46,7 +46,7 @@ export function CTASection() {
               <Link href="/config">
                 <Button 
                   size="lg" 
-                  className="group bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl"
+                  className="group bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl"
                 >
                   <Play className="w-5 h-5 mr-3 transition-transform group-hover:scale-110" />
                   Start Your Adventure

@@ -122,7 +122,7 @@ export function getTextHintCost(hintLevel: number = 1): number {
 /**
  * Gets the maximum number of text hints available for a country
  */
-export function getMaxTextHints(countryInfo: GeocodeResult | null): number {
+function getMaxTextHints(countryInfo: GeocodeResult | null): number {
   if (!countryInfo || !countryInfo.country) return 0;
   
   const countryName = countryInfo.country.toUpperCase();

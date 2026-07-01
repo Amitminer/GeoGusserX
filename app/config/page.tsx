@@ -23,7 +23,7 @@ const gameModes = [
     description: 'Perfect for a swift geographic adventure during breaks',
     rounds: '4 Locations',
     estimatedTime: '~10 min',
-    color: 'from-green-500 to-emerald-600',
+    color: 'bg-emerald-600',
     icon: 'Play' as const
   },
   {
@@ -32,7 +32,7 @@ const gameModes = [
     description: 'The traditional explorer experience with balanced discovery',
     rounds: '5 Locations',
     estimatedTime: '~15 min',
-    color: 'from-blue-500 to-cyan-600',
+    color: 'bg-blue-600',
     icon: 'MapPin' as const
   },
   {
@@ -41,7 +41,7 @@ const gameModes = [
     description: 'For serious explorers who crave extended geographic challenges',
     rounds: '8 Locations',
     estimatedTime: '~25 min',
-    color: 'from-purple-500 to-violet-600',
+    color: 'bg-purple-600',
     icon: 'Trophy' as const
   },
   {
@@ -50,7 +50,7 @@ const gameModes = [
     description: 'Unlimited geographic discovery - explore until your heart\'s content',
     rounds: '∞ Locations',
     estimatedTime: 'Unlimited',
-    color: 'from-orange-500 to-red-600',
+    color: 'bg-orange-600',
     icon: 'InfinityIcon' as const
   }
 ];
@@ -130,17 +130,17 @@ export default function ConfigPage() {
           >
             <div className="flex items-center gap-3 sm:gap-4">
               <motion.div 
-                className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg"
+                className="w-12 h-12 sm:w-14 sm:h-14 bg-slate-800 dark:bg-slate-700 rounded-2xl flex items-center justify-center shadow-lg"
                 whileHover={{ rotate: 360, scale: 1.1 }}
                 transition={{ duration: 0.6 }}
               >
                 <Settings className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
               </motion.div>
               <div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 bg-clip-text text-transparent dark:from-blue-400 dark:via-purple-400 dark:to-cyan-400">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-slate-50">
                   🎮 Adventure Setup
                 </h1>
-                <p className="text-blue-600/80 dark:text-blue-400/80 text-sm sm:text-base lg:text-lg">
+                <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base lg:text-lg">
                   🌍 Prepare for your geographic expedition
                 </p>
               </div>
@@ -164,93 +164,93 @@ export default function ConfigPage() {
             </Link>
           </motion.div>
 
-          <div className="max-w-6xl mx-auto space-y-8 sm:space-y-12">
-            {/* Game Mode Selection Section */}
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <div className="mb-6 sm:mb-8 text-center">
-                <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 dark:from-blue-400 dark:to-teal-400 bg-clip-text text-transparent mb-2 sm:mb-3">
-                  🎯 Choose Your Adventure Mode
-                </h2>
-                <p className="text-blue-600/70 dark:text-blue-400/70 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto px-4">
-                  🎆 Pick your exploration style - from quick expeditions to endless journeys
-                </p>
-              </div>
+          <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            {/* Left Column - Game Mode Selection */}
+            <div className="space-y-6">
+              <motion.section
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <div className="mb-6 text-left">
+                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-800 dark:text-slate-100 mb-2">
+                    🎯 Choose Your Adventure Mode
+                  </h2>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base">
+                    🎆 Pick your exploration style - from quick expeditions to endless journeys
+                  </p>
+                </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                {gameModes.map((mode, index) => (
-                  <motion.div
-                    key={mode.mode}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 + index * 0.1 }}
-                  >
-                    <GameModeCard
-                      mode={mode}
-                      isSelected={selectedMode === mode.mode}
-                      onSelect={handleModeSelect}
-                    />
-                  </motion.div>
-                ))}
-              </div>
-            </motion.section>
+                <div className="flex flex-col gap-4">
+                  {gameModes.map((mode, index) => (
+                    <motion.div
+                      key={mode.mode}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 + index * 0.1 }}
+                    >
+                      <GameModeCard
+                        mode={mode}
+                        isSelected={selectedMode === mode.mode}
+                        onSelect={handleModeSelect}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.section>
+            </div>
 
-            {/* Game Settings Section */}
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-            >
-              <div className="mb-6 sm:mb-8 text-center">
-                <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-green-600 to-teal-600 dark:from-green-400 dark:to-teal-400 bg-clip-text text-transparent mb-2 sm:mb-3">
-                  ⚙️ Explorer Preferences
-                </h2>
-                <p className="text-green-600/70 dark:text-green-400/70 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto px-4">
-                  🌎 Fine-tune your geographic adventure experience
-                </p>
-              </div>
+            {/* Right Column - Game Settings and Launch Button */}
+            <div className="space-y-6 sm:space-y-8">
+              <motion.section
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <div className="mb-6 text-left">
+                  <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">
+                    ⚙️ Explorer Preferences
+                  </h2>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm">
+                    🌎 Fine-tune your geographic adventure experience
+                  </p>
+                </div>
 
-              <div className="max-w-2xl mx-auto px-2 sm:px-0">
                 <SettingsCard
                   countrySettings={countrySettings}
                   gameSettings={gameSettings}
                   onCountrySettingsChange={updateCountrySettings}
                   onGameSettingsChange={updateGameSettings}
                 />
-              </div>
-            </motion.section>
+              </motion.section>
 
-            {/* Start Game Button Section */}
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
-              className="text-center py-6 sm:py-8"
-            >
-              <div className="max-w-md mx-auto px-4">
+              {/* Start Game Button Section */}
+              <motion.section
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="pt-2"
+              >
                 <motion.div
-                  whileHover={{ scale: selectedMode ? 1.05 : 1 }}
-                  whileTap={{ scale: selectedMode ? 0.95 : 1 }}
+                  whileHover={{ scale: selectedMode ? 1.02 : 1 }}
+                  whileTap={{ scale: selectedMode ? 0.98 : 1 }}
                 >
                   <Button
                     onClick={handleStartGame}
                     disabled={!selectedMode || isStarting}
                     size="lg"
-                    className={`w-full py-3 sm:py-4 text-base sm:text-lg font-semibold shadow-xl transition-all duration-300 rounded-xl ${selectedMode && !isStarting
-                        ? 'bg-gradient-to-r from-blue-500 via-teal-500 to-cyan-500 hover:from-blue-600 hover:via-teal-600 hover:to-cyan-600 hover:shadow-2xl text-white hover:scale-105'
+                    className={`w-full py-4 text-base sm:text-lg font-semibold shadow-xl transition-all duration-300 rounded-xl ${selectedMode && !isStarting
+                        ? 'bg-emerald-600 hover:bg-emerald-700 hover:shadow-2xl text-white hover:scale-102'
                         : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                     }`}
                   >
                     {isStarting ? (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center gap-2">
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         🚀 Launching Adventure...
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center gap-2">
                         <Play className="w-5 h-5" />
                         {selectedMode ? `🌍 Begin ${gameModes.find(m => m.mode === selectedMode)?.title}` : '🎯 Select Your Adventure Mode'}
                       </div>
@@ -262,14 +262,14 @@ export default function ConfigPage() {
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 1 }}
-                    className="text-sm text-blue-500/70 dark:text-blue-400/70 mt-3"
+                    transition={{ delay: 0.8 }}
+                    className="text-xs text-blue-500/70 dark:text-blue-400/70 mt-3 text-center"
                   >
                     🎨 Please choose your adventure mode above to begin exploring
                   </motion.p>
                 )}
-              </div>
-            </motion.section>
+              </motion.section>
+            </div>
           </div>
         </div>
       </div>

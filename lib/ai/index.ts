@@ -1,8 +1,6 @@
 // Export shared types
 export type { 
-  SingleHintRequest, 
   SingleHintResponse, 
-  LocationContext,
   TextHintResponse
 } from './types';
 
@@ -14,6 +12,5 @@ export {
   generateCountryLettersHint, 
   getTextHintCost, 
   canGenerateTextHint,
-  getMaxTextHints,
   hasMoreTextHints
 } from './text-hints';

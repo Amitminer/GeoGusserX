@@ -168,5 +168,4 @@ class HintsClient {
 
 export const hintsClient = new HintsClient();
 
-// Re-export types for convenience
-export type { SingleHintRequest, SingleHintResponse } from './types';
+

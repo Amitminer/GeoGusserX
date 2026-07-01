@@ -47,37 +47,3 @@ export function PageTransition({ children, className = '', delay = 0 }: PageTran
 	);
 }
 
-export function FadeTransition({ children, className = '', delay = 0 }: PageTransitionProps) {
-	return (
-		<motion.div
-			initial={{ opacity: 0 }}
-			animate={{ opacity: 1 }}
-			exit={{ opacity: 0 }}
-			transition={{ duration: 0.3, delay }}
-			className={className}
-		>
-			{children}
-		</motion.div>
-	);
-}
-
-export function SlideTransition({ children, className = '', delay = 0, direction = 'up' }: PageTransitionProps & { direction?: 'up' | 'down' | 'left' | 'right' }) {
-	const directionVariants = {
-		up: { y: 20 },
-		down: { y: -20 },
-		left: { x: 20 },
-		right: { x: -20 }
-	};
-
-	return (
-		<motion.div
-			initial={{ opacity: 0, ...directionVariants[direction] }}
-			animate={{ opacity: 1, y: 0, x: 0 }}
-			exit={{ opacity: 0, ...directionVariants[direction] }}
-			transition={{ duration: 0.3, delay }}
-			className={className}
-		>
-			{children}
-		</motion.div>
-	);
-}

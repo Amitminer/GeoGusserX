@@ -47,7 +47,7 @@ interface RegionsData {
 /**
  * The complete list of all geographic regions loaded from the `regions.json` file.
  */
-export const GEOGRAPHIC_REGIONS: GeographicRegion[] = (regionsData as RegionsData).regions;
+const GEOGRAPHIC_REGIONS: GeographicRegion[] = (regionsData as RegionsData).regions;
 
 /**
  * The `RegionManager` class is a highly optimized data structure for managing and querying
@@ -293,32 +293,9 @@ class RegionManager {
 }
 
 /** The singleton instance of the `RegionManager`. */
-export const regionManager = new RegionManager(GEOGRAPHIC_REGIONS);
+const regionManager = new RegionManager(GEOGRAPHIC_REGIONS);
 
-/**
- * Returns a sorted list of all available country names.
- */
-export function getAvailableCountries(): string[] {
-	return [...new Set(GEOGRAPHIC_REGIONS.map(region => region.name))].sort();
-}
 
-/**
- * Retrieves regions for a given country using the optimized lookup in the `RegionManager`.
- * @param countryName The name of the country.
- * @returns An array of matching regions.
- */
-export function getRegionsByCountry(countryName: string): GeographicRegion[] {
-	return regionManager.getRegionsByCountryOptimized(countryName);
-}
-
-/**
- * Retrieves regions by their type using the optimized lookup in the `RegionManager`.
- * @param type The type of region.
- * @returns An array of matching regions.
- */
-export function getRegionsByType(type: string): GeographicRegion[] {
-	return regionManager.getRegionsByTypeOptimized(type);
-}
 
 /**
  * Returns a sorted list of all regions that are of type 'country'.
@@ -365,15 +342,6 @@ export function getRandomRegion(): GeographicRegion {
 	return regionManager.getRandomRegionWithLibrary();
 }
 
-/** Retrieves regions by type using the optimized method. For internal use. */
-export function getRegionsByTypeOptimized(type: string): GeographicRegion[] {
-	return regionManager.getRegionsByTypeOptimized(type);
-}
-
-/** Retrieves regions by continent. For internal use. */
-export function getRegionsByContinent(continent: string): GeographicRegion[] {
-	return regionManager.getRegionsByContinent(continent);
-}
 
 /** The singleton instance of the `RegionManager`, exported for advanced usage. */
 export const regionManagerInstance = regionManager;

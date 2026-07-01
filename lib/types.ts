@@ -26,11 +26,6 @@ export interface GameState {
 
 export type GameMode = '4-rounds' | '5-rounds' | '8-rounds' | 'infinite';
 
-export interface GameConfig {
-	mode: GameMode;
-	timeLimit?: number;
-	difficulty?: 'easy' | 'medium' | 'hard';
-}
 
 export interface StreetViewLocation {
 	location: Location;
@@ -76,7 +71,3 @@ export interface UserGameSettings {
 	preferredGameMode: GameMode;
 }
 
-export interface UserSettings {
-	countrySettings: CountrySettings;
-	gameSettings: UserGameSettings;
-}

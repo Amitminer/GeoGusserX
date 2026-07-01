@@ -54,8 +54,8 @@ export function GameModeCard({ mode, isSelected, onSelect }: GameModeCardProps) 
       <Card
         className={`cursor-pointer transition-all duration-300 hover:shadow-xl border-2 ${
           isSelected
-            ? 'ring-2 ring-blue-500 shadow-lg border-blue-300 bg-gradient-to-br from-blue-50/80 to-cyan-50/80 dark:from-blue-900/30 dark:to-cyan-900/30'
-            : 'border-gray-200/50 dark:border-gray-700/50 hover:border-blue-200 dark:hover:border-blue-700 bg-gradient-to-br from-white/80 to-gray-50/80 dark:from-gray-800/80 dark:to-gray-900/80'
+            ? 'ring-2 ring-emerald-500 shadow-lg border-emerald-500 bg-emerald-50/25 dark:bg-emerald-950/15'
+            : 'border-gray-200/50 dark:border-gray-700/50 hover:border-emerald-500 dark:hover:border-emerald-500 bg-slate-50/50 dark:bg-slate-900/50'
         } backdrop-blur-sm rounded-2xl overflow-hidden group hover:scale-[1.02] transform`}
         onClick={() => onSelect(mode.mode)}
       >
@@ -63,7 +63,7 @@ export function GameModeCard({ mode, isSelected, onSelect }: GameModeCardProps) 
           <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg">
             {/* The icon for the game mode, with a hover animation. */}
             <motion.div 
-              className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r ${mode.color} rounded-xl flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}
+              className={`w-10 h-10 sm:w-12 sm:h-12 ${mode.color} rounded-xl flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}
               whileHover={{ rotate: 360 }}
               transition={{ duration: 0.6 }}
             >

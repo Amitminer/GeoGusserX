@@ -702,7 +702,7 @@ export function HintsDialog({ location, countryInfo, disabled = false }: HintsDi
 							<Button
 								onClick={handleGenerateAIHint}
 								disabled={!canAffordAIHint() || !countryInfo}
-								className={`w-full ${canAffordAIHint() && countryInfo ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'}`}
+								className={`w-full ${canAffordAIHint() && countryInfo ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'}`}
 							>
 								<Sparkles className="w-4 h-4 mr-2" />
 								AI Hint #{getNextHintNumber()} (-{AI_HINT_COST} pts)

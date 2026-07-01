@@ -13,20 +13,29 @@ const nextConfig: NextConfig = {
     /**
      * Optimizes the import of packages, which can improve performance.
      */
-    optimizePackageImports: ['lucide-react', 'framer-motion'],
+    optimizePackageImports: ["lucide-react", "framer-motion"],
   },
   /**
    * Configuration for the Next.js Image component.
    */
   images: {
     /**
-     * A list of domains that are allowed to be used with the Image component.
+     * A list of patterns that are allowed to be used with the Image component.
      */
-    domains: ['maps.googleapis.com', 'streetviewpixels-pa.googleapis.com'],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "maps.googleapis.com",
+      },
+      {
+        protocol: "https",
+        hostname: "streetviewpixels-pa.googleapis.com",
+      },
+    ],
     /**
      * The image formats to be used for optimization.
      */
-    formats: ['image/webp', 'image/avif'],
+    formats: ["image/webp", "image/avif"],
   },
   /**
    * Custom headers for the application.
@@ -34,11 +43,11 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: '/manifest.json',
+        source: "/manifest.json",
         headers: [
           {
-            key: 'Content-Type',
-            value: 'application/manifest+json',
+            key: "Content-Type",
+            value: "application/manifest+json",
           },
         ],
       },

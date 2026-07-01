@@ -54,16 +54,12 @@ export function HelpDialog({ disabled = false }: HelpDialogProps) {
         </motion.div>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border border-gray-200/50 dark:border-gray-700/50">
+      <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col bg-white dark:bg-gray-950 border border-gray-200/50 dark:border-gray-700/50 shadow-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <motion.div
-              animate={{ rotate: [0, 360] }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-              className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center"
-            >
+            <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
               <HelpCircle className="w-3 h-3 text-white" />
-            </motion.div>
+            </div>
             Game Help & FAQ
           </DialogTitle>
           <DialogDescription>

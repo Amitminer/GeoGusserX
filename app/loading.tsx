@@ -1,4 +1,4 @@
-import { Loader2, MapPin } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 /**
  * A visually appealing loading screen component that is displayed while the application
@@ -7,7 +7,7 @@ import { Loader2, MapPin } from 'lucide-react';
  */
 export default function Loading() {
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center relative overflow-hidden">
+		<div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center relative overflow-hidden">
 			{/* These elements create a subtle, animated background with floating dots. */}
 			<div className="absolute inset-0 opacity-20">
 				<div className="absolute top-20 left-20 w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
@@ -29,8 +29,15 @@ export default function Loading() {
 
 					{/* The central logo with a pulsing and bouncing animation. */}
 					<div className="relative">
-						<div className="w-16 h-16 bg-gradient-to-br from-blue-500 via-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto transform transition-all duration-1000 animate-pulse shadow-lg shadow-blue-500/25">
-							<MapPin className="w-8 h-8 text-white animate-bounce" suppressHydrationWarning style={{ animationDuration: '2s' }} />
+						<div className="w-16 h-16 flex items-center justify-center mx-auto transform transition-all duration-1000 animate-pulse">
+							{/* eslint-disable-next-line @next/next/no-img-element */}
+							<img 
+								src="/icon.png" 
+								alt="GeoGusserX Logo" 
+								className="w-12 h-12 object-contain animate-bounce" 
+								suppressHydrationWarning 
+								style={{ animationDuration: '2s' }} 
+							/>
 						</div>
 
 						{/* An orbiting loader icon for an extra touch of motion. */}
@@ -41,7 +48,7 @@ export default function Loading() {
 				</div>
 
 				<div className="mb-2">
-					<h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent animate-pulse">
+					<h2 className="text-2xl font-bold text-blue-600 dark:text-blue-400 animate-pulse">
 						Loading GeoGusserX
 					</h2>
 				</div>
@@ -58,16 +65,16 @@ export default function Loading() {
 				{/* A series of bouncing dots to indicate progress. */}
 				<div className="flex justify-center mb-8">
 					<div className="flex space-x-2">
-						<div className="w-3 h-3 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full animate-bounce shadow-lg"></div>
-						<div className="w-3 h-3 bg-gradient-to-r from-purple-400 to-purple-600 rounded-full animate-bounce shadow-lg" style={{ animationDelay: '0.2s' }}></div>
-						<div className="w-3 h-3 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full animate-bounce shadow-lg" style={{ animationDelay: '0.4s' }}></div>
-						<div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full animate-bounce shadow-lg" style={{ animationDelay: '0.6s' }}></div>
+						<div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce shadow-lg"></div>
+						<div className="w-3 h-3 bg-purple-500 rounded-full animate-bounce shadow-lg" style={{ animationDelay: '0.2s' }}></div>
+						<div className="w-3 h-3 bg-indigo-500 rounded-full animate-bounce shadow-lg" style={{ animationDelay: '0.4s' }}></div>
+						<div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce shadow-lg" style={{ animationDelay: '0.6s' }}></div>
 					</div>
 				</div>
 
 				<div className="max-w-xs mx-auto">
 					<div className="h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-						<div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
+						<div className="h-full bg-blue-600 rounded-full animate-pulse"></div>
 					</div>
 				</div>
 

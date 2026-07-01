@@ -39,11 +39,11 @@ export function SettingsCard({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <Card className="border-2 border-blue-200/50 dark:border-blue-700/50 bg-gradient-to-br from-blue-50/80 to-cyan-50/80 dark:from-blue-900/40 dark:to-cyan-900/40 backdrop-blur-sm shadow-xl rounded-2xl overflow-hidden">
+        <Card className="border-2 border-blue-200/60 dark:border-blue-800/40 bg-blue-50/40 dark:bg-blue-950/15 backdrop-blur-sm shadow-xl rounded-2xl overflow-hidden">
           <CardHeader className="pb-3 sm:pb-6">
             <CardTitle className="flex items-center gap-2 sm:gap-3">
               <motion.div 
-                className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 via-cyan-500 to-teal-500 rounded-xl flex items-center justify-center text-white shadow-lg"
+                className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg"
                 whileHover={{ 
                   rotate: [0, -10, 10, -10, 0],
                   scale: [1, 1.1, 1]
@@ -53,7 +53,7 @@ export function SettingsCard({
                 <Compass className="w-4 h-4 sm:w-5 sm:h-5" />
               </motion.div>
               <div className="min-w-0 flex-1">
-                <div className="text-base sm:text-lg font-semibold bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-400 dark:to-cyan-400 bg-clip-text text-transparent">
+                <div className="text-base sm:text-lg font-semibold text-blue-700 dark:text-blue-400">
                   🌍 Adventure Destinations
                 </div>
                 <div className="text-xs sm:text-sm text-blue-600/70 dark:text-blue-400/70">
@@ -77,11 +77,11 @@ export function SettingsCard({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <Card className="border-2 border-purple-200/50 dark:border-purple-700/50 bg-gradient-to-br from-purple-50/80 to-pink-50/80 dark:from-purple-900/40 dark:to-pink-900/40 backdrop-blur-sm shadow-xl rounded-2xl overflow-hidden">
+        <Card className="border-2 border-purple-200/60 dark:border-purple-800/40 bg-purple-50/40 dark:bg-purple-950/15 backdrop-blur-sm shadow-xl rounded-2xl overflow-hidden">
           <CardHeader className="pb-3 sm:pb-6">
             <CardTitle className="flex items-center gap-2 sm:gap-3">
               <motion.div 
-                className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 rounded-xl flex items-center justify-center text-white shadow-lg"
+                className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg"
                 whileHover={{ 
                   rotate: [0, 180, 360],
                   scale: [1, 1.2, 1]
@@ -91,7 +91,7 @@ export function SettingsCard({
                 <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
               </motion.div>
               <div className="min-w-0 flex-1">
-                <div className="text-base sm:text-lg font-semibold bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+                <div className="text-base sm:text-lg font-semibold text-purple-700 dark:text-purple-400">
                   🎮 Explorer Settings
                 </div>
                 <div className="text-xs sm:text-sm text-purple-600/70 dark:text-purple-400/70">
@@ -105,7 +105,7 @@ export function SettingsCard({
             <motion.div
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="cursor-pointer p-3 sm:p-4 rounded-xl bg-gray-50/50 dark:bg-gray-700/50 border border-gray-200/50 dark:border-gray-600/50 hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-300"
+              className="cursor-pointer p-3 sm:p-4 rounded-xl bg-gray-50/50 dark:bg-gray-700/50 border border-gray-200/50 dark:border-gray-600/50 hover:border-emerald-500 dark:hover:border-emerald-600 transition-all duration-300"
               onClick={() => onGameSettingsChange({ ...gameSettings, showCountryName: !gameSettings.showCountryName })}
             >
               <div className="flex items-center justify-between gap-3">

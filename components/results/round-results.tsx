@@ -62,7 +62,7 @@ export function RoundResults({ result, roundNumber, onNextRound, onEndGame, isLa
 			initial={{ opacity: 0 }}
 			animate={{ opacity: 1 }}
 			exit={{ opacity: 0 }}
-			className="fixed inset-0 bg-gradient-to-br from-blue-50/95 via-white/90 to-purple-50/95 dark:from-gray-900/95 dark:via-gray-800/90 dark:to-gray-900/95 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 z-50 overflow-y-auto"
+			className="fixed inset-0 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 z-50 overflow-y-auto"
 		>
 			<motion.div
 				initial={{ y: 20, opacity: 0, scale: 0.95 }}
@@ -70,7 +70,7 @@ export function RoundResults({ result, roundNumber, onNextRound, onEndGame, isLa
 				transition={{ duration: 0.3, ease: "easeOut" }}
 				className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-white/20 dark:border-gray-700/30 rounded-3xl shadow-2xl w-full max-w-6xl min-h-[80vh] max-h-[90vh] my-4 overflow-hidden flex flex-col"
 			>
-				<div className="bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 text-white p-3 sm:p-4 rounded-t-3xl">
+				<div className="bg-blue-600 text-white p-3 sm:p-4 rounded-t-3xl">
 					<div className="flex items-center justify-between">
 						<div>
 							<h2 className="text-lg sm:text-xl font-bold">
@@ -171,7 +171,7 @@ export function RoundResults({ result, roundNumber, onNextRound, onEndGame, isLa
 											}
 										}}
 										size="lg"
-										className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 sm:px-8 py-3 sm:py-4 w-full text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl"
+										className="bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-3 sm:py-4 w-full text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl"
 									>
 										{isLastRound ? (
 											<>
